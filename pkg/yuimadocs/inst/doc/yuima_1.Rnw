@@ -1,0 +1,53 @@
+\section{Introduction}
+
+\def\yuima{{\bf yuima}}
+
+The package $\yuima$ provides 
+an object-oriented programming environment 
+for simulation and statistical inference 
+for stochastic processes by R. 
+On this framework, 
+$\yuima$ also supplies various functions 
+to execute simulation and statistical analysis. 
+Both categories of procedures may depend each other. 
+Statistical inference often requires a simulation technique 
+as a subroutine, and a certain simulation method 
+needs to fix a tuning parameter by applying 
+a statistical methodology. 
+It is especially the case of stochastic processes 
+because most of expected values involved 
+do not admit an explicit expression. 
+%It is therefore natural to 
+$\yuima$ facilitates comprehensive, systematic approaches 
+to the solution. 
+
+
+Stochastic differential equations are 
+commonly used 
+to model random evolution along continuous or 
+practically continuous time, such as 
+the random movements of a stock price. 
+Theory of statistical inference for 
+stochastic differential equations already has a fairly long history, 
+more than three decades, but it is still developing quickly new 
+methodologies and expanding the area. 
+The formulas produced by the theory are usually very sophisticated, 
+which makes it difficult for standard users not necessarily 
+familiar with this field to enjoy utilities. 
+For example, the asymptotic expansion method for computing 
+option prices (i.e., expectation of an irregular functional of 
+a stochastic process) provides precise approximation values 
+instantaneously, taking advantage of the analytic approach, 
+but the formula has a long expression like more than one page! 
+$\yuima$ delivers up-to-date methods as a package 
+onto the desk of the user working 
+with simulation and/or statistics for stochastic differential equations. 
+
+
+Sampled data from a continuous-time process features 
+the time stamps as well as the positions of the object. 
+It is requiring a new theory of estimation. 
+$\yuima$ framework can apply multi-dimensional time stamps 
+of tick data and provides diverse functions handling such kind data 
+to support statistical analysis. 
+

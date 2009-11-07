@@ -1,0 +1,11 @@
+Package: yuimadocs
+Type: Package
+Title: The YUIMA Project package Doc Collection
+Version: 0.0.1
+Date: 2009-11-07
+Depends: yuima, methods, zoo
+Author: Yuima project team.
+Maintainer: Who to complain to <yourfault@somewhere.net>
+Description: package for the YUIMA Project. The YUIMA Project Team is: Yoshida, N., Iacus, S.M., Hino, H., 
+License: GPL (>= 2)
+

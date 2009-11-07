@@ -1,0 +1,138 @@
+\section{Simulation}
+\subsection{Diffusion Process}
+\code{simulate} is a function to solve SDE using the Euler-Maruyama method.
+Here we illustrate how to generate a simulated path of the solution of
+a given SDE. Let us consider a 3-dim SDE  
+
+ \begin{equation} \label{sabr}
+ \begin{cases}
+ & \mbox{d} X_t^1 = X_t^2 \left| X_t^1 \right|^{2/3} \mbox{d}W_t^1, \\
+ & \mbox{d}X_t^2 = g(t)\mbox{d}X_t^3, \\
+ & \mbox{d}X_t^3 = X_t^3( \mu  \mbox{d}t + \sigma (\rho \mbox{d}W_t^1 + \sqrt{1-\rho^2} 
+   \mbox{d}W_t^2))
+ \end{cases},
+ \ \ \ \ (X_0^1, X_0^2, X_0^3) = (1.0,0.1,1.0)
+ \end{equation}
+ with $\mu = 0.1, \sigma = 0.2, \rho = -0.7 $ and $g(t) = 0.4 + (0.1 + 0.2t) e^{-2t}$,  for
+ example, where $W = (W^1, W^2)$ is a 2-dim standard Brownian motion.
+ The solution  $X = (X^1, X^2, X^3)$ takes values on $\mathbb{R}_+^3$.
+ This is a stochastic integral equation defined as
+ \begin{equation}
+ X_t = X_0 +  \int_0^t b(s,X_s) \mbox{d}s + \int_0^t c(s,X_s) \mbox{d}W_s
+ \end{equation}
+ with 
+ \[
+  b(s,x) = \left( \begin{array}{@{\,}c@{\,}} 0 \\ g(s) \mu x^3 \\ \mu x^3 \end{array} \right),
+ \ \ 
+ c(s,x) = \left( \begin{array}{@{\,}cc@{\,}} x^2 | x^1|^{2/3} &  0 \\ 
+  g(s)\sigma \rho x^3 &  g(s)\sigma \sqrt{1-\rho^2} x^3 \\ 
+ \sigma \rho  x^3 & \sigma \sqrt{1-\rho^2} x^3 
+ \end{array} \right)
+ \]
+ for $ x = (x^1, x^2, x^3)$. 
+ The Euler-Maruyama method with discretization scheme
+ \begin{equation}
+ 0 = \tau_0 < \tau_1 < \cdots < \tau_j < \tau_{j+1} < \cdots
+ \end{equation}
+ refers to an approximative solution given by
+ \begin{equation}
+ \tilde{X}_{\tau_{j+1}} = \tilde{X}_{\tau_j} + 
+ b(\tau_j,\tilde{X}_{\tau_j})(\tau_{j+1} - \tau_j) + 
+ c(\tau_j, \tilde{X}_{\tau_j} )(W_{\tau_{j+1}}- W_{\tau_j}), \ \ j \geq 0.
+ \end{equation}
+ If interval $\tau_{j+1} - \tau_j$ is independent to  $\{W_t\}_{t \geq \tau_j}$ for each $j$,
+ $W_{\tau_{j+1}} - W_{\tau_j}$ has the same distribution as $\sqrt{\tau_{j+1} - \tau_j}N_j$,
+ where $N_j$ is an iid sequence of standard normal variables.
+ The usual discretization scheme is an equidistant one such as 
+ \begin{equation}
+ \tau_{j+1} - \tau_j = \text{Terminal}/\text{division}
+ \end{equation}
+ for all $j \geq 0$.
+
+<<fig=TRUE,echo=TRUE,width=7,height=7>>=
+ set.seed(123)
+
+ mu <- 0.1
+ sig <- 0.2 
+ rho <- -0.7
+
+ g <- function(t){
+    return(0.4 + (0.1 + 0.2*t)* exp(-2*t))
+ }
+
+ f1 <- function(t, x1, x2, x3) {
+    ret <- 0
+    if(x1 > 0 && x2 > 0) ret <- x2*exp(log(x1)*2/3)
+    return(ret)
+ }
+
+ f2 <- function(t, x1, x2, x3) {
+     ret <- 0
+     if(x3 > 0) ret <- rho*sig*x3
+     return(ret)
+ }
+
+ f3 <- function(t, x1, x2, x3) {
+     ret <- 0
+     if(x3 > 0) ret <- sqrt(1-rho^2)*sig*x3
+     return(ret)
+ }
+
+ diff.coef.matrix <- matrix(c("f1(t,x1,x2,x3)", "f2(t,x1,x2,x3) * g(t)", 
+     "f2(t,x1,x2,x3)", "0", "f3(t,x1,x2,x3)*g(t)", "f3(t,x1,x2,x3)"),  3, 2)
+
+ sabr.mod <- setModel(drift = c("0", "mu*g(t)*x3", "mu*x3"), diffusion = diff.coef.matrix, 
+                       state.variable = c("x1", "x2", "x3"), solve.variable = c("x1", "x2", "x3"))
+
+ # Change the parameters below if needed
+ yuima.samp <- setSampling(Terminal=1,division=1000)
+
+ # make yuima object
+ yuima <- setYuima(model=sabr.mod, sampling=yuima.samp)
+
+ # Solve SDEs using Euler-Maruyama method
+ yuima <- simulate(yuima, xinit=c(1.0,0.1,1.0))
+ plot(yuima)
+@
+
+ \subsection{Space-discretizing scheme} 
+
+ \code{simulate} provides also space-discretized Euler-Maruyama method to solve SDE.
+ This is at the moment designed for 1 factor SDE, i.e., the case the driving
+ Brownian motion $W$ is 1-dimensional. Here discretization scheme $\{\tau_j\}$ 
+ is defined as
+
+\begin{equation}
+\tau_0 = 0, \ \ \tau_{j+1} = \inf\{ t > \tau_j; |W_t - W_{\tau_j}| = \epsilon \}
+\end{equation}
+for each $j \geq 0$. \code{simulate} takes
+\begin{equation}
+\epsilon^2 = \text{Terminal} / \text{division},
+\end{equation}
+which coinsides with the mean of the interval  $\tau_{j+1} - \tau_j$. 
+This space-discretizing scheme is 3 times efficient than the usual time-discretizing
+one in the sense of mean-squared error.
+
+Let us consider the previous model (\ref{sabr}) with $\rho = -1$.
+
+<<fig=TRUE,echo=TRUE,width=7,height=7>>=
+
+set.seed(123)
+
+rho <- -1
+
+diff.coef.matrix <- c("f1(t,x1,x2,x3)", "f2(t,x1,x2,x3) * g(t)", 
+    "f2(t,x1,x2,x3)")
+
+sabr.mod <- setModel(drift = c("0", "mu*g(t)*x3", "mu*x3"), diffusion = diff.coef.matrix, 
+                      state.variable = c("x1", "x2", "x3"), solve.variable = c("x1", "x2", "x3"))
+
+yuima <- setYuima(model=sabr.mod, sampling=yuima.samp)
+
+#yuima <- simulate(yuima)
+yuima.sd <- simulate(yuima, space.discretized = TRUE, xinit=c(1.0,0.1,1.0))
+
+#plot(yuima)
+plot(yuima.sd)
+@
+

@@ -1,0 +1,300 @@
+\section{cce}
+  cce is a function to estimate the covariance between two It\^o 
+  processes when they are observed at discrete times nonsynchronously. 
+  It can also apply to irregularly sampled one-dimensional data as a special case. 
+
+\subsection{Nonsynchronous covariance estimator}
+Suppose that two It\^o processes are observed
+only at discrete times in a nonsynchronous manner.
+We are interested in estimating the covariance of the two processes accurately
+in such a situation.
+This type of problem arises typically in high-frequency financial time series.
+
+Let $T \in (0,\infty)$ be a terminal time for possible observations. 
+We consider a two dimensional It\^o process $(X^1,X^2)$  
+satisfying the stochastic differential equations
+\begin{eqnarray*}
+\mbox{d}X_t^l &=&\mu_t^l \mbox{d}t + \sigma_t^l \mbox{d}W_t^l ,\quad
+t\in[0,T]\\
+X_0^l &=& x_0^l        \notag
+\end{eqnarray*}
+for $l=1,2$. 
+Here $W^l$ denote standard Wiener processes with a 
+progressively measurable correlation process 
+$\mbox{d}\langle W_1 , W_2 \rangle_t = \rho_t \mbox{dt}$,  
+$\mu^l_t$ and $\sigma_t^l$ are progressively measurable processes, 
+and $x^l_0$ are initial random variables independent of $(W^1,W^2)$.  
+Diffusion type processes are in the scope but this model 
+can express more sophisticated stochastic structures. 
+
+
+The process $X^l$ is supposed to be observed at 
+over the increasing sequence of times 
+$T^{l,i}$ $(i\in\mathbb{Z}_{\geq0})$ starting at $0$, up to time T. 
+Thus, the observables are $(T^{l,i},X^{l,i})$ with $T^{l,i}\leq T$. 
+Each $T^{l,j}$ may be a stopping time, so possibly depends on 
+the history of $(X^1,X^2)$ as well as the precedent stopping times.  
+Two sequences of stopping times 
+$T^{1,i}$ and $T^{2,j}$ are {\it nonsynchronous},  and 
+irregularly spaced, in general. 
+In particular, cce can apply to estimation of the quadratic variation of a single 
+stochastic process sampled regularly/irregularly.  
+
+
+The parameter of interest is the quadratic covariation between $X^1$ and $X^2$: 
+
+\begin{equation}
+\theta=
+\langle X^1 , X^2 \rangle_T = \int_0^T \sigma_t^1 \sigma_t^2 \rho_t \mbox{d}t.
+\end{equation}
+The target variable $\theta$ is random in general. 
+
+It can be estimated with the nonsynchronous covariance estimator 
+(Hayashi-Yoshida estimator) 
+\begin{equation}
+U_n= \sum_{i,j:T^{1,i}\leq T, T^{2,j}\leq T} (X_{T^{1,i}}^1-X_{T^{1,i-1}}^1)(X_{T^{2,j}}^2-X_{T^{2,j-1}}^2)
+1_{\{ (T^{1,i-1},T^{1,i}] 
+\bigcap (T^{2,j-1},T^{2,j}]  \neq \emptyset  \}}.
+\end{equation}
+That is, the product of any pair of increments $(X_{T^{1,i}}^1-X_{T^{1,i-1}}^1)$ and
+$(X_{T^{2,j}}^2-X_{T^{2,j-1}}^2)$ will make a contribution 
+to the sum only when 
+the respective observation intervals $(T^{1,i-1},T^{1,i}] $ and $ (T^{2,j-1},T^{2,j}] $ are overlapping 
+with each other. 
+%The estimator $U_n$ was proposed by Hayashi and Yoshida  and 
+It is known that $U_n$ is consist and has asymptotically mixed normal 
+distribution 
+as $n\to\infty$ if the maximum length between two consecutive observing times 
+tends to $0$. 
+See \cite{hay-yos05,hay-yos04,hay-yos06,hay-yos08} for details. 
+
+\subsection{Example: data generation and estimation by yuima package}
+We will demonstrate how to apply cce function to 
+nonsynchronous high-frequency data by simulation. 
+As an example, consider a two dimensional stochastic process 
+$(X^1_t,X^2_t)$ satisfying the stochastic differential equation
+\begin{equation}
+\begin{split}
+\mbox{d}X^1_t = \sigma_{1,t} \mbox{d}B^1_t, \\
+\mbox{d}X^2_t = \sigma_{2,t} \mbox{d}B^2_t. 
+\end{split}
+\end{equation}
+Here $B^1_t$ and $B^2_t$ denote two standard Wiener processes, 
+however they are correlated as 
+\begin{eqnarray}
+B^1_t &=& W^1_t,\\
+B^2_t &=&  \int_0^t \rho_s \mbox{d} W^1_s +
+  \int_0^t \sqrt{ 1- \rho_s^2} \mbox{d} W^2_s,
+\end{eqnarray}
+where  $W^1_t$ and $W^2_t$ are independent Wiener processes,  and 
+$\rho_t$ is the correlation function between $B^1_t$ and $B^2_t$. 
+We consider $\sigma_{l,t},l=1,2$ and $\rho_t$ 
+of the following form in this example:
+
+\begin{eqnarray*}
+ \sigma_{1,t} &=& \sqrt{1+t}, \\
+ \sigma_{2,t} &=& \sqrt{1+t^2}, \\
+ \rho_t &=& \frac{1}{\sqrt{2}}.
+\end{eqnarray*}
+
+To simulate the stochastic process $(X^1_t,X^2_t)$, we first build the model 
+by setModel as follows. 
+It should be noted that the method of generating 
+nonsynchronous data can be replaced by a simpler one but 
+we will take a general approach here to demonstrate 
+a usage of 
+the yuima comprehensive package for simulation and estimation of 
+stochastic processes. 
+
+<<print=FALSE,echo=TRUE>>=
+# diffusion coefficient for process 1
+diff.coef.1 <- function(t,x1=0, x2=0) sqrt(1+t)
+# diffusion coefficient for process 2
+diff.coef.2 <- function(t,x1=0, x2=0) sqrt(1+t^2)
+# correlation
+cor.rho <- function(t,x1=0, x2=0) sqrt(1/2)
+# coefficient matrix for diffusion term
+diff.coef.matrix <- matrix( c( "diff.coef.1(t,x1,x2)", "diff.coef.2(t,x1,x2) * cor.rho(t,x1,x2)", "", "diff.coef.2(t,x1,x2) * sqrt(1-cor.rho(t,x1,x2)^2)"),2,2)
+# Model sde using yuima.model
+cor.mod <- setModel(drift = c("",""), diffusion = diff.coef.matrix, solve.variable=c("x1","x2"))
+@ 
+
+The parameter we want to estimate is the quadratic covariation between $X_1$ and $X_2$: 
+
+\begin{equation}
+\theta = \langle X_1, X_2 \rangle_T =
+ \int_0^T \sigma_{1,t} \sigma_{2,t} \rho_t \mbox{d} t.
+\end{equation}
+Later, we will compare estimated values with 
+the true value of  $\theta$ given by 
+<<echo=TRUE>>=
+CC.theta <- function( T, sigma1, sigma2, rho)
+{
+ 	tmp <- function(t) return( sigma1(t) * sigma2(t) * rho(t) )
+ 	integrate(tmp,0,T)
+}
+# Cumulative Covariance
+theta <- CC.theta(T=1, sigma1=diff.coef.1, sigma2=diff.coef.2, rho=cor.rho)$value
+cat(sprintf("theta=%5.3f\n",theta))
+@ 
+For the sampling scheme, we will consider the independent oisson sampling. 
+That is, each configuration of the sampling times $T^{l,i}$ is realized 
+as the Poisson random measure with intensity $np_l$, 
+and the two random measures are independent each other as well as 
+the stochastic processes. 
+Then it is known that
+
+
+\begin{equation}
+n^{1/2} ( U_n -\theta) \rightarrow N(0,c),
+\end{equation}
+as $n\to\infty$, 
+where 
+\begin{equation}
+ c = \left( \frac{2}{p_1} + \frac{2}{p_2} \right)
+\int_0^T \left( \sigma_{1,t} \sigma_{2,t}  \right)^2 \mbox{d}t +
+\left(
+\frac{2}{p_1} + \frac{2}{p_2} - \frac{2}{p_1 + p_2}
+\right)
+\int_0^T
+\left(
+\sigma_{1,t} \sigma_{2,t} \rho_t
+\right)^2 \mbox{d} t.
+\end{equation}
+
+We use a function \code{poisson.random.sampling} to get observations 
+by the Poisson sampling.
+This function returns a matrix combined times and observations of
+Poisson random sampling. 
+
+<<echo=TRUE>>=
+set.seed(111)
+ 
+Terminal <- 1
+p1 <- 0.2
+p2 <- 0.3
+rate<-c(p1, p2)
+n <- 1000 
+# Change to n<-1000
+division <- 1200
+# Change too division <- 1200
+
+yuima.samp <- setSampling(Terminal=Terminal,division=division)
+yuima <- setYuima(model=cor.mod, sampling=yuima.samp)
+
+# solve SDEs using Euler-Maruyama method
+Data <- simulate(yuima)
+
+sampledData <- poisson.random.sampling(Data,rate=rate, n=n)
+@ 
+\code{cce} takes the sample and returns 
+an estimate of the quadratic covariation.
+<<cce, echo=TRUE>>=
+cce(sampledData)[1,2] # CumulativeCovarianceEstimator
+@ 
+and in case of non missing data
+<<cce2, echo=TRUE>>=
+cce(Data)[1,2] # CumulativeCovarianceEstimator
+@ 
+The last value is just for reference; it may bear another kind error 
+due to approximation error to the Poisson sampling. 
+
+
+In what follows, we will evaluate the difference between 
+the estimated value and the true value, as well as the asymptotic variance, 
+and compare the histogram of the estimation error after scaling 
+with the limiting Gaussian distribution 
+(Figure \ref{fig:histogram}). 
+The function \texttt{var.c} calculates the theoretical 
+asymptotic variance of the scaled estimation error. 
+
+<<cctheta2, echo=TRUE>>=
+#error <- NULL   # difference between true parameter and estimator
+
+
+# Cumulative Covariance
+theta <- CC.theta(T=Terminal, diff.coef.1, diff.coef.2, cor.rho)$value
+cat(sprintf("The true value of theta=%5.3f\n",theta))
+
+
+
+# asymptotic variance
+var.c <- function(T, p1,p2, sigma1, sigma2, rho)
+{
+  tmp_integrand1 <- function(t) (sigma1(t) * sigma2(t))^2
+  i1 <- integrate(tmp_integrand1,0,T)
+  tmp_integrand2 <- function(t) (sigma1(t) * sigma2(t) * rho(t))^2
+  i2 <- integrate(tmp_integrand2,0,T)
+  2*(1/p1 + 1/p2)* i1$value + 2*(1/p1+1/p2 - 1/(p1+p2)) * i2$value
+}
+
+vc <- var.c(T=Terminal, p1, p2, diff.coef.1, diff.coef.2, cor.rho)
+sd <- sqrt(vc/n)
+cat(sprintf("The standard deviation by normal approximation =%5.3f\n",sd))
+
+
+
+# simulation
+N <- 100
+U <- NULL
+for(i in 1:N)
+{
+  # solve SDEs using Euler-Maruyama method
+  yuima.tmp <- simulate(yuima)
+  yuimaData <- poisson.random.sampling(yuima.tmp,rate=rate,n=n)
+  Un <- cce(yuimaData)[1,2] # CumulativeCovarianceEstimator
+  U <- append(U, Un)
+}
+
+cat(sprintf("The sample mean =%5.3f\n", mean(U)))
+cat(sprintf("The sample standard deviation =%5.3f\n", sqrt(var(U))))
+@ 
+
+
+\begin{figure}[h]
+\centering
+<<fig1, fig=TRUE,echo=TRUE,width=10,height=10,results=hide>>=
+# plot sampled data histogram and Gaussian distribution (theoretical result).
+library(KernSmooth)
+h <- dpih(U)
+bins <- seq(min(U)-5, max(U)+5+h,by=h)
+xrange <- c(min(U)-5-h, max(U)+5+h)
+yrange<-c(0,max(hist(U)$density))
+hist(U,breaks=bins,xlab="",ylab="",xlim=xrange,ylim=yrange,probability=T)
+curve(dnorm(x,mean=theta,sd=sd),ylab="",xlim=xrange,ylim=yrange,col="red", add=TRUE)
+@  
+\caption{A sampled data histogram and Gaussian distribution(theoretical result)}
+\label{fig:histogram}
+\end{figure}
+
+
+
+
+\begin{thebibliography}{99}
+\bibitem{hay-yos05}
+Hayashi, T., Yoshida, N.: 
+On Covariance Estimation of Non-synchronously Observed Diffusion Processes. 
+Bernoulli, {\bf 11}, 2, 359-379 (2005)
+
+
+\bibitem{hay-yos04}
+Hayashi, T., Yoshida, N.: 
+Asymptotic normality of a covariance estimator for nonsynchronously observed diffusion processes. 
+Annals of the Institute of Statistical Mathematics, 
+{\bf 60}, 2, %/ 2008”N6ŒŽ 
+367-406 (2008)
+
+\bibitem{hay-yos06}
+Hayashi, T., Yoshida, N.: 
+Nonsynchronous Covariance Estimator and Limit Theorem. 
+Research Memorandum No.1020, Institute of Statistical Mathematics, 2006
+
+\bibitem{hay-yos08}
+Hayashi, T., Yoshida, N.: 
+Nonsynchronous Covariance Estimator and Limit Theorem II. 
+Research Memorandum No.1067, Institute of Statistical Mathematics, 2008
+
+\end{thebibliography}
+
+
+

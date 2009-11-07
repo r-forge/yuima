@@ -1,0 +1,218 @@
+
+\section{Yuima object}
+The main object in our framework is the \code{yuima} object.
+The \code{yuima} object contains slots named \code{model}, \code{data},
+\code{sampling}, and \code{characteristic}. 
+
+\begin{center}
+\begin{tabular}{|c|}
+\hline
+\colorbox{black}{\textcolor{white}{  \code{yuima} \bf object}}\\
+\hline
+\hline
+\code{model}\\
+\hline
+\code{data}\\
+\hline
+\code{sampling}\\
+\hline
+\code{characteristic}\\
+\hline
+\end{tabular}
+\end{center}
+
+
+The slot \code{data} will contain
+a time series data and the slot \code{sampling} contains a description of
+sampling methods and/or parameters of the data collection(e.g. poisson sampling with rate $p=0.1$.).
+
+The \code{yuima.model} object is intended to be a description of model 
+independent of the actual data. 
+For example, in model selection or hypothesis testing for SDEs, 
+it is possible to have different models to fit to the same set of data.
+ 
+On the contrary, for the same model specified in \code{yuima.model}, 
+different time series can be fitted. 
+In this case the vector \code{model} has length 1, and 
+the vector of \code{data} has length greater than 1.
+
+The \code{yuima.characteristic} object is prepared for specifying the characteristics of the \code{yuima} object such as
+the number of equations in the model and data, time and space unit scale for simulation or data.
+For now, this slot is mainly for keeping consistency of the other three slots.
+%For example, the number of pathes specified in the \code{yuima.model} object and the actual data in \code{yuima.data} is 
+%not the same, 
+
+\code{setYuima} is a constructor for \code{yuima} class, 
+which does not initialize but only creates four NULL slots:
+
+\begin{itemize}
+\item{data:}{ an object of class \code{yuima.data}}
+\item{model:}{ an object of class \code{yuima.model}}
+\item{sampling:}{ an object of class \code{yuima.sampling}}
+\item{characteristic:}{ an object of class \code{yuima.characteristic}}
+\end{itemize}
+%We show how to construct \code{yuima} object in the next section.
+
+%%Note that \code{yuima.sampling} is not implemented yet.
+
+%-----------------------------------
+ \begin{figure}[!htb]
+  \centering
+  \includegraphics[width=10cm,clip]{./EPS/functionDefinition.eps}
+  \caption{function relation}
+ \end{figure}
+ %-----------------------------------
+%-----------------------------------
+ \begin{figure}[!htb]
+  \centering
+  \includegraphics[width=5cm,clip]{./EPS/classDefinition.eps}
+  \caption{class definition}
+ \end{figure}
+ %-----------------------------------
+
+\subsection{yuima.model}
+\code{yuima.model} specifies the SDE of interest. The constructor \code{setModel} is
+used to give a mathematical description of the stochastic differential equation. 
+All functions in the package are assumed to get as much information
+as possible from the model instead of replicating the same code everywhere.
+If there are missing pieces of information, we may change or extend the description
+of the model.
+\\
+\\
+An object of \code{yuima.model} contains several slots listed below. 
+To see inside its structure, we use the \R{} command \code{str}.
+\begin{itemize}
+\item \code{drift} is an \R{} expression which contains the drift specification.
+\item \code{diffusion} is itself a list of 1 slot which describes the diffusion
+  coefficient relative to first noise. 
+  
+\item \code{parameter} which is a short name for ``parameters'' which 
+  is a list of objects.
+
+\item \code{all} contains the names of all the parameters found 
+   in the diffusion and drift coefficient.
+\item \code{common} contains the names of the parameters in common between the drift and diffusion coefficients.
+\item \code{diffusion} contains the parameters belonging to the diffusion coefficient.
+\item \code{drift} contains the parameters belonging to the drift coefficient.
+\item \code{solve.variable} contains a vector of variable names, each element corresponds to the
+   name of the solution variable (left-hand-side) of each equation in the model, in the corresponding order.
+  
+\item \code{state.variable} and \code{time.variable}, by default,
+  are assumed to be $x$ and $t$ but the user can freely choose them.
+  The \code{yuima.model} function assumes that the user either use default
+  names for \code{state.variable} and \code{time.variable} variables or specify his own names. All
+  the rest of the symbols are considered parameters and distributed accordingly
+  in the \code{parameter} slot.
+  
+\item \code{noise.number} indicates the number of sources of noise.
+  
+\item \code{equation.number} represents the number of equations, i.e. the number of one dimensional
+  stochastic differential equations.
+  
+\item \code{dimension} reports the dimensions of the parameter space. It is a list of the
+  same length of \code{parameter} with the same names.
+
+\end{itemize}
+We show an example to describe the following simple stochastic differential equation
+
+\begin{equation}
+\mbox{d}X_t=3X_t\mbox{d}t+\mbox{d}W_t.
+\end{equation}
+
+<<print=FALSE,echo=TRUE>>=
+library(yuima)
+@ 
+
+<<echo=TRUE>>=
+mod <- setModel(drift="3*x")
+str(mod)
+@ 
+
+\subsection{yuima.data}
+\code{yuima.data} is a class to represent the data to be used. The constructor \code{setData} is
+used to give an observed data to the \code{yuima.data} object. \code{get.zoo.data} returns the \code{zoo.data} field of 
+an \code{yuima.data} object.
+As usual class methods, \code{yuima.data} provides \code{length}, \code{plot} and 
+\code{dim} functions to get necessary information. 
+
+ The \code{zoo.data} slot may contain different kind of observed data. 
+ In the \R{} system, there are different kinds of objects to describe time series data.
+ Here is a very short list of possibilities
+ \begin{center}
+ \begin{tabular}{r l}
+ \code{ts}, \code{mts}: & regularly spaced time series 1-dim or multidim\\
+ \code{its}: & irregularly spaced time series\\
+ \code{tseries}: & time index is real time of financial markets \\
+ \code{zoo}: & more flexibility  in the management of the index of the time series.\\ 
+ \end{tabular}
+ \end{center}
+ Because \R{} is used in many contexts, including finance, and users adopt one of 
+ the above times series objects because they are used to it, 
+ our framework accepts any of the above as observed data and treat the inference accordingly.
+ \\
+ \\
+ An object of \code{yuima.data} contains several slots listed below. 
+ To see inside its structure we use the \R{} command \code{str}.
+ \begin{itemize}
+ \item \code{original.data} is a copy of the original data. (it can be any type of data.)
+ \item \code{zoo.data} is an bundled \code{zoo} version object of class \code{yuima.data} or \code{yuima}.
+ \end{itemize}
+
+ We show an example of \code{yuima.data} object.
+
+<<print=FALSE,echo=TRUE>>=
+library(zoo)
+@ 
+
+<<fig=TRUE,echo=TRUE,width=7,height=7,results=hide>>=
+X <- ts(matrix(rnorm(200),100,2))
+mydata <- setData(X)
+str(get.zoo.data(mydata))
+#plot(get.zoo.data(mydata))
+dim(mydata)
+length(mydata)
+plot(mydata)
+@ 
+
+Then, we show how to construct \code{yuima} object with \code{yuima.data} and \code{yuima.model} object.
+
+We first construct a two-dimensional homogeneous diffusion process:
+\begin{eqnarray*}
+\mbox{d} X_{1t} &=&
+- 3 X_{1t} \mbox{d}t + \mbox{d} W_{1t}, \\
+\mbox{d}X_{2t} &=&
+-(X_{1t} + 2 X_{2t}) \mbox{d}t + 0.5 \mbox{d} W_{1t} + \mbox{d}W_{2t}.
+\end{eqnarray*}
+<<echo=TRUE>>=
+# we set the drift coefficient
+a <- c("-3*x1","-x1-2*x2")
+# and also the diffusion coefficient
+b <- matrix(c("1","0.5","0","1"),2,2)
+# Then set
+mod2 <- setModel(drift = a, diffusion = b, solve.variable = c("x1","x2"))
+str(mod2)
+@
+
+Then, we can combine the \code{yuima.model} and \code{yuima.data}
+objects to a \code{yuima} object.
+<<echo=TRUE>>=
+yuima.obj <- setYuima(data=mydata,model=mod2)
+str(yuima.obj)
+@
+
+\subsection{Realworld data}
+In this subsection, we show a simple example of handling the realworld data in
+the yuima framework.
+<<fig=TRUE,echo=TRUE,width=7,height=7>>=
+## Use TTR package to get real market data from Yahoo! Finance
+require(TTR)
+sbux<-getYahooData("SBUX", start=20080401, end=20090331)
+cbou<-getYahooData("CBOU", start=20080401, end=20090331)
+sd <- setData(list(sbux,cbou))
+real.yuima <- setYuima(data=sd)
+summary(real.yuima)
+head(get.zoo.data(real.yuima)[[1]])
+head(get.zoo.data(real.yuima)[[2]])
+
+plot(get.zoo.data(real.yuima)[[1]]$High,main="SBUX_High")
+@
