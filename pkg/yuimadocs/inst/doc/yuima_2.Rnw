@@ -58,14 +58,14 @@ which does not initialize but only creates four NULL slots:
 %-----------------------------------
  \begin{figure}[!htb]
   \centering
-  \includegraphics[width=10cm,clip]{./EPS/functionDefinition.eps}
+  \includegraphics[width=10cm,clip]{./EPS/functionDefinition}
   \caption{function relation}
  \end{figure}
  %-----------------------------------
 %-----------------------------------
  \begin{figure}[!htb]
   \centering
-  \includegraphics[width=5cm,clip]{./EPS/classDefinition.eps}
+  \includegraphics[width=5cm,clip]{./EPS/classDefinition}
   \caption{class definition}
  \end{figure}
  %-----------------------------------

@@ -1,0 +1,39 @@
+
+
+\begin{thebibliography}{99}
+\bibitem{hay-yos05}
+Hayashi, T., Yoshida, N.: 
+On Covariance Estimation of Non-synchronously Observed Diffusion Processes. 
+Bernoulli, {\bf 11}, 2, 359-379 (2005)
+
+
+\bibitem{hay-yos04}
+Hayashi, T., Yoshida, N.: 
+Asymptotic normality of a covariance estimator for nonsynchronously observed diffusion processes. 
+Annals of the Institute of Statistical Mathematics, 
+{\bf 60}, 2, %/ 2008Ç¯6·î 
+367-406 (2008)
+
+\bibitem{hay-yos06}
+Hayashi, T., Yoshida, N.: 
+Nonsynchronous Covariance Estimator and Limit Theorem. 
+Research Memorandum No.1020, Institute of Statistical Mathematics, 2006
+
+\bibitem{hay-yos08}
+Hayashi, T., Yoshida, N.: 
+Nonsynchronous Covariance Estimator and Limit Theorem II. 
+Research Memorandum No.1067, Institute of Statistical Mathematics, 2008
+
+
+\bibitem[Yoshida, 2005a]{Yos05a}
+Yoshida, N. (2005). 
+\newblock 
+General M-estimation for stochastic differential equation with 
+jumps by sampled data. 
+\newblock 
+in preparation
+
+\end{thebibliography}
+
+
+

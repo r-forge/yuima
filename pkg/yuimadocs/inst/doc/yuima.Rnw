@@ -6,8 +6,8 @@
 \SweaveOpts{echo=FALSE}
 \usepackage{a4wide}
 \usepackage{Rd}
-%\usepackage{graphicx}
-\usepackage[dvipdfm]{graphicx} %for pdf output
+\usepackage{graphicx}
+%\usepackage[dvipdfm]{graphicx} %for pdf output
 \usepackage{color}
 \usepackage{amsmath,amssymb}
 \usepackage{fancybox} % this is needed for \VerbatimEnvironment
@@ -39,7 +39,7 @@
 \SweaveInput{yuima_2}
 \SweaveInput{yuima_3}
 \SweaveInput{yuima_4}
-\SweaveInput{yuima_5}
+%\SweaveInput{yuima_5}
 \SweaveInput{bib}
 
 

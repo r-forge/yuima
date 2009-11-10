@@ -1,0 +1,156 @@
+%nakamacro16.tex(H161003)(H120522;0730)
+%\documentstyle[11pt]{article}
+%\setlength{\textwidth}{6.7in}
+%\setlength{\oddsidemargin}{-0.2in}
+%\setlength{\topmargin}{-0.52in}
+%\setlength{\textheight}{9.0in}
+%\setlength{\footskip}{0.5in}
+
+%\newtheorem{definition}{Definition}
+%\newtheorem{assumption}{$[$ A}
+\newtheorem{condition}{$[$ C}
+%\newtheorem{lemma}{Lemma}
+%\newtheorem{proposition}{Proposition}
+%\newtheorem{theorem}{Theorem}
+%\newtheorem{remark}{Remark}
+%\newtheorem{example}{Example}
+%--------------------------------------------------------------------------
+%BOLD FACES
+\newcommand{\bsx}{\bar{x}}
+\newcommand{\bsd}{\bar{d}}
+\newcommand{\bx}{\bar{X}}
+\newcommand{\ba}{\bar{A}}
+\newcommand{\bb}{\bar{B}}
+\newcommand{\bc}{\bar{C}}
+\newcommand{\bv}{\bar{V}}
+\newcommand{\n}{{\bf n}}
+\newcommand{\A}{{\bf A}}
+\newcommand{\B}{{\bf B}}
+\newcommand{\C}{{\bf C}}
+\newcommand{\D}{{\bf D}}
+\newcommand{\E}{{\bf E}}
+\newcommand{\F}{{\bf F}}
+\newcommand{\G}{{\bf G}}
+%\newcommand{\H}{{\bf H}}
+\newcommand{\I}{{\bf I}}
+\newcommand{\J}{{\bf J}}
+\newcommand{\K}{{\bf K}}
+%\newcommand{\L}{{\bf L}}
+\newcommand{\M}{{\bf M}}
+\newcommand{\N}{{\bf N}}
+%\newcommand{\O}{{\bf O}}
+%\newcommand{\P}{{\bf P}}
+\newcommand{\Q}{{\bf Q}}
+%\newcommand{\R}{{\bf R}}
+%\newcommand{\S}{{\bf S}}
+\newcommand{\T}{{\bf T}}
+\newcommand{\U}{{\bf U}}
+\newcommand{\V}{{\bf V}}
+\newcommand{\W}{{\bf W}}
+\newcommand{\X}{{\bf X}}
+\newcommand{\Y}{{\bf Y}}
+\newcommand{\Z}{{\bf Z}}
+%
+\newcommand{\cala}{{\cal A}}
+\newcommand{\calb}{{\cal B}}
+\newcommand{\calc}{{\cal C}}
+\newcommand{\cald}{{\cal D}}
+\newcommand{\cale}{{\cal E}}
+\newcommand{\calf}{{\cal F}}
+\newcommand{\calg}{{\cal G}}
+\newcommand{\calh}{{\cal H}}
+\newcommand{\cali}{{\cal I}}
+\newcommand{\calj}{{\cal J}}
+\newcommand{\calk}{{\cal K}}
+\newcommand{\call}{{\cal L}}
+\newcommand{\calm}{{\cal M}}
+\newcommand{\caln}{{\cal N}}
+\newcommand{\calo}{{\cal O}}
+\newcommand{\calp}{{\cal P}}
+\newcommand{\calq}{{\cal Q}}
+\newcommand{\calr}{{\cal R}}
+\newcommand{\cals}{{\cal S}}
+\newcommand{\calt}{{\cal T}}
+\newcommand{\calu}{{\cal U}}
+\newcommand{\calv}{{\cal V}}
+\newcommand{\calw}{{\cal W}}
+\newcommand{\calx}{{\cal X}}
+\newcommand{\caly}{{\cal Y}}
+\newcommand{\calz}{{\cal Z}}
+%
+%YOKUTUKAUMONO
+\newcommand{\sskip}{\hspace{0.5cm}}
+\newcommand{\simleq}{ \raisebox{-.7ex}{\em $\stackrel{{\textstyle <}}{\sim}$} }
+\newcommand{\leqsim}{ \raisebox{-.7ex}{\em $\stackrel{{\textstyle <}}{\sim}$} }
+\newcommand{\ep}{\epsilon}
+\newcommand{\half}{\frac{1}{2}}
+\newcommand{\iku}{\rightarrow}
+\newcommand{\Iku}{\Rightarrow}
+\newcommand{\ikup}{\rightarrow^{p}}
+\newcommand{\inclusion}{\hookrightarrow}
+\newcommand{\cadlag}{c\`adl\`ag\ }
+\newcommand{\up}{\uparrow}
+\newcommand{\down}{\downarrow}
+\newcommand{\doti}{\Leftrightarrow}
+\newcommand{\douti}{\Leftrightarrow}
+\newcommand{\dochi}{\Leftrightarrow}
+\newcommand{\douchi}{\Leftrightarrow}%
+%KAIGYOU,ARRAY
+\newcommand{\yy}{\\ && \nonumber \\}
+\newcommand{\y}{\vspace*{3mm}\\}
+\newcommand{\halflineskip}{\vspace*{3mm}}
+\newcommand{\nn}{\nonumber}
+\newcommand{\be}{\begin{equation}}
+\newcommand{\ee}{\end{equation}}
+\newcommand{\bea}{\begin{eqnarray}}
+\newcommand{\eea}{\end{eqnarray}}
+\newcommand{\beas}{\begin{eqnarray*}}
+\newcommand{\eeas}{\end{eqnarray*}}
+%
+%KONO RONBUN DE TUKAU MONO
+\newcommand{\balpha}{\bar{\alpha}}
+\newcommand{\bbalpha}{\alpha}
+\newcommand{\combi}{\l(\begin{array}{c}\alpha\\ \beta \end{array}\r)}
+\newcommand{\f}{^{(1)}}
+\newcommand{\s}{^{(2)}}
+%\newcommand{\ss}{^{(2)*}}
+%\newcommand{\l}{\left}
+%\newcommand{\r}{\right}
+%\newcommand{\l}{\lambda}
+%\newcommand{\a}{\alpha}
+%\newcommand{\b}{\beta}
+%\newcommand{\L}{\Lambda}
+%上に定義されたコマンドは数式モ－ドで用いる。
+%--------------------------------------------------
+
+% == Black Board ==
+\newcommand{\bbA}{{\mathbb A}}
+\newcommand{\bbB}{{\mathbb B}}
+\newcommand{\bbC}{{\mathbb C}}
+\newcommand{\bbD}{{\mathbb D}}
+\newcommand{\bbE}{{\mathbb E}}
+\newcommand{\bbF}{{\mathbb F}}
+\newcommand{\bbG}{{\mathbb G}}
+\newcommand{\bbH}{{\mathbb H}}
+\newcommand{\bbI}{{\mathbb I}}
+\newcommand{\bbJ}{{\mathbb J}}
+\newcommand{\bbK}{{\mathbb K}}
+\newcommand{\bbL}{{\mathbb L}}
+\newcommand{\bbM}{{\mathbb M}}
+\newcommand{\bbN}{{\mathbb N}}
+\newcommand{\bbO}{{\mathbb O}}
+\newcommand{\bbP}{{\mathbb P}}
+\newcommand{\bbQ}{{\mathbb Q}}
+\newcommand{\bbR}{{\mathbb R}}
+\newcommand{\bbS}{{\mathbb S}}
+\newcommand{\bbT}{{\mathbb T}}
+\newcommand{\bbU}{{\mathbb U}}
+\newcommand{\bbV}{{\mathbb V}}
+\newcommand{\bbW}{{\mathbb W}}
+\newcommand{\bbX}{{\mathbb X}}
+\newcommand{\bbY}{{\mathbb Y}}
+\newcommand{\bbZ}{{\mathbb Z}}
+
+
+
+
