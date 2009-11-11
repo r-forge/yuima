@@ -1,0 +1,96 @@
+
+\section{adaBayes}
+  adaBayes is a function that computes Bayesian estimators for unknown parameters of 
+  a stochastic differential equation based on discretely observed data.  
+
+\subsection{Bayesian type estimators for the stochastic differential equation}\label{190105-4}
+
+
+Consider a diffusion process $X=(X_t)_{t\in\bbR_+}$ satisfying the 
+stochastic differential equation 
+\beas 
+dX_t=a(X_t,\theta_2)dt+b(X_t,\theta_1)dw_t,
+\sskip X_0=x_0,
+\eeas
+where $w_t$ is an{$r$}-dimensional standard Wiener process 
+independent of the initial value $x_0$. 
+We suppose that the parameters 
+$\theta_1$ and $\theta_2$ are unknown 
+but 
+$\theta_i\in\Theta_i\subset\bbR^{m_i}$ 
+for $i=1,2$. 
+Also assume that 
+$B(x,\theta_1)=bb'(x,\theta_1)$ is elliptic uniformly 
+in $(x,\theta_1)$. 
+
+In order to estimate the unknown parameters 
+with the discrete-time 
+observations ${\bf x}_n=(X_{t_i})_{i=0}^n$, 
+$t_i=ih$ with $h=h_n$ depending on $n\in\bbN$,  
+we use the quasi-likelihood function 
+\beas 
+p_n({\bf x}_n,\theta)
+&=&\prod_{i=1}^n\frac{1}{(2\pi h)^{d/2}|B(X_{t_{i-1}},\theta_1)|^{1/2}}
+\\&&
+\cdot 
+\exp\left(-\frac{1}{2h}
+B(X_{t_{i-1}},\theta_1)^{-1}\left[
+(\Delta_iX-ha(X_{t_{i-1}},\theta_2) )^{\otimes2}\right]\right),
+\eeas
+where $\Delta_iX=X_{t_i}-X_{t_{i-1}}$. 
+%
+
+Two approaches are possible. 
+One is the quasi-maximum likelihood approach  
+and another is the adaptive Bayesian approach. 
+
+The quasi-maximum likelihood estimator 
+that maximizes $p_n({\bf x}_n,\theta)$ 
+in $\theta=(\theta_1,\theta_2)\in
+=\overline{\Theta_1\times\Theta_2}$ 
+is denoted by $\hat{\theta}_{n}=
+(\hat{\theta}_{1,n},\hat{\theta}_{2,n})$. 
+
+The adaptive Bayes type estimator is defined as follows. 
+First we choose arbitrary value $\theta_2^\star\in\Theta_2$ and 
+pretend $\theta_1$ is the unknown parameter to 
+make the Bayesian type estimator $\tilde{\theta}_1$ as 
+\beas 
+\tilde{\theta}_1
+&=&
+\Big[\int_{\Theta_1}p_n({\bf x}_n,(\theta_1,\theta_2^\star))
+\pi_1(\theta_1)d\theta_1 \Big]^{-1}
+\int_{\Theta_1} \theta_1 p_n({\bf x}_n,(\theta_1,\theta_2^\star))
+\pi_1(\theta_1)d\theta_1, 
+\eeas
+where 
+$\pi_1$ is a prior density on $\Theta_1$. 
+According to the asymptotic theory, 
+if $\pi_1$ is positive on $\Theta_1$, any function can be used. 
+For estimation of $\theta_2$, we use $\tilde{\theta}_1$ 
+to reform the quasi-likelihood function. That is,
+the Bayes type estimator for $\theta_2$ is defined by 
+\beas 
+\tilde{\theta}_2
+&=&
+\Big[\int_{\Theta_2}p_n({\bf x}_n,(\tilde{\theta}_1,\theta_2))
+\pi_2(\theta_2)d\theta_2 \Big]^{-1}
+\int_{\Theta_2} \theta_2 p_n({\bf x}_n,(\tilde{\theta}_1,\theta_2))
+\pi_2(\theta_2)d\theta_2, 
+\eeas
+where 
+$\pi_2$ is a prior density on $\Theta_2$. 
+In this way, we obtain the adaptive Bayes type estimator 
+$\tilde{\theta}=(\tilde{\theta}_1,\tilde{\theta}_2)$ 
+for $\theta=(\theta_1,\theta_2)$. 
+
+
+The asymptotic behavior of those estimators is known 
+in various situations. The results depend on what kind 
+asymptotics one considers. 
+
+See \cite{yos05}. 
+
+
+\subsection{Example}
+
