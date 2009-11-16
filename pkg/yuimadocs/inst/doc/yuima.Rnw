@@ -39,7 +39,7 @@
 \SweaveInput{yuima_2}
 \SweaveInput{yuima_3}
 \SweaveInput{yuima_4}
-%\SweaveInput{yuima_5}
+\SweaveInput{yuima_5}
 \SweaveInput{bib}
 
 
