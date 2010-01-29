@@ -176,10 +176,10 @@ p2 <- 0.3
 rate<-c(p1, p2)
 n <- 1000 
 # Change to n<-1000
-division <- 1200
-# Change too division <- 1200
+n <- 1200
+# Change too n <- 1200
 
-yuima.samp <- setSampling(Terminal=Terminal,division=division)
+yuima.samp <- setSampling(Terminal=Terminal,n=n)
 yuima <- setYuima(model=cor.mod, sampling=yuima.samp)
 
 # solve SDEs using Euler-Maruyama method
@@ -266,35 +266,3 @@ curve(dnorm(x,mean=theta,sd=sd),ylab="",xlim=xrange,ylim=yrange,col="red", add=T
 \caption{A sampled data histogram and Gaussian distribution(theoretical result)}
 \label{fig:histogram}
 \end{figure}
-
-
-
-
-\begin{thebibliography}{99}
-\bibitem{hay-yos05}
-Hayashi, T., Yoshida, N.: 
-On Covariance Estimation of Non-synchronously Observed Diffusion Processes. 
-Bernoulli, {\bf 11}, 2, 359-379 (2005)
-
-
-\bibitem{hay-yos04}
-Hayashi, T., Yoshida, N.: 
-Asymptotic normality of a covariance estimator for nonsynchronously observed diffusion processes. 
-Annals of the Institute of Statistical Mathematics, 
-{\bf 60}, 2, %/ 2008”N6ŒŽ 
-367-406 (2008)
-
-\bibitem{hay-yos06}
-Hayashi, T., Yoshida, N.: 
-Nonsynchronous Covariance Estimator and Limit Theorem. 
-Research Memorandum No.1020, Institute of Statistical Mathematics, 2006
-
-\bibitem{hay-yos08}
-Hayashi, T., Yoshida, N.: 
-Nonsynchronous Covariance Estimator and Limit Theorem II. 
-Research Memorandum No.1067, Institute of Statistical Mathematics, 2008
-
-\end{thebibliography}
-
-
-

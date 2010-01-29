@@ -45,7 +45,7 @@ a given SDE. Let us consider a 3-dim SDE
  where $N_j$ is an iid sequence of standard normal variables.
  The usual discretization scheme is an equidistant one such as 
  \begin{equation}
- \tau_{j+1} - \tau_j = \text{Terminal}/\text{division}
+ \tau_{j+1} - \tau_j = \text{Terminal}/\text{n}
  \end{equation}
  for all $j \geq 0$.
 
@@ -85,7 +85,7 @@ a given SDE. Let us consider a 3-dim SDE
                        state.variable = c("x1", "x2", "x3"), solve.variable = c("x1", "x2", "x3"))
 
  # Change the parameters below if needed
- yuima.samp <- setSampling(Terminal=1,division=1000)
+ yuima.samp <- setSampling(Terminal=1,n=1000)
 
  # make yuima object
  yuima <- setYuima(model=sabr.mod, sampling=yuima.samp)
@@ -107,7 +107,7 @@ a given SDE. Let us consider a 3-dim SDE
 \end{equation}
 for each $j \geq 0$. \code{simulate} takes
 \begin{equation}
-\epsilon^2 = \text{Terminal} / \text{division},
+\epsilon^2 = \text{Terminal} / \text{n},
 \end{equation}
 which coinsides with the mean of the interval  $\tau_{j+1} - \tau_j$. 
 This space-discretizing scheme is 3 times efficient than the usual time-discretizing
