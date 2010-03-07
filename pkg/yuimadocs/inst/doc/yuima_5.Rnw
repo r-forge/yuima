@@ -1,4 +1,3 @@
-
 \section{adaBayes}
   adaBayes is a function that computes Bayesian estimators for unknown parameters of 
   a stochastic differential equation based on discretely observed data.  
@@ -84,13 +83,25 @@ In this way, we obtain the adaptive Bayes type estimator
 $\tilde{\theta}=(\tilde{\theta}_1,\tilde{\theta}_2)$ 
 for $\theta=(\theta_1,\theta_2)$. 
 
-
 The asymptotic behavior of those estimators is known 
 in various situations. The results depend on what kind 
 asymptotics one considers. 
 
 See \cite{yos05}. 
 
+\subsection{Technical Details}
+2010/03/07: Hideitsu Hino wrote\\
+[TBC: Description about ml.ql function. It's possible options. Optim
+function equipped with R which uses ``Nelder-Mead method'' for
+likelihood maximization. By specifying method=''Newton'', we can use
+Newton method for likelihood maximization.]
+
+[TBC: Description about adaBayes function. It's possible options. MCMC.]
+
+[TBC: Return value format of ml.ql and adaBayes. It is in the same form
+to the return value of ``mle'' function. That is, we can apply
+``confint'' to get their confidence intervals.]
+
+
 
 \subsection{Example}
-
