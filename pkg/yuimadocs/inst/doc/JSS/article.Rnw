@@ -5,12 +5,19 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% almost as usual
-\author{Achim Zeileis\\Wirtschaftsuniversit\"at Wien \And 
-        Second Author\\Plus Affiliation}
-\title{A Capitalized Title: Something About a Package \pkg{foo}}
+\author{Alexandre Brouste\\University of Le Mans \And 
+        Stefano M. Iacus\\University of Milan \And 	
+        Hiroki Masuda\\University of Kyushu \And
+        Masaaki Fukasawa\\University of ???\AND
+        Kengo Kamatani\\University of Tokyo \And
+        Yusutaka Shimuzu\\University of Osaka \And
+        Masayuki Uchida\\University of Osaka \And
+        Nakahiro Yoshida\\University of Tokyo 
+        }
+\title{The Yuima Project: a Computational Framework for Simulation and Inference of Stochastic Differential Equations}
 
 %% for pretty printing and a nice hypersummary also set:
-\Plainauthor{Achim Zeileis, Second Author} %% comma-separated
+\Plainauthor{Alexandre Brouste, Stefano M. Iacus, Hiroki Masuda, Masayuki Uchida, Nakahiro Yoshida} %% comma-separated
 \Plaintitle{A Capitalized Title: Something About a Package foo} %% without formatting
 \Shorttitle{A Capitalized Title} %% a short title (if necessary)
 
@@ -34,12 +41,12 @@
 %% The address of (at least) one author should be given
 %% in the following format:
 \Address{
-  Achim Zeileis\\
-  Department f\"ur Statistik \& Mathematik\\
-  Wirtschaftsuniversit\"at Wien\\
-  1090 Wien, Austria\\
-  E-mail: \email{Achim.Zeileis@wu-wien.ac.at}\\
-  URL: \url{http://statmath.wu-wien.ac.at/~zeileis/}
+  Stefano M. Iacus\\
+  Department of Economics, Management and Quantitative Methods\\
+  University of Milan\\
+  Via Conservatorio 7, 20122 Milan, Italy\\
+  E-mail: \email{stefano.iacus@unimi.it}\\
+  URL: \url{http://www.economia.unimi.it/~iacus/}
 }
 %% It is also possible to add a telephone and fax number
 %% before the e-mail in the following format:
