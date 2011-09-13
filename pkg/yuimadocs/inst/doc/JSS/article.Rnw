@@ -15,9 +15,9 @@
         Hideitsu Hino\\Waseda University\And
         Stefano M. Iacus\\University of Milan \AND 	
         Kengo Kamatani\\University of Tokyo \And
-        Koike Yuta\\University of Tokyo\And
-        Hiroki Masuda\\University of Kyushu \AND
-        Ryosuke Nomura\\University of Tokyo\And
+        Yuta Koike\\University of Tokyo\And
+        Hiroki Masuda\\University of Kyushu \And
+        Ryosuke Nomura\\University of Tokyo\AND
         Yusutaka Shimuzu\\University of Osaka \And
         Masayuki Uchida\\University of Osaka \And
         Nakahiro Yoshida\\University of Tokyo 
@@ -110,21 +110,12 @@ options(width=70)
 
 
 \section{Introduction}
-The YUIMA Project\footnote{The Project has been  funded up to 2010 by the Japan Science Technology (JST) Basic Research Programs PRESTO, Grants-in-Aid for Scientific Research No. 19340021.} is an open source\footnote{All code in the \pkg{yuima} package is subject to the GNU General Public License, Version 2, see \url{http://www.gnu.org/licenses/gpl-2.0.html}.}
- academic project aimed at developing the \proglang{R} package named ``\pkg{yuima}'' for simulation and inference of stochastic differential equations. 
-The YUIMA Project is mainly developed by mathematicians and 
-statisticians who actively publish in the field of inference and simulation for stochastic
-differential equations.
-%The YUIMA Project Core Team, currently 
-%consists of the following people: A. Brouste, M. Fukasawa, H. Hino, S.M. Iacus, K. Kamatani, H.Masuda, Y. Shimizu, M. Uchida, N. Yoshida.
-
-
-
- The \pkg{yuima} package  provides 
+The plan of the YUIMA Project is to define the bases for a complete environment for simulation and inference for stochastic processes via an \proglang{R} package called \pkg{yuima}.
+ The package \pkg{yuima} provides 
 an object-oriented programming environment 
 for simulation and statistical inference 
 for stochastic processes by \proglang{R}.
-The \pkg{yuima} package adopts the  $\tt S4$ system of classes and methods \citep{chambers98}.
+The \pkg{yuima} package adopts the  \texttt{S4} system of classes and methods \citep{chambers98}.
  
 Under this framework, 
 the \pkg{yuima} package also supplies various functions 
@@ -151,30 +142,31 @@ stochastic differential equations already has a fairly long history,
 more than three decades, but it is still developing quickly new 
 methodologies and expanding the area. 
 The formulas produced by the theory are usually very sophisticated, 
-which makes it difficult for practitioners not necessarily 
-familiar with this field to enjoy their utility. 
+which makes it difficult for standard users not necessarily 
+familiar with this field to enjoy utilities. 
 For example, the asymptotic expansion method for computing 
-asian option prices (i.e., expectation of a functional of 
+option prices (i.e., expectation of an irregular functional of 
 a stochastic process) provides precise approximation values 
 instantaneously, taking advantage of the analytic approach, 
-but the formula, based on Malliavin calculus, has a long expression like more than one page! 
+but the formula has a long expression like more than one page! 
 
 
 The \pkg{yuima} package delivers up-to-date methods as a package 
 onto the desk of the user working 
 with simulation and/or statistics for stochastic differential equations. 
+In the \pkg{yuima} package stochastic differential equations can be of very abstract type, 
+multidimensional, driven by Wiener process or fractional Brownian motion 
+with general Hurst parameter, with or without jumps specified as L\'evy noise. 
 
 
-Sampled data from a continuous-time process features 
-the time stamps as well as the positions of the object. 
-It is requiring a new theory of estimation. 
-The \pkg{yuima} framework can apply multi-dimensional time stamps 
-of tick data and provides diverse functions handling such kind data 
-to support statistical analysis. 
+
+The \pkg{yuima} package is intended to offer the basic infrastructure on which complex models and inference procedures can be built on. This paper explains the design of the \pkg{yuima} package and provides some examples of applications.
+The paper is organised as follows. Section \ref{sec2} is an overview about the package. Section \ref{sec3} describe the way models are specified in \pkg{yuima}. Section \ref{sec4} explains asymptotic expansion methods. Section \ref{sec5} is a review of basic inference procedures. Finally, Section \ref{sec6} explains additional details and the roadmap of the YUIMA Project.
+
 
 Although we assume that the reader of this paper has a basic knowledge of the \proglang{R} language, most of the examples are easy to be understood by anyone.
  
-\section{The \pkg{yuima} package}
+\section{The \pkg{yuima} package}\label{sec2}
 The package \pkg{yuima} depends on some other packages, like  \pkg{zoo}, which can be installed separately.
 The package \pkg{zoo} is used internally to store time series data. This dependence may change in the future adopting a more flexible class for internal storage of time series.
 
@@ -266,7 +258,7 @@ To see inside its structure, one can use the \proglang{R} command \code{str} on 
 \end{itemize}
 As seen in the above, the parameters space is accurately described internally in a \code{yuima} object because in inference for stochastic differential equations, estimators of different parameters have different properties. Usually, the rate of convergence for estimators in the diffusion coefficient are similar to the ones in the i.i.d. sampling while estimators of parameters in the drift coefficient are slower or, in some cases, not even consistent. The \pkg{yuima} always tries to implement the best statistical inference for the given model under the observed sampling scheme.
 
-\section{Model specification}
+\section{Model specification}\label{sec3}
 In order to show how general is the approach in the \pkg{yuima} package we present some examples.
 
 \subsection{Diffusion processes}
@@ -428,10 +420,7 @@ The \code{simulate} function simulates \code{yuima} models according to Euler-Ma
 The \code{simulate} function accepts several arguments including the description of the sampling structure, which is an object of type \code{yuima.sampling}. The \code{setSampling} allow for the specification of different sampling parameters including random sampling. Further, the \code{subsampling} allow to subsample a trajectory of a simulated stochastic differential equation or a given time series in the \code{yuima.data} slot of a \code{yuima} object.
 Sampling and subsampling can be specified jointly as arguments to the \code{simulate} function. This is convenient if one wants to simulate data at very high frequency but then return only low frequency data for inference or other applications.
 
-\section{Miscellanea}
-The code \pkg{yuima} package offers several other utility and extensions from the main core classes. We will review some of these.
- 
-\subsection{Asymptotic expansion}
+\section{Asymptotic expansion}\label{sec4}
 The \pkg{yuima} package can handle asymptotic expansion of functionals of  $d$-dimensional diffusion process 
 $$\de X_t^\ve = a(X_t^\ve,\ve)\de t + b(X_t^\ve,\ve)\de W_t, \qquad \ve \in(0,1]$$
 with $W_t$ and $r$-dimensional Wiener process, i.e. $W_t=(W_t^1, \ldots, W_t^r)$.
@@ -507,11 +496,9 @@ and the final value is
 asymp$d0 + e * asymp$d1  # asymp. exp. of asian call price
 @
 
-\subsection{Export of a \code{yuima} model}
-The \pkg{yuima} implements the function \code{toLatex} for objects of class \code{yuima} and \code{yuima.model}. A simple writing like
-\code{toLatex(my-yuima-obj)} produces the related \LaTeX{} code which can be copy and pasted in a mathematical paper.
 
-\section{Inference for stochastic processes}
+
+\section{Inference for stochastic processes}\label{sec5}
 The \pkg{yuima} implements several optimal techniques for parametric and nonparametric estimation of multidimensional stochastic differential equations.
 Although most of the examples in this section are given on simulated data, the main way to fill up the \code{data} slot of a \code{yuima} object is to use the function \code{setYuima}. The function \code{setYuima} sets various slots of the \code{yuima} object. In particular, to estimate a \code{yuima.model} called \code{mod} on the data \code{X} one can use a code like this \code{my.yuima <- setYuima(data=setData(X), model=mod)} and then pass \code{my.yuima} to the inference functions as described in what follows.
 
@@ -752,8 +739,7 @@ For the sampling scheme, we will consider the independent Poisson sampling.
 That is, each configuration of the sampling times $T^{l,i}$ is realized 
 as the Poisson random measure with intensity $np_l$, 
 and the two random measures are independent each other as well as 
-the stochastic processes. 
-Then it is known from today's lecture that
+the stochastic processes. It is known that 
 \begin{equation}
 n^{1/2} ( U_n -\theta) \rightarrow N(0,c),
 \end{equation}
@@ -802,20 +788,7 @@ newsamp <- setSampling(
 Y <- subsampling(X, sampling=newsamp)
 cce(Y)
 @ 
-Now we calculate the asymptotic variance of the estimator using \eqref{eq:vc}
-<<>>=
-# asymptotic variance
-var.c <- function(T, p1,p2, sigma1, sigma2, rho)
-{
-  tmp_integrand1 <- function(t) (sigma1(t) * sigma2(t))^2
-  i1 <- integrate(tmp_integrand1,0,T)
-  tmp_integrand2 <- function(t) (sigma1(t) * sigma2(t) * rho(t))^2
-  i2 <- integrate(tmp_integrand2,0,T)
-  2*(1/p1 + 1/p2)* i1$value + 2*(1/p1+1/p2 - 1/(p1+p2)) * i2$value
-}
-vc <- var.c(T=Terminal, p1, p2, diff.coef.1, diff.coef.2, cor.rho)
-sqrt(vc/n)
-@
+
 
 \subsection{Change point analysis}
 Consider a multidimensional stochastic differential equation of the form
@@ -881,7 +854,6 @@ $$
  \theta_{1.1}  \cdot  X_t^1&0  \cdot  X_t^1 \\ 
  0  \cdot  X_t^2&\theta_{1.2}  \cdot  X_t^2 \\ 
  \end{array}\right]
-'
 \left(\begin{array}{c}
  \de W_t^1\\ \de W_t^2 
  \end{array}\right)
@@ -1003,12 +975,17 @@ the LASSO method selects the reduced model
 $$\de X_t =  0.6 \de t + 0.12 X_t^{\frac32}\de W_t$$
 
 
+\section{Miscellanea and Roadmap of YUIMA Project}\label{sec6}
+Other statistical techniques are already implemented or will be shortly releases in the \pkg{yuima}. For example, a nice utility is the function \code{toLatex} for objects of class \code{yuima} and \code{yuima.model}. A simple writing like
+\code{toLatex(my-yuima-obj)} produces the related \LaTeX{} code which can be copy and pasted in a mathematical paper.
 
-\section{The future of YUIMA}
-some words
+
+
 
 \section*{Acknowledgements}
-some thanks
+The YUIMA Project was initially started by Nakahiro Yoshida as principal 
+investigator and then Stefano M. Iacus joined as coordinator of the \proglang{R}
+implementation. \textcolor{red}{PLEASE ADD SOME HISTORICAL FACTS AND ACKNOWLEDGMENTS OF DIFFERENT FUNDS}. 
 
 
 %\bibliographystyle{natbib} 
@@ -1020,3 +997,64 @@ some thanks
 
 \end{document}
 
+The YUIMA Project\footnote{The Project has been  funded up to 2010 by the Japan Science Technology (JST) Basic Research Programs PRESTO, Grants-in-Aid for Scientific Research No. 19340021.} is an open source\footnote{All code in the \pkg{yuima} package is subject to the GNU General Public License, Version 2, see \url{http://www.gnu.org/licenses/gpl-2.0.html}.}
+ academic project aimed at developing the \proglang{R} package named ``\pkg{yuima}'' for simulation and inference of stochastic differential equations. 
+The YUIMA Project is mainly developed by mathematicians and 
+statisticians who actively publish in the field of inference and simulation for stochastic
+differential equations.
+%The YUIMA Project Core Team, currently 
+%consists of the following people: A. Brouste, M. Fukasawa, H. Hino, S.M. Iacus, K. Kamatani, H.Masuda, Y. Shimizu, M. Uchida, N. Yoshida.
+
+
+
+ The \pkg{yuima} package  provides 
+an object-oriented programming environment 
+for simulation and statistical inference 
+for stochastic processes by \proglang{R}.
+The \pkg{yuima} package adopts the  $\tt S4$ system of classes and methods \citep{chambers98}.
+ 
+Under this framework, 
+the \pkg{yuima} package also supplies various functions 
+to execute simulation and statistical analysis. 
+Both categories of procedures may depend each other. 
+Statistical inference often requires a simulation technique 
+as a subroutine, and a certain simulation method 
+needs to fix a tuning parameter by applying 
+a statistical methodology. 
+It is especially the case of stochastic processes 
+because most of expected values involved 
+do not admit an explicit expression. 
+The \pkg{yuima} package facilitates comprehensive, systematic approaches 
+to the solution. 
+
+
+Stochastic differential equations are 
+commonly used 
+to model random evolution along continuous or 
+practically continuous time, such as 
+the random movements of a stock price. 
+Theory of statistical inference for 
+stochastic differential equations already has a fairly long history, 
+more than three decades, but it is still developing quickly new 
+methodologies and expanding the area. 
+The formulas produced by the theory are usually very sophisticated, 
+which makes it difficult for practitioners not necessarily 
+familiar with this field to enjoy their utility. 
+For example, the asymptotic expansion method for computing 
+asian option prices (i.e., expectation of a functional of 
+a stochastic process) provides precise approximation values 
+instantaneously, taking advantage of the analytic approach, 
+but the formula, based on Malliavin calculus, has a long expression like more than one page! 
+
+
+The \pkg{yuima} package delivers up-to-date methods as a package 
+onto the desk of the user working 
+with simulation and/or statistics for stochastic differential equations. 
+
+
+Sampled data from a continuous-time process features 
+the time stamps as well as the positions of the object. 
+It is requiring a new theory of estimation. 
+The \pkg{yuima} framework can apply multi-dimensional time stamps 
+of tick data and provides diverse functions handling such kind data 
+to support statistical analysis. 
