@@ -484,9 +484,9 @@ Subsampling can be used within the \code{simulate} function. What is usually don
 This can be done in a single step in the following way.
 <<sub4,fig=TRUE,width=9,height=5>>=
 set.seed(123)
-Y.sub <- simulate(mymod,sampling=setSampling(delta=0.001), subsampling=setSampling(delta=0.01))
+Y.sub <- simulate(mymod,sampling=setSampling(delta=0.001,n=1000), subsampling=setSampling(delta=0.01,n=100))
 set.seed(123)
-Y <- simulate(mymod, sampling=setSampling(delta=0.001))
+Y <- simulate(mymod, sampling=setSampling(delta=0.001,n=1000))
 plot(Y, plot.type="single")
 points(get.zoo.data(Y.sub)[[1]],col="red")
 points(get.zoo.data(Y.sub)[[2]],col="green",pch=18)
@@ -987,12 +987,12 @@ n <- 1000
 
 set.seed(123)
 
-t0 <- list(theta1.k=0.1, theta2.k=0.2)
+t0 <- list(theta1.k=0.5, theta2.k=0.3)
 
 tau <- 0.4
 ysamp1 <- setSampling(n=tau*n, Initial=0, delta=0.01)
 yuima1 <- setYuima(model=ymodel, sampling=ysamp1)
-yuima1 <- simulate(yuima1, xinit=c(1, 1), true.parameter=t0)
+yuima1 <- simulate(yuima1, xinit=c(3, 3), true.parameter=t0)
 
 x1 <- yuima1@data@zoo.data[[1]]
 x1 <- as.numeric(x1[length(x1)])
@@ -1003,7 +1003,7 @@ now we generate the second trajectory
  with parameters
 $\theta_{1.1}=0.6$ and  $\theta_{2.1}=0.6$. For this trajectory, the initial value is set to the last value of the first trajectory stored in \code{x1} and \code{x2} for the two component of the process.
 <<cpoint3b,results=hide>>=
-t1 <- list(theta1.k=0.6, theta2.k=0.6)
+t1 <- list(theta1.k=0.2, theta2.k=0.4)
 ysamp2 <- setSampling(Initial=n*tau*0.01, n=n*(1-tau), delta=0.01)
 yuima2 <- setYuima(model=ymodel, sampling=ysamp2)
 yuima2 <- simulate(yuima2, xinit=c(x1, x2), true.parameter=t1)
@@ -1030,23 +1030,23 @@ noDriftModel@model@drift
 @
 First we show that there is no difference in using the complete model or the model without drift. For simplicity, we assume the true values of the parameters for $\theta_{1.k}$ and $\theta_{1.k}$
 <<cpoint5>>=
-t.est <- CPoint(yuima,param1=t0,param2=t1, plot=TRUE)
+t.est <- CPoint(yuima,param1=t0,param2=t1)
 t.est$tau
-t.est2 <- CPoint(noDriftModel,param1=t0,param2=t1, plot=TRUE)
+t.est2 <- CPoint(noDriftModel,param1=t0,param2=t1)
 t.est2$tau
 @
 Now we proceed first with the estimation of the parameters before and after the change point. The \pkg{yuima} package contains two  functions
 which are useful in the framework of change point or sequential analysis.
 The function \code{qmleL} estimates a model by quasi maximum likelihood using observations in the time interval $[0,t]$ where $t$ cam be specificed by the user. In our example, we set \code{t=0.2}. Similary for \code{qmleR}, which uses only observations in the time interval $[t, T]$. In our example, we take \code{t=0.8}.
 <<>>=
-qmleL(noDriftModel, t=0.2, start=list(theta1.k=0.1, theta2.k=0.1),lower=list(theta1.k=0, theta2.k=0), upper=list(theta1.k=1, theta2.k=1), method="L-BFGS-B") -> estL
-qmleR(noDriftModel, t=0.8, start=list(theta1.k=0.1, theta2.k=0.1),lower=list(theta1.k=0, theta2.k=0), upper=list(theta1.k=1, theta2.k=1), method="L-BFGS-B") -> estR
+qmleL(noDriftModel, t=2, start=list(theta1.k=0.1, theta2.k=0.1),lower=list(theta1.k=0, theta2.k=0), upper=list(theta1.k=1, theta2.k=1), method="L-BFGS-B") -> estL
+qmleR(noDriftModel, t=8, start=list(theta1.k=0.1, theta2.k=0.1),lower=list(theta1.k=0, theta2.k=0), upper=list(theta1.k=1, theta2.k=1), method="L-BFGS-B") -> estR
 t0.est <- coef(estL)
 t1.est <- coef(estR)
 @
 and now we proceed with change point estimation
 <<>>=
-t.est3 <- CPoint(noDriftModel,param1=t0.est,param2=t1.est, plot=TRUE)
+t.est3 <- CPoint(noDriftModel,param1=t0.est,param2=t1.est)
 t.est3
 @
 Notice that, even if the estimated parameters are not too accurate because we use a small subsets of observations, the change point estimate remains good.
