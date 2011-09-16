@@ -18,7 +18,7 @@
         Yuta Koike\\University of Tokyo\And
         Hiroki Masuda\\University of Kyushu \And
         Ryosuke Nomura\\University of Tokyo\AND
-        Yusutaka Shimuzu\\University of Osaka \And
+        Yasutaka Shimuzu\\University of Osaka \And
         Masayuki Uchida\\University of Osaka \And
         Nakahiro Yoshida\\University of Tokyo 
         }
@@ -739,7 +739,7 @@ For the sampling scheme, we will consider the independent Poisson sampling.
 That is, each configuration of the sampling times $T^{l,i}$ is realized 
 as the Poisson random measure with intensity $np_l$, 
 and the two random measures are independent each other as well as 
-the stochastic processes. It is known that 
+the stochastic processes. Under this scheme data become asynchronous. It is known that 
 \begin{equation}
 n^{1/2} ( U_n -\theta) \rightarrow N(0,c),
 \end{equation}
@@ -778,17 +778,27 @@ an estimate of the quadratic covariation. For example, for the complete data
 <<>>=
 cce(X)
 @
-and we now apply random sampling
+<<cceplot1,fig=TRUE,width=9,height=5>>=
+plot(X,main="complete data")
+@
+
+We now apply random sampling in the following way: we define a new sampling structure via \code{setSampling} specifying in the argument \code{random} 
+a list which contains a vector of random distributions. For the $i$-th component of $X$ we specificy an exponential distribution with rate $n \cdot p_i/T$ for the random times. This will generate Poisson random times with the corresponding rate. 
 <<>>=
 p1 <- 0.2
 p2 <- 0.3
 newsamp <- setSampling(
  random=list(rdist=c( function(x) rexp(x, rate=p1*n/Terminal), 
   function(x) rexp(x, rate=p1*n/Terminal))) )
+@
+Now we use the \code{subsampling} function to subsample the original data \code{X} into new asynchronous data \code{Y}
+<<>>=
 Y <- subsampling(X, sampling=newsamp)
 cce(Y)
 @ 
-
+<<cceplot2,fig=TRUE,width=9,height=5>>=
+plot(Y,main="asynchronous data")
+@
 
 \subsection{Change point analysis}
 Consider a multidimensional stochastic differential equation of the form
@@ -803,22 +813,22 @@ $$
 Y_t=
 \Bigg\{
 \begin{array}{ll}
-Y_0+\int_0^t b_s d s+\int_0^t \sigma(X_s,\theta_1^*) d W_s
+Y_0+\int_0^t b_s d s+\int_0^t \sigma(X_s,\theta_0^*) d W_s
 & \mbox{ for } t\in[0,\tau^*)
 \\
-Y_{\tau^*}+\int_{\tau^*}^t b_s d s+\int_{\tau^*}^t \sigma(X_s,\theta_2^*) d W_s
+Y_{\tau^*}+\int_{\tau^*}^t b_s d s+\int_{\tau^*}^t \sigma(X_s,\theta_1^*) d W_s
 & \mbox{ for } t\in[\tau^*,T]. 
 \end{array}
 $$
 The change point $\tau^*$ instant is unknown and 
-is  to be estimated, along with $\theta_1^*$ and $\theta_2^*$, from the observations sampled 
+is  to be estimated, along with $\theta_0^*$ and $\theta_1^*$, from the observations sampled 
 from the path of $(X,Y)$. The \pkg{yuima} implements the quasi-maximum likelihood approach as in \citet{iacyos09} described in the following.
 Let  $\Delta_iY=Y_{t_i}-Y_{t_{i-1}}$ and 
 define 
 \begin{equation} 
-\Phi_n(t;\theta_1,\theta_2)
+\Phi_n(t;\theta_0,\theta_1)
 =
-\sum_{i=1}^{[nt{/T}]}G_i(\theta_1)+\sum_{i={[nt{/T}]+1}}^nG_i(\theta_2),
+\sum_{i=1}^{[nt{/T}]}G_i(\theta_0)+\sum_{i={[nt{/T}]+1}}^nG_i(\theta_1),
 \label{eq:phiCH10}
 \end{equation}
 with 
@@ -829,30 +839,52 @@ G_i(\theta) =
 \label{eq:GiCH10}
 \end{equation}
 Suppose that there exists an estimator 
-$\hat{\theta}_k$ for each $\theta_k$, $k=1,2$. 
+$\hat{\theta}_k$ for each $\theta_k$, $k=0,1$. 
 In case $\theta_k^*$ are known, we define $\hat{\theta}_k$ 
 just as $\hat{\theta}_k=\theta_k^*$. 
 The change point estimator  of $\tau^*$ is
 \begin{eqnarray*} 
 \hat{\tau}_n&=&\arg\!\!\min\limits_{t\in[0,T]} 
-\Phi_n(t;\hat{\theta}_1,\hat{\theta}_2).
+\Phi_n(t;\hat{\theta}_0,\hat{\theta}_1).
 \end{eqnarray*}
 
 \subsection{Example  of Volatility Change-Point Estimation}
-Consider the 2-dimensional stochastic differential equation
+One example of model that can be analyzed by this technique is, for example, the 2-dimensional stochastic differential equation
+$$
+\left(\begin{array}{c}
+\de X_t^1\\ \de X_t^2 
+\end{array}\right)
+= 
+\left(\begin{array}{c}
+b_1(X^1_t) \\ 
+b_2(X^2_t) \\ 
+\end{array}\right) \de t
++
+\left[\begin{array}{cc}
+\theta_{1.k}  \cdot  X_t^1&0  \cdot  X_t^1 \\ 
+0  \cdot  X_t^2&\theta_{2.k}  \cdot  X_t^2 \\ 
+\end{array}\right]
+\left(\begin{array}{c}
+\de W_t^1\\ \de W_t^2 
+\end{array}\right)
+$$
+where $b_1(\cdot)$ and $b_2(\cdot)$ are any functions and $\theta_{1.k}$ and $\theta_{2.k}$ the value of the parameters before ($k=0$) and after $k=1$) the change point. 
+Just for simplicity and in order to simulate some data, we specify some specific form for $b_1(\cdot)$ and $b_2(\cdot)$ but this information will not be used in the change point analysis.
+For example, we will simulate
+the following 2-dimensional stochastic differential equation
 $$
 \left(\begin{array}{c}
  \de X_t^1\\ \de X_t^2 
  \end{array}\right)
  = 
 \left(\begin{array}{c}
- 1 - X^1_t \\ 
+ \sin(X^1_t) \\ 
  3 - X^2_t \\ 
  \end{array}\right) \de t
  +
 \left[\begin{array}{cc}
- \theta_{1.1}  \cdot  X_t^1&0  \cdot  X_t^1 \\ 
- 0  \cdot  X_t^2&\theta_{1.2}  \cdot  X_t^2 \\ 
+ \theta_{1.k}  \cdot  X_t^1&0  \cdot  X_t^1 \\ 
+ 0  \cdot  X_t^2&\theta_{2.k}  \cdot  X_t^2 \\ 
  \end{array}\right]
 \left(\begin{array}{c}
  \de W_t^1\\ \de W_t^2 
@@ -862,53 +894,84 @@ $$
 X^1_0=1.0,\quad
 X^2_0=1.0,\quad
 $$
-with change point instant at time $\tau=0.4$.  Some code is needed to simulate such a process. First we define the model
+with change point instant at time $\tau=0.4$.   First, we describe the model to be simulated
 <<cpoint1,eval=TRUE, echo=TRUE,results=hide>>=
-diff.matrix <- matrix(c("theta1.1*x1","0*x2","0*x1","theta1.2*x2"), 2, 2)
-drift.c <- c("1-x1", "3-x2")
+diff.matrix <- matrix(c("theta1.k*x1","0*x2","0*x1","theta2.k*x2"), 2, 2)
+drift.c <- c("sin(x1)", "3-x2")
 drift.matrix <- matrix(drift.c, 2, 1)
 ymodel <- setModel(drift=drift.matrix, diffusion=diff.matrix, time.variable="t",
 state.variable=c("x1", "x2"), solve.variable=c("x1", "x2"))
 @
-and then simulate two trajectories. One up to the change point $\tau=4$ with parameters $\theta_{1.1}=0.1$ and  $\theta_{1.1}=0.2$, and a second trajectory with parameters
- $\theta_{1.1}=0.6$ and  $\theta_{1.2}=0.6$. For the second trajectory, the initial value is set to the last value of the first trajectory.
+and then simulate two trajectories. One up to the change point $\tau=4$ with parameters $\theta_{1.0}=0.1$ and  $\theta_{2.0}=0.2$
 <<cpoint3,results=hide>>=
 n <- 1000
 
 set.seed(123)
 
-t1 <- list(theta1.1=.1, theta1.2=0.2)
-t2 <- list(theta1.1=.6, theta1.2=.6)
+t0 <- list(theta1.k=0.1, theta2.k=0.2)
 
 tau <- 0.4
 ysamp1 <- setSampling(n=tau*n, Initial=0, delta=0.01)
 yuima1 <- setYuima(model=ymodel, sampling=ysamp1)
-yuima1 <- simulate(yuima1, xinit=c(1, 1), true.parameter=t1)
+yuima1 <- simulate(yuima1, xinit=c(1, 1), true.parameter=t0)
 
 x1 <- yuima1@data@zoo.data[[1]]
 x1 <- as.numeric(x1[length(x1)])
 x2 <- yuima1@data@zoo.data[[2]]
 x2 <- as.numeric(x2[length(x2)])
-
+@
+now we generate the second trajectory
+ with parameters
+$\theta_{1.1}=0.6$ and  $\theta_{2.1}=0.6$. For this trajectory, the initial value is set to the last value of the first trajectory stored in \code{x1} and \code{x2} for the two component of the process.
+<<cpoint3b,results=hide>>=
+t1 <- list(theta1.k=0.6, theta2.k=0.6)
 ysamp2 <- setSampling(Initial=n*tau*0.01, n=n*(1-tau), delta=0.01)
 yuima2 <- setYuima(model=ymodel, sampling=ysamp2)
-yuima2 <- simulate(yuima2, xinit=c(x1, x2), true.parameter=t2)
+yuima2 <- simulate(yuima2, xinit=c(x1, x2), true.parameter=t1)
+@
+finaly we collate the two trajectories
+<<cpoint3c,results=hide>>=
 yuima <- yuima1
 yuima@data@zoo.data[[1]] <- c(yuima1@data@zoo.data[[1]], yuima2@data@zoo.data[[1]][-1])
 yuima@data@zoo.data[[2]] <- c(yuima1@data@zoo.data[[2]], yuima2@data@zoo.data[[2]][-1])
 @ 
+
 The composed trajectory appears as follows
 <<cpoint4,fig=TRUE,width=9,height=5>>=
 plot(yuima)
 @
 
-\noindent
-Just as an example, we test the ability of the change point estimator to identify $\tau$ when for given true values of the parameters $\theta_{1.1}$ and $\theta_{1.2}$
-<<cpoint5>>=
-t.est <- CPoint(yuima,param1=t1,param2=t2, plot=TRUE)
-t.est$tau
+As said, the change point analysis do not consider the information coming from the drift part of the model and \pkg{yuima} ignores this internally.
+Just to make clear that the information on the drift term is not considered by the function \code{CPoint}, we redefine the \code{yuima} model removing the information coming from the drift and then adding back the data.
+<<cpoint4b>>=
+noDriftModel <- setModel(drift=c("0", "0"), diffusion=diff.matrix, time.variable="t",
+state.variable=c("x1", "x2"), solve.variable=c("x1", "x2"))
+noDriftModel <- setYuima(noDriftModel, data=yuima@data)
+noDriftModel@model@drift
 @
-A two stage change point estimation approach is available as explained in  \citet{iacyos09}.
+First we show that there is no difference in using the complete model or the model without drift. For simplicity, we assume the true values of the parameters for $\theta_{1.k}$ and $\theta_{1.k}$
+<<cpoint5>>=
+t.est <- CPoint(yuima,param1=t0,param2=t1, plot=TRUE)
+t.est$tau
+t.est2 <- CPoint(noDriftModel,param1=t0,param2=t1, plot=TRUE)
+t.est2$tau
+@
+Now we proceed first with the estimation of the parameters before and after the change point. The \pkg{yuima} package contains two  functions
+which are useful in the framework of change point or sequential analysis.
+The function \code{qmleL} estimates a model by quasi maximum likelihood using observations in the time interval $[0,t]$ where $t$ cam be specificed by the user. In our example, we set \code{t=0.2}. Similary for \code{qmleR}, which uses only observations in the time interval $[t, T]$. In our example, we take \code{t=0.8}.
+<<>>=
+qmleL(noDriftModel, t=0.2, start=list(theta1.k=0.1, theta2.k=0.1),lower=list(theta1.k=0, theta2.k=0), upper=list(theta1.k=1, theta2.k=1), method="L-BFGS-B") -> estL
+qmleR(noDriftModel, t=0.8, start=list(theta1.k=0.1, theta2.k=0.1),lower=list(theta1.k=0, theta2.k=0), upper=list(theta1.k=1, theta2.k=1), method="L-BFGS-B") -> estR
+t0.est <- coef(estL)
+t1.est <- coef(estR)
+@
+and now we proceed with change point estimation
+<<>>=
+t.est3 <- CPoint(noDriftModel,param1=t0.est,param2=t1.est, plot=TRUE)
+t.est3
+@
+Notice that, even if the estimated parameters are not too accurate because we use a small subsets of observations, the change point estimate remains good.
+A two stage change point estimation approach is also possible as explained in  \citet{iacyos09}.
 
 \subsection{LASSO model selection}
 Let $X_t$ be a  diffusion process solution to
