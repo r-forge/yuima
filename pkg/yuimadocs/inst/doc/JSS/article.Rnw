@@ -415,10 +415,89 @@ The \pkg{yuima} package implements many multivariate Random Numbers Generators (
 \code{rIG} (Inverse Gaussian), \code{rNIG} (Normal Inverse Gaussian), \code{rbgamma} (Bilateral Gamma), \code{rngamma} (Gamma) and \texttt{rstable} (Stable Laws).
 Other user-defined RNG can be used freely.
 
-\subsection{Simulation of models and sampling}
-The \code{simulate} function simulates \code{yuima} models according to Euler-Maruyama scheme in the presence of non-fractional diffusion noise and L\'eve jumps and uses the Cholesky or the Wood and Chan methods for the fractional Gaussian noise.
+\subsection{Simulation, sampling and subsampling}
+The \code{simulate} function simulates \code{yuima} models according to Euler-Maruyama scheme in the presence of non-fractional diffusion noise and L\'evy jumps and uses the Cholesky or the Wood and Chan methods for the fractional Gaussian noise.
 The \code{simulate} function accepts several arguments including the description of the sampling structure, which is an object of type \code{yuima.sampling}. The \code{setSampling} allow for the specification of different sampling parameters including random sampling. Further, the \code{subsampling} allow to subsample a trajectory of a simulated stochastic differential equation or a given time series in the \code{yuima.data} slot of a \code{yuima} object.
-Sampling and subsampling can be specified jointly as arguments to the \code{simulate} function. This is convenient if one wants to simulate data at very high frequency but then return only low frequency data for inference or other applications.
+Sampling and subsampling can be specified jointly as arguments to the \code{simulate} function. This is convenient if one wants to simulate data at very high frequency but then return only low frequency data for inference or other applications. We now go through few examples just to describe the use of standard arguments to these functions but the reader is invited to go thorough the man pages of the \code{yuima} packages for complete details.
+
+Assume that we want to simulate this model
+$$
+\begin{aligned}
+\de X^1_t &= -\theta X^1_t \de t + \de W^1_t + X^2_t \de W^3_t\\
+\de X^2_t &= -(X^1_t + \gamma X^2_t) \de t + X^1_t \de W^1_t + \delta \de W^2_t
+\end{aligned}
+$$
+Now we prepare the model using the \code{setModel} constructor function
+<<setModel1>>=
+sol <- c("x1","x2") # variable for numerical solution
+b <- c("-theta*x1","-x1-gamma*x2")   # drift vector 
+s <- matrix(c("1","x1","0","delta","x2","0"),2,3)  #  diffusion matrix
+mymod <- setModel(drift = b, diffusion = s, solve.variable = sol)
+@
+Suppose now that we want to simulate the process on a regular grid on the interval $[0,3]$ and $n=3000$ observations. We can prepare the sampling structure as follows
+<<>>=
+samp <- setSampling(Terminal=3, n=3000)
+@
+and look inside it
+<<>>=
+str(samp)
+@
+As seen from the output, the sampling structure is quite reach and we will show how to specify few of the slots later one.
+We now simulate this process specifying the \code{sampling} argument to \code{simulate}
+<<>>=
+set.seed(123)
+X2 <- simulate(mymod, sampling=samp)
+@
+now the sampling structure is recorded along with the data in the \code{yuima} object \code{X2}
+<<>>=
+str(X2@sampling)
+@
+\subsubsection{Subsampling}
+The sampling structure can be used to operate subsampling. Next example shows how to perform Poisson random sampling, with two independent Poisson processes, one per coordinate of \code{X2}.
+<<sub1>>=
+newsamp <- setSampling(
+random=list(rdist=c( function(x) rexp(x, rate=10), 
+function(x) rexp(x, rate=20))) )
+str(newsamp)
+@
+In the above we have specified two independent exponential  distributions to represent Poissoninan random times. Notice that the slot \code{regular} is now set to \code{FALSE}.
+Now we subsample the original trajectory of \code{X2} using the \code{subsampling} function
+<<sub2,fig=TRUE,width=9,height=5>>=
+newdata <- subsampling(X2, sampling=newsamp)
+plot(X2,plot.type="single", lty=c(1,3),ylab="X2")
+points(get.zoo.data(newdata)[[1]],col="red")
+points(get.zoo.data(newdata)[[2]],col="green",pch=18)
+@
+
+Or we can operate a deterministic sampling specifying two different regular frequencies
+<<sub3,fig=TRUE,width=9,height=5>>=
+newsamp <- setSampling(delta=c(0.1,0.2))
+newdata <- subsampling(X2, sampling=newsamp)
+plot(X2,plot.type="single", lty=c(1,3),ylab="X2")
+points(get.zoo.data(newdata)[[1]],col="red")
+points(get.zoo.data(newdata)[[2]],col="green", pch=18)
+@
+
+Again one can look at the structure of the sampling structure.
+
+Subsampling can be used within the \code{simulate} function. What is usually done in simulation studies, is to simulate the process at very high frequency but then use data for estimation at a lower frequency.
+This can be done in a single step in the following way.
+<<sub4,fig=TRUE,width=9,height=5>>=
+set.seed(123)
+Y.sub <- simulate(mymod,sampling=setSampling(delta=0.001), subsampling=setSampling(delta=0.01))
+set.seed(123)
+Y <- simulate(mymod, sampling=setSampling(delta=0.001))
+plot(Y, plot.type="single")
+points(get.zoo.data(Y.sub)[[1]],col="red")
+points(get.zoo.data(Y.sub)[[2]],col="green",pch=18)
+@
+
+In the previous code we have simulated the process twice just to show the effect of the subsampling but the reader should use only the line which outputs the simulation to \code{Y.sub} as seen in the next plot.
+<<sub5,fig=TRUE,width=9,height=5>>=
+plot(Y.sub, plot.type="single")
+@
+
+
 
 \section{Asymptotic expansion}\label{sec4}
 The \pkg{yuima} package can handle asymptotic expansion of functionals of  $d$-dimensional diffusion process 
