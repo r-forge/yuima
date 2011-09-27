@@ -33,7 +33,7 @@
 \Abstract{
 The Yuima Project is an open source and collaborative effort  aimed at developing the \proglang{R} package named \pkg{yuima} for simulation and inference of stochastic differential equations. 
 
-In the \pkg{yuima} package stochastic differential equations can be of very abstract type, multidimensional, driven by Wiener process of fractional Brownian motion with general Hurst parameter, with or without jumps specified as L\'evy noise. 
+In the \pkg{yuima} package stochastic differential equations can be of very abstract type, multidimensional, driven by Wiener process or fractional Brownian motion with general Hurst parameter, with or without jumps specified as L\'evy noise. 
 
 The \pkg{yuima} package is intended to offer the basic infrastructure on which complex models and inference procedures can be built on. This paper explains the design of the \pkg{yuima} package and provides some examples of applications.
 }
@@ -148,7 +148,7 @@ For example, the asymptotic expansion method for computing
 option prices (i.e., expectation of an irregular functional of 
 a stochastic process) provides precise approximation values 
 instantaneously, taking advantage of the analytic approach, 
-but the formula has a long expression like more than one page! 
+but the formula has a long expression like more than 900 terms! 
 
 
 The \pkg{yuima} package delivers up-to-date methods as a package 
@@ -211,7 +211,7 @@ $$
 $$
 \end{itemize}
 
-The \code{yuima.model} class contains informations about the stochastic differential equation of interest. The constructor function \code{setModel} is
+The \code{yuima.model} class contains information about the stochastic differential equation of interest. The constructor function \code{setModel} is
 used to give a mathematical description of the stochastic differential equation. 
 All functions in the package are assumed to get as much information
 as possible from the model instead of replicating the same code everywhere.
@@ -245,7 +245,7 @@ To see inside its structure, one can use the \proglang{R} command \code{str} on 
   names for \code{state.variable} and \code{time.variable} variables or specify his own names. All
   the rest of the symbols are considered parameters and distributed accordingly
   in the \code{parameter} slot.
-\item \code{jump.variable} the name of the variable used in the description of the L\'eve component;
+\item \code{jump.variable} the name of the variable used in the description of the L\'evy component;
 \item \code{solve.variable} contains a vector of variable names, each element corresponds to the
    name of the solution variable (left-hand-side) of each equation in the model, in the corresponding order.
 \item \code{noise.number} indicates the number of sources of noise.
@@ -256,7 +256,7 @@ To see inside its structure, one can use the \proglang{R} command \code{str} on 
   same length of \code{parameter} with the same names.
 \item \code{J.flag} for internal use only.
 \end{itemize}
-As seen in the above, the parameters space is accurately described internally in a \code{yuima} object because in inference for stochastic differential equations, estimators of different parameters have different properties. Usually, the rate of convergence for estimators in the diffusion coefficient are similar to the ones in the i.i.d. sampling while estimators of parameters in the drift coefficient are slower or, in some cases, not even consistent. The \pkg{yuima} always tries to implement the best statistical inference for the given model under the observed sampling scheme.
+As seen in the above, the parameter space is accurately described internally in a \code{yuima} object because in inference for stochastic differential equations, estimators of different parameters have different properties. Usually, the rate of convergence for estimators in the diffusion coefficient are similar to the ones in the i.i.d. sampling while estimators of parameters in the drift coefficient are slower or, in some cases, not even consistent. The \pkg{yuima} always tries to implement the best statistical inference for the given model under the observed sampling scheme.
 
 \section{Model specification}\label{sec3}
 In order to show how general is the approach in the \pkg{yuima} package we present some examples.
@@ -504,11 +504,15 @@ The \pkg{yuima} package can handle asymptotic expansion of functionals of  $d$-d
 $$\de X_t^\ve = a(X_t^\ve,\ve)\de t + b(X_t^\ve,\ve)\de W_t, \qquad \ve \in(0,1]$$
 with $W_t$ and $r$-dimensional Wiener process, i.e. $W_t=(W_t^1, \ldots, W_t^r)$.
 The functional is expressed in the following abstract form
-$$
-F^\ve(X_t^\ve)  = \sum_{\alpha=0}^r \int_0^T f_\alpha(X_t^\ve,\de)\de W_t^\alpha + F(X_t^\ve,\ve), \qquad W_t^0=t
-$$ 
+\begin{equation}
+\label{yuima:func1}
+F^\ve(X_t^\ve)  = \sum_{\alpha=0}^r \int_0^T f_\alpha(X_t^\ve,\de)\de W_t^\alpha + F(X_t^\ve,\ve), \qquad W_t^0=t.
+\end{equation} 
 A typical example of application is the case of Asian option pricing. For example, in the Black \& Scholes model
-$$\de X_t^\ve = \mu X_t^\ve\de t + \ve X_t^\ve \de W_t$$ 
+\begin{equation}
+\label{eqyuima:gbm1}
+\de X_t^\ve = \mu X_t^\ve\de t + \ve X_t^\ve \de W_t
+\end{equation}
 the price of the option is of the form
 $$ \dE\left\{ \max\left( \frac{1}{T}\int_0^T X_t^\ve \de t - K,0\right)\right\}.$$
 Thus the functional of interest is
@@ -517,10 +521,7 @@ with
 $$
 f_0(x,\ve) = \frac{x}{T}, \quad f_1(x,\ve)=0, \quad  F(x, \ve) = 0
 $$
-in 
-$$
-F^\ve(X_t^\ve)  = \sum_{\alpha=0}^r \int_0^T f_\alpha(X_t^\ve,\de)\de W_t^\alpha + F(X_t^\ve,\ve)
-$$ 
+in \eqref{yuima:func1}.
 So, the call option price requires the composition  of a smooth functional
 $$F^\ve(X_t^\ve) = \frac{1}{T}\int_0^T X_t^\ve \de t, \qquad r=1$$
 with the irregular function
@@ -529,39 +530,35 @@ $$
 $$
 Monte Carlo methods require a huge number of simulations to get the desired accuracy of the
 calculation of the price, while asymptotic expansion of $F^\ve$ provides very accurate approximations.
-The \pkg{yuima} package provides functions to construct the functional $F^\ve$, and automatic asymptotic expansion based on Malliavin calculus starting from a \pkg{yuima} object.
-Next is an example
+The \pkg{yuima} package provides functions to construct the functional $F^\ve$, and automatic asymptotic expansion based on Malliavin calculus \citep{Yoshida92b} starting from a \pkg{yuima} object.
+Here is an example. Consider a simple geometric Brownian motion of equation \eqref{eqyuima:gbm1} with $\mu=1$ and $X_0=1$. We define the model and the functional below:
 <<echo=TRUE, print=FALSE, results=hide>>=
-diff.matrix <- matrix( c("x*e"), 1,1)
-model <- setModel(drift = c("x"), diffusion = diff.matrix)
+model <- setModel(drift = "x", diffusion = matrix( "x*e", 1,1))
 T <- 1
 xinit <- 1
 K <- 1
 f <- list( expression(x/T), expression(0))
 F <- 0
-e <- .3
+e <- 0.5
 yuima <- setYuima(model = model, sampling = setSampling(Terminal=T, n=1000))
 yuima <- setFunctional( yuima, f=f,F=F, xinit=xinit,e=e)
 @
-this time the \code{setFunctional} command fills the appropriate slots
+this time the \code{setFunctional} command fills the appropriate slots inside the \code{yuima} object
 <<echo=TRUE, print=FALSE>>=
 str(yuima@functional)
 @
-Then, it is as easy as
+Then, to obtain the first term in the asymptotic expansion (i.e. for $\ve=0$), it is as easy as calling the function \code{F0} on the \code{yuima} object:
 <<echo=TRUE, print=FALSE>>=
 F0 <- F0(yuima)
 F0
+@
+so the option price approximation is
+<<>>=
 max(F0-K,0)  # asian call option price
 @
-to obtain the zero order approximation of the value of the functional.
 We can go up to the first order approximation adding one term to the expansion
 <<echo=TRUE, print=FALSE,results=hide>>=
 rho <- expression(0)
-get_ge <- function(x,epsilon,K,F0){
-  tmp <- (F0 - K) + (epsilon * x) 
-  tmp[(epsilon * x) < (K-F0)] <- 0
-  return( tmp )
-}
 epsilon <- e  # noise level
 g <- function(x) {
   tmp <- (F0 - K) + (epsilon * x) 
@@ -578,7 +575,7 @@ asymp$d0 + e * asymp$d1  # asymp. exp. of asian call price
 
 
 \section{Inference for stochastic processes}\label{sec5}
-The \pkg{yuima} implements several optimal techniques for parametric and nonparametric estimation of multidimensional stochastic differential equations.
+The \pkg{yuima} implements several optimal techniques for parametric, semi- and non-parametric estimation of (multidimensional) stochastic differential equations.
 Although most of the examples in this section are given on simulated data, the main way to fill up the \code{data} slot of a \code{yuima} object is to use the function \code{setYuima}. The function \code{setYuima} sets various slots of the \code{yuima} object. In particular, to estimate a \code{yuima.model} called \code{mod} on the data \code{X} one can use a code like this \code{my.yuima <- setYuima(data=setData(X), model=mod)} and then pass \code{my.yuima} to the inference functions as described in what follows.
 
 \subsection{Quasi Maximum Likelihood estimation}
@@ -596,30 +593,30 @@ Quasi-MLE assumes the following approximation of the true log-likelihood for mul
 +\frac{1}{\Delta_n}
 \Sigma_{i-1}^{-1}(\theta_1)[\Delta X_i-\Delta_n b_{i-1}(\theta_2)]^{\otimes 2}\right\}
 \end{eqnarray}}
-where $\theta=(\theta_1, \theta_2)$, $\Delta X_i=X_{t_i}-X_{t_{i-1}}$, $\Sigma_i(\theta_1)=\Sigma(\theta_1,X_{t_i})$, $b_i(\theta_2)=b(\theta_2,X_{t_i})$, $\Sigma=\sigma^{\otimes 2}$, $A^{\otimes 2}= A^T A$ and $A^{-1}$ the inverse of $A$, $A[B]^{\otimes 2} = B^T A B$.  Then, \cite{Yoshida92}, the QML estimator of $\theta$ is
+where $\theta=(\theta_1, \theta_2)$, $\Delta X_i=X_{t_i}-X_{t_{i-1}}$, $\Sigma_i(\theta_1)=\Sigma(\theta_1,X_{t_i})$, $b_i(\theta_2)=b(\theta_2,X_{t_i})$, $\Sigma=\sigma^{\otimes 2}$, $A^{\otimes 2}= A^T A$ and $A^{-1}$ the inverse of $A$, $A[B]^{\otimes 2} = B^T A B$.  Then, \citep[see e.g.][]{Yoshida92, Kessler97}, the QML estimator of $\theta$ is
 $$\tilde\theta_n=\arg\min_\theta \ell_n({\bf X}_n,\theta)$$
 As an example, we consider the simple model
 \begin{equation}
 \de X_t = (2-\theta_2  X_t)  \de t + (1+X_t^2)^{\theta_1}  \de W_t
 \label{eq:model1}
 \end{equation}
-with $\theta_1=0.3$ and $\theta_2=0.2$
+with $\theta_1=0.2$ and $\theta_2=0.3$. We generate sampled data $X_{t_i}$, with $t_i = i \cdot n^{-\frac23}$.
 <<echo=TRUE, print=FALSE,results=hide>>=
 ymodel <- setModel(drift="(2-theta2*x)", diffusion="(1+x^2)^theta1")
-n <- 500
+n <- 750
 ysamp <- setSampling(Terminal = n^(1/3), n = n)
 yuima <- setYuima(model = ymodel, sampling = ysamp)
 set.seed(123)
 yuima <- simulate(yuima, xinit = 1, true.parameter = list(theta1 = 0.2, theta2 = 0.3))
 @
-With the simulated path we can use the function \code{qmle} to estimate the parameters as follows
+With the sampled data we can use the function \code{qmle} to estimate the parameters as follows
 <<echo=TRUE, print=FALSE,results=hide>>=
 param.init <- list(theta2=0.5,theta1=0.5)
 mle1 <- qmle(yuima, start =param.init , 
      lower = list(theta1=0, theta2=0), 
      upper = list(theta1=1, theta2=1))
 @
-and the estimated coefficients are as follows
+and the estimated coefficients are extracted from the output object \code{mle1} as follows
 <<echo=TRUE, print=FALSE>>=
 summary(mle1)
 @
@@ -665,23 +662,23 @@ $\tilde{\theta}=(\tilde{\theta}_1,\tilde{\theta}_2)$
 for $\theta=(\theta_1,\theta_2)$. 
 
 Adaptive Bayes estimation is developed in \pkg{yuima} via the method $\tt adaBayes$.
-Consider again the model \eqref{eq:model1} with the same values for the parameters, i.e.
- $\theta_1=0.3$ and $\theta_2=0.1$
+Consider again the model \eqref{eq:model1} with the same values for the parameters.
 In order to perform Bayesian estimation, we need to prepare the prior densities for the parameters.
 For simplicity we use uniform distributions in $[0,1]$
 <<echo=TRUE>>=
 prior <- list(theta2=list(measure.type="code",df="dunif(theta2,0,1)"), theta1=list(measure.type="code",df="dunif(theta1,0,1)"))
 @
-Then we call $\tt adaBayes$ as follows
+Then we call $\tt adaBayes$, on the same sample data we used for the \code{qmle} function, as follows
 <<eval=TRUE,echo=TRUE, results=hide>>=
-bayes1 <- adaBayes(yuima, start=param.init, prior=prior, method="nomcmc")
+bayes1 <- adaBayes(yuima, start=param.init, prior=prior)
 @
 and we can compare the adaptive Bayes estimates  with the QMLE estimates
 <<eval=TRUE,echo=TRUE>>=
 coef(bayes1)
 coef(mle1)
 @
-The argument \code{method="nomcmc"} in \code{adaBayes} performs numerical integration, otherwise MCMC method is used.
+%The argument \code{method="nomcmc"} in \code{adaBayes} performs numerical
+%integration, otherwise MCMC method is used.
 
 
 
@@ -877,6 +874,57 @@ cce(Y)
 @ 
 <<cceplot2,fig=TRUE,width=9,height=5>>=
 plot(Y,main="asynchronous data")
+@
+
+\subsubsection{Asynchronous estimation for nonlinear systems}
+Consider now the two-dimensional system with nonlinear feedback
+$$
+\begin{aligned}
+\de X_t &= Y_t\de t + \sigma_1(t,X_t,Y_t) \de W_t\\
+\de Y_t &= -X_t\de t + \rho(t,X_t,Y_t)\sigma_2(t,X_t,Y_t) \de W_t+
+\sigma_2(t,X_t,Y_t)\sqrt{1-\rho^2(t,X_t,Y_t)}\de B_t
+\end{aligned}
+$$
+with $ \sigma_1(t,X_t,Y_t)=\sqrt{|X_t|(1+t)}$,
+$ \sigma_2(t,X_t,Y_t)=\sqrt{|Y_t|}$,
+$\rho(t,X_t,Y_t) = \frac{1}{1+X_t^2}$ and $W_t$, $B_t$, two independent
+Brownian motions.
+We construct the model and we generate data from it
+<<>>=
+b1 <- function(x,y) y
+b2 <- function(x,y) -x
+s1 <- function(t,x,y) sqrt(abs(x)*(1+t))
+s2 <- function(t,x,y) sqrt(abs(y))
+cor.rho <- function(t,x,y) 1/(1+x^2)
+diff.mat <- matrix(c("s1(t,x,y)", "s2(t,x,y) * cor.rho(t,x,y)","", "s2(t,x,y) * sqrt(1-cor.rho(t,x,y)^2)"), 2, 2) 
+cor.mod <- setModel(drift = c("b1","b2"), diffusion = diff.mat,solve.variable = c("x", "y"),state.var=c("x","y"))
+
+## Generate a path of the process
+set.seed(111) 
+Terminal <- 1
+n <- 10000
+yuima.samp <- setSampling(Terminal = Terminal, n = n) 
+yuima <- setYuima(model = cor.mod, sampling = yuima.samp) 
+yuima <- simulate(yuima, xinit=c(2,3)) 
+@
+We apply the same Poisson random sampling so that the object \code{Y} will contain  asynchronous data
+<<>>=
+p1 <- 0.2
+p2 <- 0.3
+newsamp <- setSampling(
+random=list(rdist=c( function(x) rexp(x, rate=p1*n/Terminal), 
+function(x) rexp(x, rate=p1*n/Terminal))) )
+Y <- subsampling(yuima, sampling = newsamp)
+@
+<<cceplot3,fig=TRUE,width=9,height=5>>=
+plot(Y,main="asynchronous data (non linear case)")
+@
+
+The estimated covariance for the complete trajectory \code{yuima}
+is now compared with the one obtained on asyncronous data \code{Y}
+<<>>=
+cce(yuima)
+cce(Y)
 @
 
 \subsection{Change point analysis}
@@ -1114,8 +1162,8 @@ round(lasso10$mle, 2)
 round(lasso10$lasso, 2)
 @
 the LASSO method selects the reduced model
-$$\de X_t =  0.6 \de t + 0.12 X_t^{\frac32}\de W_t$$
-
+$$\de X_t =  0.6 \de t + 0.12 X_t^{\frac32}\de W_t.$$
+Notice that this model is not an ergodic one, indicating that the LASSO method shows that the real data are indeed not stationary, but still in the family of CKLS models.
 
 \section{Miscellanea and Roadmap of YUIMA Project}\label{sec6}
 Other statistical techniques are already implemented or will be shortly releases in the \pkg{yuima}. For example, a nice utility is the function \code{toLatex} for objects of class \code{yuima} and \code{yuima.model}. A simple writing like
