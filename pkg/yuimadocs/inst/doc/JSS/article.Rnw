@@ -371,6 +371,7 @@ In this case, the appropriate slot is now filled
 str(mod4)
 @
 }
+The user can choose between the two simulation schemes, namely the Cholesky method and \citet{WoodChan} method.
 
 \subsection{L\'evy processes}
 Jump processes can be specified in different ways in mathematics and hence in \pkg{yuima} package. 
