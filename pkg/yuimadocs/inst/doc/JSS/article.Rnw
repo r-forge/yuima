@@ -26,8 +26,8 @@
 
 %% for pretty printing and a nice hypersummary also set:
 \Plainauthor{Alexandre Brouste, Stefano M. Iacus, Hiroki Masuda, Masayuki Uchida, Nakahiro Yoshida} %% comma-separated
-\Plaintitle{A Capitalized Title: Something About a Package foo} %% without formatting
-\Shorttitle{A Capitalized Title} %% a short title (if necessary)
+\Plaintitle{YUIMA: Simulation and Inference for SDE} %% without formatting
+\Shorttitle{The YUIMA Project} %% a short title (if necessary)
 
 %% an abstract and keywords
 \Abstract{
@@ -1194,10 +1194,10 @@ Other statistical techniques are already implemented or will be shortly releases
 
 
 
-\section*{Acknowledgements}
-The YUIMA Project was initially started by Nakahiro Yoshida as principal 
-investigator and then Stefano M. Iacus joined as coordinator of the \proglang{R}
-implementation. \textcolor{red}{PLEASE ADD SOME HISTORICAL FACTS AND ACKNOWLEDGMENTS OF DIFFERENT FUNDS}. 
+%\section*{Acknowledgements}
+%The YUIMA Project was initially started by Nakahiro Yoshida as principal 
+%investigator and then Stefano M. Iacus joined as coordinator of the \proglang{R}
+%implementation. \textcolor{red}{PLEASE ADD SOME HISTORICAL FACTS AND ACKNOWLEDGMENTS OF DIFFERENT FUNDS}. 
 
 
 %\bibliographystyle{natbib} 
