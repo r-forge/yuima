@@ -11,16 +11,16 @@
 
 %% almost as usual
 \author{Alexandre Brouste\\University of Le Mans \And 
-        Masaaki Fukasawa\\University of Osaka\And
+        Masaaki Fukasawa\\Osaka University\And
         Hideitsu Hino\\Waseda University\And
         Stefano M. Iacus\\University of Milan \AND 	
-        Kengo Kamatani\\University of Tokyo \And
-        Yuta Koike\\University of Tokyo\And
-        Hiroki Masuda\\University of Kyushu \And
-        Ryosuke Nomura\\University of Tokyo\AND
-        Yasutaka Shimuzu\\University of Osaka \And
-        Masayuki Uchida\\University of Osaka \And
-        Nakahiro Yoshida\\University of Tokyo 
+        Kengo Kamatani\\The University of Tokyo \And
+        Yuta Koike\\The University of Tokyo\And
+        Hiroki Masuda\\Kyushu University \And
+        Ryosuke Nomura\\The University of Tokyo\AND
+        Yasutaka Shimuzu\\Osaka University \And
+        Masayuki Uchida\\Osaka University \And
+        Nakahiro Yoshida\\The University of Tokyo 
         }
 \title{The YUIMA Project: a Computational Framework for Simulation and Inference of Stochastic Differential Equations}
 
@@ -205,7 +205,7 @@ $$ \de X_t=a(t,X_t)dt + b(t,X_t)\de W_t^{H}; $$
 \item diffusions with jumps and  L\'evy processes solution to
 $$
 \begin{aligned}
-\de X_t = & \,\,\, a(X_t)dt + b(X_t)\de W_t + \int\limits_{|z|>1}\!\!\! c(X_{t-},z)\mu(\de t,\de z) \\
+\de X_t = & \,\,\, a(X_t)\de t + b(X_t)\de W_t + \int\limits_{|z|>1}\!\!\! c(X_{t-},z)\mu(\de t,\de z) \\
 &{}+\!\! \int\limits_{0<|z|\le 1}\!\!\!  c(X_{t-},z)\{\mu(\de t,\de z) - \nu(\de z)\de t\}.
 \end{aligned}
 $$
@@ -377,11 +377,11 @@ The user can choose between the two simulation schemes, namely the Cholesky meth
 Jump processes can be specified in different ways in mathematics and hence in \pkg{yuima} package. 
 Let $Z_t$ be a  Compound Poisson Process (i.e. jumps size follow some distribution, like the Gaussian law and jumps occur at Poisson times).
 Then it is possible to consider the following SDE which involves jumps
-$$\de X_t =  a(X_t)dt + b(X_t)\de W_t + \de Z_t$$
+$$\de X_t =  a(X_t)\de t + b(X_t)\de W_t + \de Z_t$$
 In the next example we consider a compound Poisson process with intensity $\lambda=10$ with Gaussian jumps.
 This model can be specified in \code{setModel} using the argument  \code{measure.type="CP"} 
 A simple Ornstein-Uhlembeck process with Gaussian jumps 
-$$\de X_t = -\theta X_t \de t + \sigma \de W_t + Z_t$$
+$$\de X_t = -\theta X_t \de t + \sigma \de W_t + \de Z_t$$
 is specified as
 <<echo=TRUE, print=FALSE,fig=TRUE,width=9,height=4,results=hide>>=
 mod5 <- setModel(drift=c("-theta*x"), diffusion="sigma",
@@ -394,7 +394,7 @@ plot(X)
 
 \noindent
 Another possibility is to specify the jump component via the L\'evy measure. Without going into too much details, here is an example of specification of a simple Ornstein-Uhlembeck  process with IG (Inverse Gaussian) L\'evy measure 
-$$\de X_t = -x dt + dZ_t$$
+$$\de X_t = -x \de t + \de Z_t$$
 <<echo=TRUE, print=FALSE,fig=TRUE,width=9,height=4,results=hide>>=
 mod6 <- setModel(drift="-x", xinit=1, jump.coeff="1", 
   measure.type="code", measure=list(df="rIG(z, 1, 0.1)"))
@@ -413,7 +413,7 @@ setModel(drift, diffusion, hurst = 0.5, jump.coeff,
  jump.variable = "z", time.variable = "t", solve.variable, xinit)
 @
 The \pkg{yuima} package implements many multivariate Random Numbers Generators (RNG) which are needed to simulate L\'evy paths including
-\code{rIG} (Inverse Gaussian), \code{rNIG} (Normal Inverse Gaussian), \code{rbgamma} (Bilateral Gamma), \code{rngamma} (Gamma) and \texttt{rstable} (Stable Laws).
+\code{rIG} (Inverse Gaussian), \code{rNIG} (Normal Inverse Gaussian), \code{rbgamma} (Bilateral Gamma), \code{rngamma} (Normal Gamma) and \texttt{rstable} (Stable Laws).
 Other user-defined RNG can be used freely.
 
 \subsection{Simulation, sampling and subsampling}
@@ -682,7 +682,7 @@ coef(mle1)
 %integration, otherwise MCMC method is used.
 \subsubsection{Small sample size}
 It is known from the theory that the estimation of the drift in a diffusion process strongly depend on the length of the observation interval $[0,T]$.
-In our example above, we took $T=n^(1/3)$, with $n = \Sexpr{n}$, which is approximatively  \Sexpr{round(n^(1/3),2)}. Now we reduce the sample size to $n=500$ and the value of $T$ is then $T=\Sexpr{round(500^(1/3),2)}$.
+In our example above, we took $T=n^\frac13$, with $n = \Sexpr{n}$, which is approximatively  \Sexpr{round(n^(1/3),2)}. Now we reduce the sample size to $n=500$ and the value of $T$ is then $T=\Sexpr{round(500^(1/3),2)}$.
 We then apply both quasi-maximum likelihood and adaptive Bayes type estimators to these data
 <<>>=
 n <- 500
@@ -962,10 +962,10 @@ $$
 Y_t=
 \Bigg\{
 \begin{array}{ll}
-Y_0+\int_0^t b_s d s+\int_0^t \sigma(X_s,\theta_0^*) d W_s
+Y_0+\int_0^t b_s \de s+\int_0^t \sigma(X_s,\theta_0^*) \de W_s
 & \mbox{ for } t\in[0,\tau^*)
 \\
-Y_{\tau^*}+\int_{\tau^*}^t b_s d s+\int_{\tau^*}^t \sigma(X_s,\theta_1^*) d W_s
+Y_{\tau^*}+\int_{\tau^*}^t b_s \de s+\int_{\tau^*}^t \sigma(X_s,\theta_1^*) \de W_s
 & \mbox{ for } t\in[\tau^*,T]. 
 \end{array}
 $$
