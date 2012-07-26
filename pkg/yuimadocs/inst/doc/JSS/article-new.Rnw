@@ -18,24 +18,9 @@
 
 
 %% HOW TO BUILD THIS FILE
-%% step 1) Sweave will produce LaTeX file
-%% step 2) remove all out file (don't ask why)
-%% step 3) pdflatex the .tex file
-%% all the above steps should be done VIA R CMD as
-%% explained in the next lines:
+%% from inside the directory of JSS
+%% ./script.sh article-new
 
-%% FROM A TERMINAL SHELL, IN THE SAME DIRECTORY OF THE .RNW FILE 
-%% TYPE THESE THREE COMMANDS IN SEQUENCE
-%% step 1)   R CMD Sweave article-new
-%% step 2)   rm *.out
-%% step 3)   R CMD pdflatex article-new
-
-%% you can repeat steps 2) and 3) to update references etc.
-
-%% For bibtex you need to run these commands
-%% step 3)   R CMD bibtex article-new
-%% step 2)   rm *.out
-%% step 3)   R CMD pdflatex article-new
 
 
 
