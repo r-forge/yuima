@@ -16,13 +16,17 @@
 % USE THIS INSTEAD IF YOU WANT TO EXECUTE R CODE
 %\SweaveOpts{prefix.string=yuima, echo=TRUE, eval=TRUE} 
 
+%% before editing this file get the new version, type this command on Terminal
+%% in the same directory where this Rnw-file lives
+%% svn up
 
 %% HOW TO BUILD THIS FILE
-%% from inside the directory of JSS
+%% from inside the directory where this Rnw-file lives
 %% ./script.sh article-new
 
-
-
+%% to commit to svn the changes type
+%% from inside the directory where this Rnw-file lives
+%% svn commit -m "my changes"
 
 \usepackage{amsmath,amssymb}
 
