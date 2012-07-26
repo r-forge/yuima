@@ -1,11 +1,38 @@
 \documentclass[article]{jss}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% declarations for jss.cls %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% declarations for jss.cls %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %\usepackage{Sweave}    
 %\usepackage{Rd}    
+
+
+%%% INFOS FOR YUIMA CORE TEAM %%%
+
+% USE THIS IF YOU DON'T WANT TO EXECUTE R CODE
+\SweaveOpts{prefix.string=yuima, echo=TRUE, eval=FALSE} 
+
+% USE THIS INSTEAD IF YOU WANT TO EXECUTE R CODE
+%\SweaveOpts{prefix.string=yuima, echo=TRUE, eval=TRUE} 
+
+
+%% HOW TO BUILD THIS FILE
+%% step 1) Sweave will produce LaTeX file
+%% step 2) remove all out file (don't ask why)
+%% step 3) pdflatex the .tex file
+%% all the above steps should be done VIA R CMD as
+%% explained in the next lines:
+
+%% FROM A TERMINAL SHELL, IN THE SAME DIRECTORY OF THE .RNW FILE 
+%% TYPE THESE THREE COMMANDS IN SEQUENCE
+%% step 1)   R CMD Sweave article-new
+%% step 2)   rm *.out
+%% step 3)   R CMD pdflatex article-new
+
+%% you can repeat steps 2) and 3) to update references etc.
+
+
 
 \usepackage{amsmath,amssymb}
 
@@ -76,10 +103,6 @@ The \pkg{yuima} package is intended to offer the basic infrastructure on which c
 %% Fax: +43/1/31336-734
 
 
-
-\SweaveOpts{prefix.string=yuima} 
-\SweaveOpts{echo=TRUE}
-
 %% preamble for Rnw files
 <<print=FALSE, echo=FALSE>>=
 options(prompt="R> ")
@@ -97,6 +120,9 @@ options(width=60)
 
 
 \begin{document}
+
+
+
 
 %% include your article here, just as usual
 %% Note that you should use the \pkg{}, \proglang{} and \code{} commands.
@@ -670,11 +696,11 @@ For simplicity we use uniform distributions in $[0,1]$
 prior <- list(theta2=list(measure.type="code",df="dunif(theta2,0,1)"), theta1=list(measure.type="code",df="dunif(theta1,0,1)"))
 @
 Then we call $\tt adaBayes$, on the same sample data we used for the \code{qmle} function, as follows
-<<eval=TRUE,echo=TRUE, results=hide>>=
+<<echo=TRUE, results=hide>>=
 bayes1 <- adaBayes(yuima, start=param.init, prior=prior)
 @
 and we can compare the adaptive Bayes estimates  with the QMLE estimates
-<<eval=TRUE,echo=TRUE>>=
+<<echo=TRUE>>=
 coef(bayes1)
 coef(mle1)
 @
@@ -1045,7 +1071,7 @@ X^1_0=1.0,\quad
 X^2_0=1.0,\quad
 $$
 with change-point instant at time $\tau=0.4$ \textcolor{red}{and $T=10$}.   First, we describe the model to be simulated
-<<cpoint1,eval=TRUE, echo=TRUE,results=hide>>=
+<<cpoint1, echo=TRUE,results=hide>>=
 diff.matrix <- matrix(c("theta1.k*x1","0*x2","0*x1","theta2.k*x2"), 2, 2)
 drift.c <- c("sin(x1)", "3-x2")
 drift.matrix <- matrix(drift.c, 2, 1)
