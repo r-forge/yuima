@@ -32,6 +32,11 @@
 
 %% you can repeat steps 2) and 3) to update references etc.
 
+%% For bibtex you need to run these commands
+%% step 3)   R CMD bibtex article-new
+%% step 2)   rm *.out
+%% step 3)   R CMD pdflatex article-new
+
 
 
 \usepackage{amsmath,amssymb}
