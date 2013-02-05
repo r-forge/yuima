@@ -14,7 +14,7 @@
 \SweaveOpts{prefix.string=yuima, echo=TRUE, eval=FALSE} 
 
 % USE THIS INSTEAD IF YOU WANT TO EXECUTE R CODE
-%\SweaveOpts{prefix.string=yuima, echo=TRUE, eval=TRUE} 
+%\SweaveOpts{prefix.string=yuima, echo=TRUE, eval=TRUE}
 
 %% before editing this file get the new version, type this command on Terminal
 %% in the same directory where this Rnw-file lives
@@ -213,24 +213,34 @@ Figure \ref{fig:classes} represents the different classes and their slots.
 \label{fig:classes}
 \end{figure} 
 The different slots do not need to be all present at the same time. For example, in case one wants to simulate a stochastic process, only the slots \code{model} and \code{sampling} should be present, while the slot \code{data} will be filled by the simulator.
-We now discuss in details the \textcolor{red}{different objects} separately.
+We discuss in details the \textcolor{red}{different objects} separately in the next sections.
+
+\textcolor{blue}{The general idea of the \pkg{yuima} package is to separate into different subclass objects the statistical model, the data and the statistical methods. As will be explained with several examples, the user may give a mathematical description of the statistical model with \code{setModel} which prepares a \code{yuima.model} object by filling the appropriate slots. If the aim is the simulation of the solution of the stochastic  differential equation specified in the \code{yuima.model} object then, using the method \code{simulate}, it is possible to obtain one trajectory of the process. As an output, a \code{yuima} object is created which contains the original model specified in the \code{yuima.model} object in the slot named \code{model} and two additional slots named \code{data}, for the simulated data, and \code{sampling} which contains the description of the simulation scheme used as well as other informations. The details of \code{simulate} will be explained in Section \ref{sec:simul} along with the use of method \code{setSampling} which allows to specify the type of sampling scheme to be used by the \code{simulate} method.
+But \code{yuima} object may contain the slot \code{data} non only as the outcome of \code{simulate} but also because the user decides to analyse its own data. In this case the method \code{setData} is used to transform most types  of \proglang{R} time series object into a a proper \code{yuima.data} object.
+When the slots \code{data} and \code{model} are available, many other methods can be used to perform statistical analysis on these sde's models. These methods will be discussed in Section \ref{sec5}.
+Further, functionals of stochastic differential equations can be defined using the \code{setFunctional} method and evaluated using asymptotc expansion methods as explained in Section \ref{sec4}. The \code{setFunctional} method creates a \code{yuima.functional} object which is included along with a \code{yuima.model} object into a \code{yuima} object in order to evaluate the asymptotic expansion.}
 
 
-
-\subsection{The \code{yuima.model} Class}
-At present, in \pkg{yuima}  three main classes of stochastic differential equations  can be easily specified. All multidimensional and eventually as parametric models.
+\subsection{The \code{yuima.model} Class}\label{sec:model}
+At present, in \pkg{yuima}  three main classes of stochastic differential equations  can be easily specified. \textcolor{blue}{Here we present  a brief
+overview of these models as they will be described in details in Section \ref{sec3}, but this allow to introduce an overall view of the slots of the \code{yuima.model} class.}. 
+\textcolor{blue}{In \pkg{yuima} one can describe three main families of stochastic processes at present. These models can be one or multidimensional and eventually described as parametric models. Let $X_0=x_0$ be the initial value of the process, then, the main classes are as follows:}
 \begin{itemize}
-\item diffusions $\displaystyle  \de X_t=a(t,X_t)dt + b(t,X_t)\de W_t $, where $W_t$ is a standard Brownian motion;
-\item fractional Gaussian noise, with $H$ the Hurst parameter
-$$ \de X_t=a(t,X_t)dt + b(t,X_t)\de W_t^{H}; $$ 
-\item diffusions with jumps and  L\'evy processes solution to
+\item \textcolor{blue}{diffusion models described as} 
+$$  \de X_t=a(t,X_t,\theta)dt + b(t,X_t,\theta)\de W_t, \quad X_0=x_0$$
+ where $W_t$ is a standard Brownian motion;
+\item \textcolor{blue}{sde's driven by fractional Gaussian noise, with $H$ the Hurst parameter, described as}
+$$ \de X_t=a(t,X_t,\theta)dt + b(t,X_t,\theta)\de W_t^{H}, \quad X_0=x_0;$$ 
+\item \textcolor{blue}{diffusion process with jumps} and  L\'evy processes solution to
 $$
 \begin{aligned}
-\de X_t = & \,\,\, a(X_t)\de t + b(X_t)\de W_t + \int\limits_{|z|>1}\!\!\! c(X_{t-},z)\mu(\de t,\de z) \\
-&{}+\!\! \int\limits_{0<|z|\le 1}\!\!\!  c(X_{t-},z)\{\mu(\de t,\de z) - \nu(\de z)\de t\}.
-\end{aligned}
+\de X_t = & \,\,\, a(t,X_t,\theta)\de t + b(t,X_t,\theta)\de W_t + \int\limits_{|z|>1}\!\!\! c(X_{t-},z)\mu(\de t,\de z) \\
+&{}+\!\! \int\limits_{0<|z|\le 1}\!\!\!  c(X_{t-},z)\{\mu(\de t,\de z) - \nu(\de z)\de t\}
+\end{aligned}, \quad X_0=x_0;
 $$
 \end{itemize}
+\textcolor{blue}{The functions $a(\cdot)$, $b(\cdot)$ and $c(\cdot)$ may have a different number of arguments. For example, if the model is homogeneous in time and drift and diffusion coefficients are entirely specified, then we will use the notaion $a(x)$ and $b(x)$ and describe the diffusion model simply as $\displaystyle \de X_t=a(X_t)dt + b(X_t)\de W_t$. And so forth. Detailed hypotheses and regularity conditions on the coefficients $a(\cdot)$, $b(\cdot)$ and $c(\cdot)$ for each class of models will be given in the next sections. Nevertheless, it is important to remark that these notations only matter the mathematical description of the model while each coefficient is passed to \pkg{yuima} methods as \proglang{R} mathematical expressions. It means that, for example, $a(t, X_t, \theta) = t\cdot \sqrt{\theta X_t}$ will be passed as \code{t*sqrt(x*theta)}, therefore, the order of the arguments is not relevant to \proglang{R} as well as its mathematical description as long as it is consistent through each specific section. Furhter, \pkg{yuima} is able to accept any user-specified notation for the state variable $x$ (for $X_t$) and the time variable $t$ and the remaining term of an \proglang{R} expression will be interpreted as parameter as will explained in Section \ref{sec:diff}.
+We are now able to give an overview of the mian slots of the most important class of the \pkg{yuima} package.}
 
 The \code{yuima.model} class contains information about the stochastic differential equation of interest. The constructor function \code{setModel} is
 used to give a mathematical description of the stochastic differential equation. 
@@ -246,9 +256,9 @@ To see inside its structure, one can use the \proglang{R} command \code{str} on 
 \item \code{drift} is an \proglang{R} vector of expressions which contains the drift specification;
 \item \code{diffusion} is itself a list of 1 slot which describes the diffusion
   coefficient matrix relative to first noise;
-\item \code{hurst} is the Hurst index of the fractional Brownian motion, by default \code{0.5}  meaning a standard Brownian motion;
-\item \code{parameter} which is a short name for ``parameters'' which 
-  is a list with the following entries:
+\item \code{hurst} is the Hurst index of the fractional Brownian motion, by default \code{0.5}  meaning a standard Brownian motion. \textcolor{blue}{More details will be given in Section \ref{sec:fgn}};
+\item \code{parameter},  which is a short name for ``parameters'',  
+  is a list with the following entries \textcolor{blue}{(explained details in Section \ref{sec:par})}:
 \begin{itemize}
 \item \code{all} contains the names of all the parameters found 
    in the diffusion and drift coefficient;
@@ -256,19 +266,19 @@ To see inside its structure, one can use the \proglang{R} command \code{str} on 
 \item \code{diffusion} contains the parameters belonging to the diffusion coefficient;
 \item \code{drift} contains the parameters belonging to the drift coefficient;
 \item \code{jump} contains the parameters belonging to the  coefficient of the L\'evy noise;
-\item \code{measure} contains the parameters \textcolor{red}{describing the L\'evy} measure;
+\item \code{measure} contains the parameters \textcolor{red}{describing the L\'evy} measure (\textcolor{blue}{(explained details in Section \ref{sec:jump})};
 \end{itemize}
-\item \code{measure} specifies the measure of the L\'evy noise;
-\item \code{measure.type} a switch to specify how the L\'evy measure is described;
+\item \code{measure} specifies the measure of the L\'evy noise (\textcolor{blue}{(see Section \ref{sec:jump})};
+\item \code{measure.type} a switch to specify how the L\'evy measure is described (\textcolor{blue}{(see Section \ref{sec:jump})};
 \item \code{state.variable} and \code{time.variable}, by default,
-  are assumed to be \code{x} and \code{t} but the user can freely choose them.
+  are assumed to be \code{x} and \code{t} but the user can freely choose them \textcolor{blue}{and they matter the right hand-side of the equation of the sde}.
   The \code{yuima.model} class assumes that the user either \textcolor{red}{uses} default
   names for \code{state.variable} and \code{time.variable} variables or specify his own names. All
   the rest of the symbols are considered parameters and distributed accordingly
-  in the \code{parameter} slot.
-\item \code{jump.variable} the name of the variable used in the description of the L\'evy component;
+  in the \code{parameter} slot. \textcolor{blue}{Example of use will be given in Section \ref{sec:diff};}
+\item \code{jump.variable} the name of the variable used in the description of the L\'evy component (\textcolor{blue}{(see Section \ref{sec:jump})};
 \item \code{solve.variable} contains a vector of variable names, each element corresponds to the
-   name of the solution variable (left-hand-side) of each equation in the model, in the corresponding order.
+   name of the solution variable (left-hand-side) of each equation in the model, in the corresponding order. \textcolor{blue}{An example of use can be found in \Section \ref{sec:multi}.}
 \item \code{noise.number} indicates the number of sources of noise.
 \item \code{xinit} initial value of the stochastic differential equation;
 \item \code{equation.number} represents the number of equations, i.e., the number of one dimensional
@@ -282,23 +292,27 @@ As seen in the above, the parameter space is accurately described internally in 
 \section{Model Specification}\label{sec3}
 In order to show \textcolor{red}{how general the approach is} in the \pkg{yuima} package we present some examples.
 
-\subsection{Diffusion Processes}
+\subsection{Diffusion Processes}\label{sec:diff}
 Assume that we want to describe the following stochastic differential equation
-$$\de X_t = -3 X_t \de t + \frac{1}{1+X_t^2}\de W_t$$
-This is done in \pkg{yuima} \textcolor{red}{by} specifying the drift and diffusion coefficients as plain mathematical expressions
+$$\de X_t = -3 X_t \de t + \frac{1}{1+X_t^2}\de W_t.$$
+\textcolor{blue}{In the above $a(x) = -3 x$ and $b(x) = \frac{1}{1+x^2}$ according to the notaion of previous section}
+This \textcolor{blue}{can be described} in \pkg{yuima} \textcolor{red}{by} specifying the drift and diffusion coefficients as plain 
+\textcolor{blue}{\proglang{R} expressions passed as strings}
 <<print=FALSE,echo=FALSE,results=hide>>=
 library(yuima)
 @ 
 <<echo=TRUE, print=FALSE,results=hide>>=
 mod1 <- setModel(drift = "-3*x", diffusion = "1/(1+x^2)")
 @ 
+\textcolor{blue}{By default, \pkg{yuima} assumes that the state variable is \code{x} and the time variable is \code{t} and the solve variable is again \code{x}. Notice that the left hand-side of the equation is implicit, this is why \code{yuima.model} has the slot \code{solve.variable}.
+The user should not we worried about the warning raised by \pkg{yuima} at this stage, as this is just to inform the user about the implicit assumption on the solution variable.}
 At this point, the package fills the proper slots of the \code{yuima} object
 <<>>=
 str(mod1)
 @
 
-For the above, it is possible to see that the jump coefficient is void and the Hurst parameter is set to 0.5, because this corresponds to the standard Brownian motion.
-Now, with \code{mod1} in hands, it is very easy to simulate a trajectory of the process as follows
+From the above, it is possible to see that the jump coefficient is void and the Hurst parameter is set to 0.5, \textcolor{blue}{because this is a model where the driving process is the standard Brownian motion, i.e. a fractional Brownian motion if Hurst index $H=\frac12$.}
+Now, with \code{mod1} in hands, it is very easy to simulate a trajectory \textcolor{blue}{Euler-Maruyama scheme} of the process as follows
 <<echo=TRUE, print=FALSE,fig=TRUE,width=9,height=4,results=hide>>=
 set.seed(123)
 X <- simulate(mod1)
@@ -306,43 +320,61 @@ plot(X)
 @
 
 \noindent
-The \code{simulate} function fills in addition the two slots \code{data} and \code{sampling} of the \code{yuima} object.
+The \code{simulate} function fills in addition the two slots \code{data} and \code{sampling} of the \code{yuima} object. 
 <<>>=
 str(X,vec.len=2)
 @
+\textcolor{More details on how to change the default sampling scheme for the \code{simulate} method and how to perform subsampling will be given in Section \ref{sec:simul}.}
 
-\subsection{Specification of Parametric Models}
-When a parametric model like
+
+\subsection{User specified state and time variables: NEW SECTION}
+Suppose now that the user wants to specify her own model using a prescribed notation, e.g., some sdes like
+$$\de Y_s = -3 s Y_s \de s + \frac{1}{1+Y_s^2}\de W_s,$$
+then this can be done in \pkg{yuima} as follows
+<<echo=TRUE, print=FALSE,results=hide>>=
+mod1b <- setModel(drift = "-3*s*y", diffusion = "1/(1+y^2)", state.var="y", time.var="s")
+@
+In this case the solution variable is the same as the state variable. Indeed, the \code{yuima.model} object appears as follows
+<<>>=
+str(mod1b)
+@
+Once again, the user may use the \code{simulate} method to perform simulation.
+
+\subsection{Specification of Parametric Models}\label{sec:par}
+\textcolor{blue}{Assume now that we want to specify a parametric model like this}
 $$\de X_t = -\theta X_t \de t + \frac{1}{1+X_t^\gamma}\de W_t$$
-is specified, \pkg{yuima} attempts to distinguish the parameters' names from the ones of the state and time variables
+\textcolor{blue}{where $a(x,\theta) = -\theta x$ and $b(x,\gamma) = 1/(1+x^\gamma)$.}
+Then, \pkg{yuima} attempts to distinguish the parameters' names from the ones of the state and time variables
 <<echo=TRUE, print=FALSE,results=hide>>=
 mod2 <- setModel(drift = "-theta*x", diffusion = "1/(1+x^gamma)")
-@ 
+@
+\textcolor{blue}{so, in this case, \code{theta} and \code{gamma}, which are different form \code{x} and \code{t}, are assumed to be parameters. Notice that in the above notation $\theta$ and $\gamma$ are generic names for the components of a parameters' vector $\theta$ in the notation of Section \ref{sec:model}.}
 <<>>=
 str(mod2)
 @
-In order to simulate the parametric model it is necessary to specify the values of the parameters as the next code shows
+In order to simulate the parametric model it is necessary to specify the values of the \textcolor{blue}{parameters $\theta$ and $\gamma$ as shown in the next code chunk}
 <<echo=TRUE, print=FALSE,fig=TRUE,height=4,results=hide>>=
 set.seed(123)
 X <- simulate(mod2,true.param=list(theta=1,gamma=3))
 plot(X)
 @
 
-\subsection{Multidimensional Processes}
-Next is an example with two stochastic differential equations driven by three independent Brownian motions
+\subsection{Multidimensional Processes}\label{sec:multi}
+\textcolor{blue}{Next is an example of a system of two stochastic differential equations for the couple $(X_{t,1}, X_{t,2})$ driven by three independent Brownian motions $(W_{t,1}, W_{t,2}, W_{t,3})$}
 $$
 \begin{aligned}
-\de X^1_t &= -3 X^1_t \de t + \de W^1_t + X^2_t \de W^3_t\\
-\de X^2_t &= -(X^1_t + 2 X^2_t) \de t + X^1_t \de W^1_t + 3 \de W^2_t
+\de X_{1,t} &= -3 X_{1,t} \de t + \de W_{1,t} + X_{2,t} \de W_{3,t}\\
+\de X_{2,t} &= -(X_{1,t} + 2 X_{2,t}) \de t + X_{1,t} \de W_{1,t} + 3 \de W_{2,t}
 \end{aligned}
 $$
-but this has to be organized into matrix form
+but this has to be organized into matrix form \textcolor{red}{with a vector of drift expressions and a diffusion matrix}
 $$
-\left(\begin{array}{c}\de X^1_t \\\de X^2_t\end{array}\right)=
-\left(\begin{array}{c} -3 X^1_t \\  -X^1_t - 2X^2_t\end{array}\right)\de t +
-\left[\begin{array}{ccc}1 & 0 & X^2_t \\X^1_t & 3 & 0\end{array}\right]
-\left(\begin{array}{c}\de W_t^1 \\ \de W_t^2 \\ \de W_t^3\end{array}\right)
+\left(\begin{array}{c}\de X_{1,t} \\\de X_{2,t}\end{array}\right)=
+\left(\begin{array}{c} -3 X_{1,t} \\  -X_{1,t} - 2X_{2,t}\end{array}\right)\de t +
+\left[\begin{array}{ccc}1 & 0 & X_{2,t} \\X_{1,t} & 3 & 0\end{array}\right]
+\left(\begin{array}{c}\de W_{t,1} \\ \de W_{t,2} \\ \de W_{t,3}\end{array}\right)
 $$
+\textcolor{blue}{For this system it now necessary to instruct \pkg{yuima} about the state variable on bot the left-hand side of the equation and the right-hand side of the equation, i.e. the \code{solve.variable}.}
 <<echo=TRUE, print=FALSE,results=hide>>=
 sol <- c("x1","x2") # variable for numerical solution
 a <- c("-3*x1","-x1-2*x2")   # drift vector 
@@ -367,7 +399,7 @@ $$
 $$
 where  $g(t) = 0.4 + (0.1 + 0.2t) e^{-2t}$.
 
-\subsection{Fractional Gaussian Noise}
+\section{Fractional Gaussian Noise}\label{sec:fgn}
 In order to specify a stochastic differential equation driven by fractional Gaussian noise it is necessary to specify the value of the Hurst parameter. For example, if we want to specify the following model
 $$\de Y_t =  3 Y_t \de t + \de W_t^H$$
 we proceed as follows
@@ -386,7 +418,7 @@ str(mod4)
 @
 The user can choose \textcolor{red}{between  two} simulation schemes, namely the Cholesky method and \citet{WoodChan} method.
 
-\subsection{L\'evy Processes}
+\subsection{L\'evy Processes}\label{sec:jump}
 Jump processes can be specified in different ways in mathematics and hence in \pkg{yuima} package. 
 Let $Z_t$ be a  Compound Poisson Process (i.e., jumps size follow some distribution, like the Gaussian law and jumps occur at Poisson times).
 Then it is possible to consider the following SDE which involves jumps
@@ -429,7 +461,7 @@ The \pkg{yuima} package implements many multivariate Random Numbers Generators (
 \code{rIG} (Inverse Gaussian), \code{rNIG} (Normal Inverse Gaussian), \code{rbgamma} (Bilateral Gamma), \code{rngamma} (Normal Gamma) and \texttt{rstable} (Stable Laws).
 Other user-defined RNG can be used freely.
 
-\subsection{Simulation, Sampling and Subsampling}
+\section{Simulation, Sampling and Subsampling}\label{sec:simul}
 The \code{simulate} function simulates \code{yuima} models according to Euler-Maruyama scheme in the presence of non-fractional diffusion noise and L\'evy jumps and uses the Cholesky or the Wood and Chan methods for the fractional Gaussian noise.
 The \code{simulate} function accepts several arguments including the description of the sampling structure, which is an object of type \code{yuima.sampling}. The \code{setSampling} \textcolor{red}{allows} for the specification of different sampling parameters including random sampling. Further, the \code{subsampling} \textcolor{red}{allows us} to subsample a trajectory of a simulated stochastic differential equation or a given time series in the \code{yuima.data} slot of a \code{yuima} object.
 Sampling and subsampling can be specified jointly as arguments to the \code{simulate} function. This is convenient if one wants to simulate data at very high frequency but then return only low frequency data for inference or other applications. \textcolor{red}{In what follows we explain how to specify  arguments of these \pkg{yuima} functions.   Complete details can be found in  the man pages of the \pkg{yuima} package.}
