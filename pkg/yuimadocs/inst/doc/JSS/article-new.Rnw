@@ -32,6 +32,9 @@
 
 \usepackage[utf8x]{inputenc} 
 
+\usepackage{comment}
+\excludecomment{en-text}
+
 \newcommand{\colorr}{\color[rgb]{0.8,0,0}}
 \newcommand{\colorg}{\color[rgb]{0,0.5,0}}
 \newcommand{\colorb}{\color[rgb]{0,0,0.8}}
