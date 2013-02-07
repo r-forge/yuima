@@ -713,7 +713,7 @@ in \eqref{yuima:func1}.
 %
 {\colorb Similarly, for $F(x,\ve)=x$, 
 the functional becomes $F^{(\ve)}=X^{(\ve)}_T$ and the price of the European call option is 
-$\dE[\max(X^{(\ve)}_T-K,0)]$. This value has a closed form in the Black-Sholes economy but 
+$\dE[\max(X^{(\ve)}_T-K,0)]$. This value has a closed form in the Black-Sholes economy but
 it is necessary to apply some numerical method for pricing the Asian option even in this linear case. }
 
 {\colorb 
@@ -840,9 +840,6 @@ asymp$d0 + e * asymp$d1+ e^2* asymp$d2  # 2nd order asymp. exp. of asian call pr
 @
 give the first and second order asymptotic expansions, respectively.  
 
-{\coloro koko MC here!! Why don't we make asyexp = \code{asymptotic_term} + sums? 
-Also Monte-Carlo driver montecarlo = \code{simulate} with number of repetition 
-+ plot + comparison of plot and theoretical curve?}
 
 We remark that the expansion of $\dE[g(\tilde{F}^{(\ep)})G^{(\ep)}]$ is also possible by the same method 
 for a functional $G^{(\ep)}$ having a stochastic expansion like (\ref{130206-8}). 
@@ -866,14 +863,18 @@ str(x@data)
 @
 
 \subsection{Quasi Maximum Likelihood Estimation}
-{\bf[please remember: $\hat\theta$ = MLE;  $\tilde \theta$ = BAYES; $\check\theta$ = LASSO]}
-\par
+{\bf ADD SOMETHING ON ASYMPT DISTRIBUTION \& SAMPLING SCHEME} 
 Consider the multidimensional diffusion process
-$$
+\begin{equation}
+\label{eq:sdemle}
 \de X_t = a(X_t,\theta_2)\de t + b(X_t,\theta_1) \de W_t
-$$
+\end{equation}
 where $W_t$ is an {$r$}-dimensional standard Wiener process 
 independent of the initial value $X_0=x_0$. 
+Moreover, $\theta_1\in\Theta_1\subset \mathbb{R}^p, p\geq1$,
+$\theta_2\in\Theta_2\subset \mathbb{R}^q, q\geq1$,
+$a:\mathbb{R}^d\times\Theta_2 \to \mathbb{R}^d$ and $b:\mathbb{R}^d\times\Theta_1 \to \mathbb{R}^d\times \mathbb{R}^r$. 
+
 Quasi-MLE assumes the following approximation of the true log-likelihood for multidimensional diffusions
 {\small
 \begin{eqnarray}\label{qlik}
@@ -883,7 +884,7 @@ Quasi-MLE assumes the following approximation of the true log-likelihood for mul
 \Sigma_{i-1}^{-1}(\theta_1)[\Delta X_i-\Delta_n a_{i-1}(\theta_2)]^{\otimes 2}\right\}
 \end{eqnarray}}
 where $\theta=(\theta_1, \theta_2)$, $\Delta X_i=X_{t_i}-X_{t_{i-1}}$, $\Sigma_i(\theta_1)=\Sigma(\theta_1,X_{t_i})$, $a_i(\theta_2)=a(X_{t_i},\theta_2)$, $\Sigma=b^{\otimes 2}$, \textcolor{red}{$A^{\otimes 2}= A A^T$} and $A^{-1}$ the inverse of $A$, $A[B]^{\otimes 2} = B^T A B$.  Then, \citep[see e.g.,][]{Yoshida92, Kessler97}, the QML estimator of $\theta$ is
-\textcolor{red}{$$\hat\theta_n=\arg\max_\theta \ell_n({\bf X}_n,\theta)$$}
+\textcolor{red}{$$\hat\theta=\arg\max_\theta \ell_n({\bf X}_n,\theta)$$}
 
 \textcolor{red}{The \pkg{yuima} package implements QML estimation via the  \code{qmle} function. The interface and the output of the \code{qmle} function are made as similar as possible to those of the standard \code{mle} function in the \pkg{stats4} package of the basic \proglang{R} system. The main arguments to  \code{qmle} consist of a \code{yuima} object and initial values (\code{start}) for the optimizer. The \code{yuima} object must contain the slots \code{model} and \code{data}. The \code{start} argument must be specified as a named list, where the  names of the  elements of the list  correspond to the names of the parameters as they appear in the \code{yuima} object. Optionally, one can specify named lists of \code{upper}  and \code{lower} bounds
 to identify the search region of the optimizer. The standard optimizer is \code{BFGS} when no bounds are specified. If bounds are specified then \code{L-BFGS-B} is used. More optimizers can be added in the  future.}
@@ -919,10 +920,7 @@ summary(mle1)
 %Notice the interface and the output of the \code{qmle} is quite similar to the ones of the standard \code{mle} function of the \pkg{stats4} package of the base \proglang{R} system.
 
 \subsection{Adaptive Bayes Estimation}
-Consider again the  diffusion process solution to
-\begin{equation} 
-\de X_t=a(X_t,\theta_2)\de t+b(X_t,\theta_1)\de W_t,
-\end{equation}
+Consider again the  diffusion process solution to \eqref{eq:sdemle}
 and the quasi likelihood defined in \eqref{qlik}.
 
 
@@ -1249,7 +1247,10 @@ Consider a multidimensional stochastic differential equation of the form
 $$
 \de Y_t = a_t \de t + b(X_t,\theta) \de W_t,\ \ t\in[0,T], 
 $$
-where $W_t$ \textcolor{red}{is an} $r$-dimensional Wiener process and $a_t$ and $X_t$ are multidimensional processes and $b$ is the diffusion coefficient (volatility) matrix.
+where $W_t$ \textcolor{red}{is an} $r$-dimensional Wiener process and $a_t$ and $X_t$ are multidimensional processes, $\theta\in\Theta\subset \mathbb{R}^p$,  $b:\mathbb{R}^d\times\Theta \to \mathbb{R}^d\times \mathbb{R}^r$, is the diffusion coefficient (volatility) matrix.
+
+
+
 When $Y=X$ the problem is a diffusion model.
 The process $a_t$ may have jumps but should not explode and it is treated as a nuisance in this model.
 The change-point problem for the volatility is formalized as follows
@@ -1282,14 +1283,14 @@ G_i(\theta) =
 + \Delta_n^{-1}(\Delta_iY)'S(X_{t_{i-1}},\theta)^{-1}(\Delta_iY)
 \label{eq:GiCH10}
 \end{equation}
-\textcolor{red}{and $S=\sigma^{\otimes 2}$.}
+\textcolor{red}{and $S=b^{\otimes 2}$.}
 Suppose that there exists an estimator 
 $\hat{\theta}_k$ for each $\theta_k$, $k=0,1$. 
 In case $\theta_k^*$ are known, we define $\hat{\theta}_k$ 
 just as $\hat{\theta}_k=\theta_k^*$. 
 The change-point estimator  of $\tau^*$ is
 \begin{eqnarray*} 
-\hat{\tau}_n&=&\arg\!\!\min\limits_{t\in[0,T]} 
+\hat{\tau}&=&\arg\!\!\min\limits_{t\in[0,T]} 
 \Phi_n(t;\hat{\theta}_0,\hat{\theta}_1).
 \end{eqnarray*}
 
@@ -1301,8 +1302,8 @@ $$
 \end{array}\right)
 = 
 \left(\begin{array}{c}
-b_1(X_{1,t}) \\
-b_2(X_{2,t}) \\ 
+a_1(X_{1,t}) \\
+a_2(X_{2,t}) \\
 \end{array}\right) \de t
 +
 \left(\begin{array}{cc}
@@ -1430,26 +1431,26 @@ with $b:\Theta_p\times\mathbb{R}^d\to \mathbb{R}^d$, $\sigma:\Theta_q\times \mat
 We assume that the functions $a$ and $b$ are known up to   $\alpha$ and $\beta$.
 We denote by $\theta=(\alpha,\beta)\in\Theta_p\times \Theta_q=\Theta$ the parametric vector and with $\theta_0=(\alpha_0,\beta_0)$ its unknown true value. 
 Let $\mathbb{H}_n({\bf X}_n,\theta) = \ell_n({\bf X}_n,\theta)$ from equation \eqref{qlik}.
-The quasi-MLE $\tilde{\theta}_n$ for this model is the solution of the following problem
+The quasi-MLE $\hat{\theta}$ for this model is the solution of the following problem
 $$
-\tilde{\theta}_n=(\tilde\alpha_n,\tilde\beta_n)'=\arg\min_\theta \mathbb{H}_n({\bf X}_n,\theta)
+\hat{\theta}=(\hat\alpha,\hat\beta)'=\arg\min_\theta \mathbb{H}_n({\bf X}_n,\theta)
 $$ 
 The adaptive LASSO estimator is defined as the solution to the quadratic problem under $L_1$ constraints
 $$
-\hat{\theta}_n=(\hat\alpha_n,\hat\beta_n)=\arg\min_\theta\mathcal{F}(\theta).
+\check{\theta}=(\check\alpha,\check\beta)=\arg\min_\theta\mathcal{F}(\theta).
 $$
 with
 $$
-\mathcal{F}(\theta)=(\theta-\tilde{\theta}_n)^T\ddot{\mathbb{H}}_n({\bf X}_n, \tilde\theta_n)(\theta-\tilde{\theta}_n)+\sum_{j=1}^p\lambda_{n,j}|\alpha_j| +\sum_{k=1}^q\gamma_{n,k}|\beta_k|
+\mathcal{F}(\theta)=(\theta-\hat{\theta})^T\ddot{\mathbb{H}}_n({\bf X}_n, \hat\theta)(\theta-\hat{\theta})+\sum_{j=1}^p\lambda_{n,j}|\alpha_j| +\sum_{k=1}^q\gamma_{n,k}|\beta_k|
 $$
 For more details see \citet{DegIac10b}.
 The tuning parameters should be chosen as in \citet{Zou06} in the following way
 \begin{equation}
 \label{eq:penalty}
-\lambda_{n,j} = \lambda_0 |\tilde \alpha_{n,j}|^{-\delta_1}, \qquad
-\gamma_{n,k} = \gamma_0 |\tilde \beta_{n,j}|^{-\delta_2}
+\lambda_{n,j} = \lambda_0 |\hat \alpha_{j}|^{-\delta_1}, \qquad
+\gamma_{n,k} = \gamma_0 |\hat \beta_{j}|^{-\delta_2}
 \end{equation}
-where $\tilde \alpha_{n,j}$ and  $\tilde \beta_{n,k}$ are the unpenalized QML estimator of $\alpha_j$ and $\beta_k$ respectively, $\delta_1, \delta_2>0$ and usually taken unitary.
+where $\hat \alpha_{j}$ and  $\hat \beta_{k}$ are the unpenalized QML estimator of $\alpha_j$ and $\beta_k$ respectively, $\delta_1, \delta_2>0$ and usually taken unitary.
 
 \subsubsection{An Example of Model Selection for Interest Rates Data}
 The \code{lasso} method is implemented in the \pkg{yuima} package.
