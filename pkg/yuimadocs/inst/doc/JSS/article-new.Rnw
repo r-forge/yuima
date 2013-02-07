@@ -14,7 +14,7 @@
 \SweaveOpts{prefix.string=yuima, echo=TRUE, eval=FALSE}
 
 % USE THIS INSTEAD IF YOU WANT TO EXECUTE R CODE
-\SweaveOpts{prefix.string=yuima, echo=TRUE, eval=TRUE}
+%\SweaveOpts{prefix.string=yuima, echo=TRUE, eval=TRUE}
 
 %% before editing this file get the new version, type this command on Terminal
 %% in the same directory where this Rnw-file lives
@@ -361,7 +361,8 @@ $$\de Y_s = -3 s Y_s \de s + \frac{1}{1+Y_s^2}\de W_s,$$
 where $a(s,y) = -3sy$ and $b(y) = 1/(1+y^2)$.
 Then this model can be described in \pkg{yuima} as follows
 <<echo=TRUE, print=FALSE,results=hide>>=
-mod1b <- setModel(drift = "-3*s*y", diffusion = "1/(1+y^2)", state.var="y", time.var="s")
+mod1b <- setModel(drift = "-3*s*y", diffusion = "1/(1+y^2)", 
+state.var="y", time.var="s")
 @
 In this case the solution variable is the same as the state variable. Indeed, the \code{yuima.model} object appears as follows
 <<>>=
@@ -472,10 +473,12 @@ f3 <- function(t, x1, x2, x3) {
      return(ret)
 }
 
-diff.coef.matrix <- matrix(c("f1(t,x1,x2,x3)", "f2(t,x1,x2,x3) * g(t)", 
-     "f2(t,x1,x2,x3)", "0", "f3(t,x1,x2,x3)*g(t)", "f3(t,x1,x2,x3)"),  3, 2)
+diff.coef.matrix <- matrix(c("f1(t,x1,x2,x3)",
+ "f2(t,x1,x2,x3) * g(t)", "f2(t,x1,x2,x3)", "0", 
+     "f3(t,x1,x2,x3)*g(t)", "f3(t,x1,x2,x3)"),  3, 2)
 
-sabr.mod <- setModel(drift = c("0", "mu*g(t)*x3", "mu*x3"), diffusion = diff.coef.matrix, state.variable = c("x1", "x2", "x3"), 
+sabr.mod <- setModel(drift = c("0", "mu*g(t)*x3", "mu*x3"), 
+diffusion = diff.coef.matrix, state.variable = c("x1", "x2", "x3"),
     solve.variable = c("x1", "x2", "x3"))
 str(sabr.mod@parameter)
 @
@@ -493,11 +496,13 @@ str(sabr.mod@parameter)
      return(ret)
  }
 
- diff.coef.matrix <- matrix(c("f1(t,x1,x2,x3)", "f2(t,x1,x2,x3,rho, sig) * g(t)", 
-     "f2(t,x1,x2,x3,rho,sig)", "0", "f3(t,x1,x2,x3,rho,sig)*g(t)", "f3(t,x1,x2,x3,rho,sig)"),  3, 2)
+ diff.coef.matrix <- matrix(c("f1(t,x1,x2,x3)", 
+ "f2(t,x1,x2,x3,rho, sig) * g(t)", "f2(t,x1,x2,x3,rho,sig)", 
+ "0", "f3(t,x1,x2,x3,rho,sig)*g(t)", "f3(t,x1,x2,x3,rho,sig)"),  3, 2)
 
- sabr.mod <- setModel(drift = c("0", "mu*g(t)*x3", "mu*x3"), diffusion = diff.coef.matrix, 
-                       state.variable = c("x1", "x2", "x3"), solve.variable = c("x1", "x2", "x3"))
+ sabr.mod <- setModel(drift = c("0", "mu*g(t)*x3", "mu*x3"), 
+ diffusion = diff.coef.matrix, state.variable = c("x1", "x2", "x3"), 
+ solve.variable = c("x1", "x2", "x3"))
 str(sabr.mod@parameter)
 @
 
@@ -644,7 +649,8 @@ Subsampling can be used within the \code{simulate} function. What is usually don
 This can be done in a single step in the following way.
 <<sub4,fig=TRUE,width=9,height=5>>=
 set.seed(123)
-Y.sub <- simulate(mymod,sampling=setSampling(delta=0.001,n=1000), subsampling=setSampling(delta=0.01,n=100))
+Y.sub <- simulate(mymod,sampling=setSampling(delta=0.001,n=1000),
+subsampling=setSampling(delta=0.01,n=100))
 set.seed(123)
 Y <- simulate(mymod, sampling=setSampling(delta=0.001,n=1000))
 plot(Y, plot.type="single")
@@ -857,7 +863,7 @@ Although most of the examples in this section are given on simulated data, the m
 
 For example, assuming that an Internet connection is available, the following simple list of commands downloads data from the internet and constructs a \code{yuima} object with the \code{data} slot containing the time series.
 <<echo=TRUE, print=FALSE,results=hide,tidy=TRUE>>=
-data <- read.csv("http://chart.yahoo.com/table.csv?s=IBM&a=1&b=01&c=2012&d=1&e=01&f=2013&g=d&x=.csv")
+data <- read.csv("http://chart.yahoo.com/table.csv?s=IBM&g=d&x=.csv")
 x <- setYuima(data=setData(data$Close))
 str(x@data)
 @
@@ -903,7 +909,8 @@ n <- 750
 ysamp <- setSampling(Terminal = n^(1/3), n = n)
 yuima <- setYuima(model = ymodel, sampling = ysamp)
 set.seed(123)
-yuima <- simulate(yuima, xinit = 1, true.parameter = list(theta1 = 0.2, theta2 = 0.3))
+yuima <- simulate(yuima, xinit = 1, 
+true.parameter = list(theta1 = 0.2, theta2 = 0.3))
 @
 \textcolor{red}{Now the \code{yuima} object contains both the \code{model} and \code{data} slots. We set the initial values for the optimizer as $\theta_1=\theta_2=0.5$ and we specify them as a named list called \code{param.init}. We can now use the function \code{qmle} to estimate the parameters $\theta_1$ and $\theta_2$ as follows}
 <<echo=TRUE, print=FALSE,results=hide>>=
@@ -960,7 +967,8 @@ Consider again the model \eqref{eq:model1} with the same values for the paramete
 In order to perform Bayesian estimation, we need to prepare the prior densities for the parameters.
 For simplicity we use uniform distributions in $[0,1]$
 <<echo=TRUE>>=
-prior <- list(theta2=list(measure.type="code",df="dunif(theta2,0,1)"), theta1=list(measure.type="code",df="dunif(theta1,0,1)"))
+prior <- list(theta2=list(measure.type="code",df="dunif(theta2,0,1)"),
+ theta1=list(measure.type="code",df="dunif(theta1,0,1)"))
 @
 Then we call $\tt adaBayes$, on the same sample data we used for the \code{qmle} function, as follows
 <<echo=TRUE, results=hide>>=
@@ -982,7 +990,8 @@ n <- 500
 ysamp <- setSampling(Terminal = n^(1/3), n = n)
 yuima <- setYuima(model = ymodel, sampling = ysamp)
 set.seed(123)
-yuima <- simulate(yuima, xinit = 1, true.parameter = list(theta1 = 0.2, theta2 = 0.3))
+yuima <- simulate(yuima, xinit = 1, 
+true.parameter = list(theta1 = 0.2, theta2 = 0.3))
 param.init <- list(theta2=0.5,theta1=0.5)
 mle2 <- qmle(yuima, start =param.init , 
 lower = list(theta1=0, theta2=0), 
@@ -1109,7 +1118,8 @@ diff.coef.matrix <- matrix( c( "diff.coef.1(t,x1,x2)",
 "diff.coef.2(t,x1,x2) * cor.rho(t,x1,x2)", "", 
 "diff.coef.2(t,x1,x2) * sqrt(1-cor.rho(t,x1,x2)^2)"),2,2)
 # Model sde using yuima.model
-cor.mod <- setModel(drift = c("",""), diffusion = diff.coef.matrix, solve.variable=c("x1","x2"))
+cor.mod <- setModel(drift = c("",""), diffusion = diff.coef.matrix,
+ solve.variable=c("x1","x2"))
 @ 
 
 The parameter we want to estimate is the quadratic covariation between $X_1$ and $X_2$: 
@@ -1155,7 +1165,8 @@ set.seed(123)
 Terminal <- 1
 n <- 1000
 # Cumulative Covariance
-theta <- CC.theta(T=Terminal, sigma1=diff.coef.1, sigma2=diff.coef.2, rho=cor.rho)$value
+theta <- CC.theta(T=Terminal, sigma1=diff.coef.1, 
+sigma2=diff.coef.2, rho=cor.rho)$value
 cat(sprintf("theta=%5.3f\n",theta))
 @
 so in our case $\theta=\Sexpr{round(theta,2)}$.
@@ -1211,8 +1222,10 @@ b2 <- function(x,y) -x
 s1 <- function(t,x,y) sqrt(abs(x)*(1+t))
 s2 <- function(t,x,y) sqrt(abs(y))
 cor.rho <- function(t,x,y) 1/(1+x^2)
-diff.mat <- matrix(c("s1(t,x,y)", "s2(t,x,y) * cor.rho(t,x,y)","", "s2(t,x,y) * sqrt(1-cor.rho(t,x,y)^2)"), 2, 2) 
-cor.mod <- setModel(drift = c("b1","b2"), diffusion = diff.mat,solve.variable = c("x", "y"),state.var=c("x","y"))
+diff.mat <- matrix(c("s1(t,x,y)", "s2(t,x,y) * cor.rho(t,x,y)","",
+ "s2(t,x,y) * sqrt(1-cor.rho(t,x,y)^2)"), 2, 2) 
+cor.mod <- setModel(drift = c("b1","b2"), diffusion = diff.mat,
+solve.variable = c("x", "y"),state.var=c("x","y"))
 
 ## Generate a path of the process
 set.seed(111) 
@@ -1345,8 +1358,9 @@ with change-point instant at time $\tau=0.4$ \textcolor{red}{and $T=10$}.   Firs
 diff.matrix <- matrix(c("theta1.k*x1","0*x2","0*x1","theta2.k*x2"), 2, 2)
 drift.c <- c("sin(x1)", "3-x2")
 drift.matrix <- matrix(drift.c, 2, 1)
-ymodel <- setModel(drift=drift.matrix, diffusion=diff.matrix, time.variable="t",
-state.variable=c("x1", "x2"), solve.variable=c("x1", "x2"))
+ymodel <- setModel(drift=drift.matrix, diffusion=diff.matrix, 
+time.variable="t", state.variable=c("x1", "x2"), 
+solve.variable=c("x1", "x2"))
 @
 and then simulate two trajectories. One up to the change-point $\tau=4$ with parameters \textcolor{red}{$\theta_{1.0}=0.5$ and  $\theta_{2.0}=0.3$}
 <<cpoint3,results=hide>>=
@@ -1379,8 +1393,10 @@ yuima2 <- simulate(yuima2, xinit=c(x1, x2), true.parameter=t1)
 finaly we collate the two trajectories
 <<cpoint3c,results=hide>>=
 yuima <- yuima1
-yuima@data@zoo.data[[1]] <- c(yuima1@data@zoo.data[[1]], yuima2@data@zoo.data[[1]][-1])
-yuima@data@zoo.data[[2]] <- c(yuima1@data@zoo.data[[2]], yuima2@data@zoo.data[[2]][-1])
+yuima@data@zoo.data[[1]] <- c(yuima1@data@zoo.data[[1]], 
+yuima2@data@zoo.data[[1]][-1])
+yuima@data@zoo.data[[2]] <- c(yuima1@data@zoo.data[[2]], 
+yuima2@data@zoo.data[[2]][-1])
 @ 
 
 The composed trajectory appears as follows
@@ -1391,8 +1407,9 @@ plot(yuima)
 As said, the change-point analysis do not consider the information coming from the drift part of the model and \pkg{yuima} ignores this internally.
 Just to make clear that the information on the drift term is not considered by the function \code{CPoint}, we redefine the \code{yuima} model removing the information coming from the drift and then adding back the data.
 <<cpoint4b>>=
-noDriftModel <- setModel(drift=c("0", "0"), diffusion=diff.matrix, time.variable="t",
-state.variable=c("x1", "x2"), solve.variable=c("x1", "x2"))
+noDriftModel <- setModel(drift=c("0", "0"), diffusion=diff.matrix,
+ time.variable="t", state.variable=c("x1", "x2"), 
+ solve.variable=c("x1", "x2"))
 noDriftModel <- setYuima(noDriftModel, data=yuima@data)
 noDriftModel@model@drift
 @
@@ -1407,8 +1424,12 @@ Now we proceed first with the estimation of the parameters before and after the 
 which are useful in the framework of change-point or sequential analysis.
 The function \code{qmleL} estimates a model by quasi maximum likelihood using observations in the time interval $[0,t]$ where $t$ can be specificed by the user. In our example, we set \code{t=2}. Similarly for \code{qmleR}, which uses only observations in the time interval $[t, T]$. In our example, we take \code{t=8}.
 <<>>=
-qmleL(noDriftModel, t=2, start=list(theta1.k=0.1, theta2.k=0.1),lower=list(theta1.k=0, theta2.k=0), upper=list(theta1.k=1, theta2.k=1), method="L-BFGS-B") -> estL
-qmleR(noDriftModel, t=8, start=list(theta1.k=0.1, theta2.k=0.1),lower=list(theta1.k=0, theta2.k=0), upper=list(theta1.k=1, theta2.k=1), method="L-BFGS-B") -> estR
+qmleL(noDriftModel, t=2, start=list(theta1.k=0.1, theta2.k=0.1),
+lower=list(theta1.k=0, theta2.k=0), upper=list(theta1.k=1, theta2.k=1), 
+method="L-BFGS-B") -> estL
+qmleR(noDriftModel, t=8, start=list(theta1.k=0.1, theta2.k=0.1),
+lower=list(theta1.k=0, theta2.k=0), upper=list(theta1.k=1, theta2.k=1), 
+method="L-BFGS-B") -> estR
 t0.est <- coef(estL)
 t1.est <- coef(estR)
 @
