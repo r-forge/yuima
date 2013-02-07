@@ -35,6 +35,17 @@
 \usepackage{comment}
 \excludecomment{en-text}
 
+\usepackage{enumerate}%\begin{enumerate}[{(}i{)}]
+\usepackage{bm}
+\usepackage{bbm} %\mathbbm{ABCabc\nabla}
+\usepackage[bbgreekl]{mathbbol} %\mathbb{abcABC\nabla\bbalpha\bbbeta\Delta  }
+\usepackage{natbib}
+\usepackage{dsfont}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{latexsym}
+\usepackage{amsmath}
+
 \newcommand{\colorr}{\color[rgb]{0.8,0,0}}
 \newcommand{\colorg}{\color[rgb]{0,0.5,0}}
 \newcommand{\colorb}{\color[rgb]{0,0,0.8}}
@@ -329,7 +340,7 @@ str(mod1)
 @
 
 From the above, it is possible to see that the jump coefficient is void and the Hurst parameter is set to 0.5, \textcolor{blue}{because this is a model where the driving process is the standard Brownian motion, i.e. a fractional Brownian motion if Hurst index $H=\frac12$.}
-Now, with \code{mod1} in hands, it is very easy to simulate a trajectory \textcolor{blue}{Euler-Maruyama scheme} of the process as follows
+Now, with \code{mod1} in hands, it is very easy to simulate a trajectory by  \textcolor{blue}{Euler-Maruyama scheme} of the process as follows
 <<echo=TRUE, print=FALSE,fig=TRUE,width=9,height=4,results=hide>>=
 set.seed(123)
 X <- simulate(mod1)
@@ -389,7 +400,7 @@ but this has to be organized into matrix form \textcolor{red}{with a vector of d
 $$
 \left(\begin{array}{c}\de X_{1,t} \\\de X_{2,t}\end{array}\right)=
 \left(\begin{array}{c} -3 X_{1,t} \\  -X_{1,t} - 2X_{2,t}\end{array}\right)\de t +
-\left[\begin{array}{ccc}1 & 0 & X_{2,t} \\X_{1,t} & 3 & 0\end{array}\right]
+\left(\begin{array}{ccc}1 & 0 & X_{2,t} \\X_{1,t} & 3 & 0\end{array}\right)
 \left(\begin{array}{c}\de W_{t,1} \\ \de W_{t,2} \\ \de W_{t,3}\end{array}\right)
 $$
 \textcolor{blue}{For this system it now necessary to instruct \pkg{yuima} about the state variable on bot the left-hand side of the equation and the right-hand side of the equation, i.e. the \code{solve.variable}.}
@@ -491,12 +502,12 @@ str(sabr.mod@parameter)
 @
 
 
-\section{Fractional Gaussian Noise}\label{sec:fgn}
+\subsection{Fractional Gaussian Noise}\label{sec:fgn}
 The \pkg{yuima} allows for the description of stochastic differential equations driven by fractional Brownian motion of the following type
 $$\de X_t =  a(X_t) \de t + b(X_t) \de W_t^H
 $$
 where $W^H=\left( W^H_t, t\geq 0 \right)$ is a normalized fractional Brownian motion (fBM), {\it i.e.} the zero mean Gaussian processes with covariance function
-$$E( W_s^H W_t^H )= \frac{1}{2} \left( |s|^{2H}+|t|^{2H}- |t-s|^{2H}\right)$$ with Hurst exponent $H\in(0,1)$.  The fractional Brownian motion process is  neither Markovian nor a semimartingale for $H\neq\frac{1}{2}$ but
+$$\dE( W_s^H W_t^H )= \frac{1}{2} \left[ |s|^{2H}+|t|^{2H}- |t-s|^{2H}\right]$$ with Hurst exponent $H\in(0,1)$.  The fractional Brownian motion process is  neither Markovian nor a semimartingale for $H\neq\frac{1}{2}$ but
 remains Gaussian.  For $H > \frac12$, the solution $X_t$ above  presents the long-range dependance property that makes it useful for different applications in biology, physics, ethernet traffic or finance.
 In order to specify a stochastic differential equation driven by fractional Gaussian noise it is necessary to specify the value of the Hurst parameter. For example, if we want to specify the following model
 $$\de Y_t =  3 Y_t \de t + \de W_t^H$$
@@ -649,31 +660,40 @@ plot(Y.sub, plot.type="single")
 
 
 \section{Asymptotic Expansion}\label{sec4}
-{\colord For numerical computation of the expectation of a functional, 
-the Monte-Carlo methods universally gives a solution although they are time consuming and involve stochastic error 
+{\colorb For numerical computation of the expectation of a random variable,
+the Monte-Carlo method gives a universal solution although it is time consuming and involves 
+ stochastic errors of certain scale 
 depending on the number of repetitions. 
-An alternative to the Monte-Carlo method is the method of asymptotic expansion, that can often give a solution with comparable accuracy, 
-besides, it is much superior in the computation time because of the approximation by an analytic formula. 
+An alternative method is the asymptotic expansion, that can often give a solution with accuracy comparable or superior to  
+Monte-Carlo approaches, 
+besides, it has advantage in the computation time because of the approximation by an analytic formula. 
  }
 
-The \pkg{yuima} package {\colord provides numerical approximation to the expectation of 
-a functional of a diffusion process in terms of the asymptotic expansion scheme. 
-Let us consider a family of}
- $d$-dimensional diffusion processes {\colord $X=(X^{(\ep)}_t)_{t\in[0,T]}$ ($\ep\in(0,1]$) specified by the stochastic differential equasions}
-$$\de X_t^{(\ve)} = a(X_t^{(\ve)},\ve)\de t + b(X_t^{(\ve)},\ve)\de W_t, \qquad \ve \in(0,1]$$
-{\colord where}  $W_t$ \textcolor{red}{is an} $r$-dimensional Wiener process, i.e., $W_t=(W_{1,t}, \ldots, W_{r,t})$.
-The functional is expressed in the following abstract form
+%The \pkg{yuima} 
+%package {\colorb provides numerical approximation to the expectation of 
+%a functional of a diffusion process in terms of the asymptotic expansion scheme. }
+Let us consider a family of 
+ $d$-dimensional diffusion processes {\colorb $X=(X^{(\ve)}_t)_{t\in[0,T]}$ ($\ve\in(0,1]$) specified 
+ by the stochastic integral equation}
+\begin{equation}\label{asy01}
+X_t^{(\ve)} = x_0+\int_0^t a(X_s^{(\ve)},\ve)\de s + \int_0^t b(X_s^{(\ve)},\ve)\de W_s, \qquad t\in[0,T]
+\end{equation}
+{\colorb for $\ve \in(0,1]$, 
+where}  $W_t=(W_{1,t}, \ldots, W_{r,t})$ \textcolor{red}{is an} $r$-dimensional Wiener process.
+The functional of interest is expressed in the following abstract form
 \begin{equation}
 \label{yuima:func1}
-F^{(\ve)}  = \sum_{\alpha=0}^r \int_0^T f_\alpha(X_t^{(\ve)},\de)\de W_t^\alpha + F(X_t^{(\ve)},\ve), \qquad W_t^0=t.
+F^{(\ve)}  = \sum_{\alpha=0}^r \int_0^T f_\alpha(X_t^{(\ve)},\ve)\de W_t^\alpha + F(X_T^{(\ve)},\ve), \qquad W_t^0=t.
 \end{equation} 
-A typical example of application is the case of Asian option pricing. For example, in the Black \& Scholes model
+
+A typical application is the Asian option pricing. For example, in the Black-Scholes model
 \begin{equation}
 \label{eqyuima:gbm1}
-\de X_t^{(\ve)} = \mu X_t^{(\ve)}\de t + \ve X_t^{(\ve)} \de W_t
+\de X_t^{(\ve)} = \mu X_t^{(\ve)}\de t + \ve X_t^{(\ve)} \de W_t, 
 \end{equation}
-the price of the option is of the form
-$$ \dE\left\{ \max\left( \frac{1}{T}\int_0^T X_t^{(\ve)} \de t - K,0\right)\right\}.$$
+the price of the option under zero interest rate is of the form
+$$ \dE\left[\max\left( \frac{1}{T}\int_0^T X_t^{(\ve)} \de t - K,0\right)\right].$$
+%
 Thus the functional of interest is
 $$F^{(\ve)} = \frac{1}{T}\int_0^T X_t^{(\ve)} \de t, \qquad r=1$$ 
 with
@@ -681,16 +701,97 @@ $$
 f_0(x,\ve) = \frac{x}{T}, \quad f_1(x,\ve)=0, \quad  F(x, \ve) = 0
 $$
 in \eqref{yuima:func1}.
-So, the call option price requires the composition  of a smooth functional
-$$F^\ve(X_t^{(\ve)}) = \frac{1}{T}\int_0^T X_t^{(\ve)} \de t, \qquad r=1$$
-with the irregular function
+%
+%\begin{en-text}%%%%%%%%%%%
+%So, the call option price requires the composition  of a smooth functional
+%$$F^\ve(X_t^{(\ve)}) = \frac{1}{T}\int_0^T X_t^{(\ve)} \de t, \qquad r=1$$
+%with the irregular function
+%$$
+%\max(x-K,0)
+%$$
+%\end{en-text}%%%%%%%%%%
+%
+{\colorb Similarly, for $F(x,\ve)=x$, 
+the functional becomes $F^{(\ve)}=X^{(\ve)}_T$ and the price of the European call option is 
+$\dE[\max(X^{(\ve)}_T-K,0)]$. This value has a closed form in the Black-Sholes economy but 
+it is necessary to apply some numerical method for pricing the Asian option even in this linear case. }
+
+{\colorb 
+Returning to the general system (\ref{asy01})-(\ref{yuima:func1}), 
+we will assume that the stochastic system is deterministic in the limit as $\ep\downarrow0$, 
+that is,  
+$$ 
+b(\cdot,0)\>=\>0 \quad \mbox{and}\quad  f_\alpha(\cdot,0)=0\quad (\alpha=1,...,r).
+$$ 
+%
+Since $X^{(0)}_t$ is deterministic solution to the ordinary differential equation 
 $$
-\max(x-K,0)
+\de X^{(0)}_t/\de t =a(X^{(0)}_t,0),\quad X^{(0)}_0=x_0,
 $$
+the functional $F^{(0)}$ becomes a constant given by 
+\begin{equation} \label{130106-1}
+F^{(0)} = \int_0^T f_0(X^{(0)}_t,0)\de t+F(X^{(0)}_T,0).
+\end{equation} 
+
+Under standard regularity of $a$, $b$, $f_\alpha$ and $F$, 
+it is possible to show $F^{(\ep)}$ has a version that is smooth in $\ep\in[0,1)$ almost surely, and hence, 
+$$
+\tilde{F}^{(\ep)} := \ep^{-1}(F^{(\ep)}-F^{(0)})
+$$
+admits a stochastic expansion
+\begin{equation}
+\label{130206-8}
+\tilde{F}^{(\ep)} \quad \sim \quad
+\tilde{F}^{[0]}+\ep\tilde{F}^{[1]}+\ep^2\tilde{F}^{[2]}+\cdots
+\end{equation}
+as $\ep\downarrow0$. 
+This stochastic expansion makes sense in the Sobolev spaces of the Malliavin calculus. 
+Then the so-called Watanabe's theory (\cite{Watanabe87}) validates 
+the asymptotic expansion of the (generalized) expectation 
+\begin{equation} \label{130206-2}
+\dE[g(\tilde{F}^{(\ep)})] \quad \sim \quad d_0(g)
++\ep d_1(g)+\ep^2 d_2(g)+\cdots
+\end{equation} 
+as $\ep\downarrow0$ for measurable functions $g$ at most polynomial growth or 
+more generally for Schwartz distributions, 
+under the uniform nondegeneracy of the Malliavain covariance of $\tilde{F}^{(\ep)}$.
+\footnote{This condition ensures smoothness of the distribution of $\tilde{F}^{(\ep)}$. 
+It should be remarked that the Watanabe's theory is more general than the present use 
+for the variable $\tilde{F}^{(\ep)}$ having a Gaussian principal part $\tilde{F}^{(0)}$. }
+%
+In the present situation, each $d_i(g)$ is expresses as 
+$$
+d_i(g) = \int g(z)p_i(z)\phi(z;0,v)dz,
+$$
+where $p_i$ is a polynomial and $\phi(z;0,v)$ is the density of the normal distribution $N(0,v)$
+with $v=\mbox{Cov}[\tilde{F}^{(0)}]$. 
+Polynomials $p_i$ are given by the conditional expectation of multiple Wiener integrals. 
+%This expansion formula is implemented in \pkg{yuima}. 
+%In finance, we can apply this expansion to $g(z)=\max(z-c,0)$, for example. 
+The expansion (\ref{130206-2}) holds uniformly in a class of functions $g$. 
+
+
+
+
+
+
+As mentioned above, 
 Monte Carlo methods require a huge number of simulations to get the desired accuracy of the
-calculation of the price, while asymptotic expansion of $F^\ve$ provides very accurate approximations.
-The \pkg{yuima} package provides functions to construct the functional $F^\ve$, and automatic asymptotic expansion based on Malliavin calculus \citep{Yoshida92b} starting from a \pkg{yuima} object.
-Here is an example. Consider a simple geometric Brownian motion of equation \eqref{eqyuima:gbm1} with $\mu=1$ and $X_0=1$. We define the model and the functional below:
+calculation of the expectation, while the asymptotic expansion of $F^{(\ve)}$ gives very fast 
+and accurate approximation by analytic formulation.
+The \pkg{yuima}  package provides functions to construct the functional $F^{(\ve)}$, and automatic asymptotic expansion based on the Malliavin calculus.  starting from a  \pkg{yuima} object. 
+This asymptotic expansion approach to option pricing was proposed in \citep{Yoshida92b} 
+and many related papers are available today.  
+
+Though our method can be applied to the nonlinear system (\ref{asy01})-(\ref{yuima:func1}), 
+just for an example, we shall consider 
+the Asian call option of the geometric Brownian motion of equation \eqref{eqyuima:gbm1} with $\mu=1$ and $x_0=1$, 
+and 
+\begin{equation} \label{130206-5} 
+g(x)= %F^{(0)}-K+\ep x\>=\>\ep\left(
+\max\left(F^{(0)}-K+\ep x,0\right)%\right). 
+\end{equation} 
+Set the model  (\ref{asy01}) and the functional (\ref{yuima:func1}) as follows:
 <<echo=TRUE, print=FALSE, results=hide>>=
 model <- setModel(drift = "x", diffusion = matrix( "x*e", 1,1))
 T <- 1
@@ -702,20 +803,20 @@ e <- 0.5
 yuima <- setYuima(model = model, sampling = setSampling(Terminal=T, n=1000))
 yuima <- setFunctional( yuima, f=f,F=F, xinit=xinit,e=e)
 @
-this time the \code{setFunctional} command fills the appropriate slots inside the \code{yuima} object
+This time the \code{setFunctional} command fills the appropriate slots inside the \code{yuima} object
 <<echo=TRUE, print=FALSE>>=
 str(yuima@functional)
 @
-Then, to obtain the first term in the asymptotic expansion (i.e., for $\ve=0$), it is as easy as calling the function \code{F0} on the 
+Then the limit $F^{(0)}$ of $F^{(\ep)}$ is easily obtained by calling the function \code{F0} on the \code{yuima} object:
 <<echo=TRUE, print=FALSE>>=
 F0 <- F0(yuima)
 F0
 @
-so the option price approximation is
-<<>>=
-max(F0-K,0)  # asian call option price
-@
-We can go up to the first order approximation adding one term to the expansion
+Set the function $g$ according to (\ref{130206-5}): 
+%<<>>=
+%max(F0-K,0)  # asian call option price
+%@
+%We can go up to the first order approximation adding one term to the expansion
 <<echo=TRUE, print=FALSE,results=hide>>=
 rho <- expression(0)
 epsilon <- e  # noise level
@@ -724,12 +825,29 @@ g <- function(x) {
  tmp[(epsilon * x) < (K-F0)] <- 0
  tmp
 }
+@
+Now we are at the point of computing the coefficients $d_i$ ($i=0,1,2$) in the expansion of 
+the price $\dE[\max(F^{(\ep)}-K,0)]$ 
+by applying the function \code{asymptotic_term}: 
+<<echo=TRUE, print=FALSE,results=hide>>=
 asymp <- asymptotic_term(yuima, block=10, rho, g)
+asymp
 @
-and the final value is
+Then the sums 
 <<echo=TRUE, print=FALSE>>=
-asymp$d0 + e * asymp$d1  # asymp. exp. of asian call price
+asymp$d0 + e * asymp$d1  # 1st order asymp. exp. of asian call price
+asymp$d0 + e * asymp$d1+ e^2* asymp$d2  # 2nd order asymp. exp. of asian call price
 @
+give the first and second order asymptotic expansions, respectively.  
+
+{\coloro koko MC here!! Why don't we make asyexp = \code{asymptotic_term} + sums? 
+Also Monte-Carlo driver montecarlo = \code{simulate} with number of repetition 
++ plot + comparison of plot and theoretical curve?}
+
+We remark that the expansion of $\dE[g(\tilde{F}^{(\ep)})G^{(\ep)}]$ is also possible by the same method 
+for a functional $G^{(\ep)}$ having a stochastic expansion like (\ref{130206-8}). 
+Thus our method works even under the existence of a stochastic discount factor. 
+
 
 
 
@@ -748,9 +866,11 @@ str(x@data)
 @
 
 \subsection{Quasi Maximum Likelihood Estimation}
+{\bf[please remember: $\hat\theta$ = MLE;  $\tilde \theta$ = BAYES; $\check\theta$ = LASSO]}
+\par
 Consider the multidimensional diffusion process
 $$
-\de X_t = b(\theta_2,X_t)\de t + \sigma(\theta_1, X_t) \de W_t
+\de X_t = a(X_t,\theta_2)\de t + b(X_t,\theta_1) \de W_t
 $$
 where $W_t$ is an {$r$}-dimensional standard Wiener process 
 independent of the initial value $X_0=x_0$. 
@@ -760,15 +880,15 @@ Quasi-MLE assumes the following approximation of the true log-likelihood for mul
 \ell_n({\bf X}_n,\theta)
 =-\frac12\sum_{i=1}^n\left\{\log\text{det}(\Sigma_{i-1}(\theta_1))
 +\frac{1}{\Delta_n}
-\Sigma_{i-1}^{-1}(\theta_1)[\Delta X_i-\Delta_n b_{i-1}(\theta_2)]^{\otimes 2}\right\}
+\Sigma_{i-1}^{-1}(\theta_1)[\Delta X_i-\Delta_n a_{i-1}(\theta_2)]^{\otimes 2}\right\}
 \end{eqnarray}}
-where $\theta=(\theta_1, \theta_2)$, $\Delta X_i=X_{t_i}-X_{t_{i-1}}$, $\Sigma_i(\theta_1)=\Sigma(\theta_1,X_{t_i})$, $b_i(\theta_2)=b(\theta_2,X_{t_i})$, $\Sigma=\sigma^{\otimes 2}$, \textcolor{red}{$A^{\otimes 2}= A A^T$} and $A^{-1}$ the inverse of $A$, $A[B]^{\otimes 2} = B^T A B$.  Then, \citep[see e.g.,][]{Yoshida92, Kessler97}, the QML estimator of $\theta$ is
+where $\theta=(\theta_1, \theta_2)$, $\Delta X_i=X_{t_i}-X_{t_{i-1}}$, $\Sigma_i(\theta_1)=\Sigma(\theta_1,X_{t_i})$, $a_i(\theta_2)=a(X_{t_i},\theta_2)$, $\Sigma=b^{\otimes 2}$, \textcolor{red}{$A^{\otimes 2}= A A^T$} and $A^{-1}$ the inverse of $A$, $A[B]^{\otimes 2} = B^T A B$.  Then, \citep[see e.g.,][]{Yoshida92, Kessler97}, the QML estimator of $\theta$ is
 \textcolor{red}{$$\hat\theta_n=\arg\max_\theta \ell_n({\bf X}_n,\theta)$$}
 
 \textcolor{red}{The \pkg{yuima} package implements QML estimation via the  \code{qmle} function. The interface and the output of the \code{qmle} function are made as similar as possible to those of the standard \code{mle} function in the \pkg{stats4} package of the basic \proglang{R} system. The main arguments to  \code{qmle} consist of a \code{yuima} object and initial values (\code{start}) for the optimizer. The \code{yuima} object must contain the slots \code{model} and \code{data}. The \code{start} argument must be specified as a named list, where the  names of the  elements of the list  correspond to the names of the parameters as they appear in the \code{yuima} object. Optionally, one can specify named lists of \code{upper}  and \code{lower} bounds
 to identify the search region of the optimizer. The standard optimizer is \code{BFGS} when no bounds are specified. If bounds are specified then \code{L-BFGS-B} is used. More optimizers can be added in the  future.}
 
-
+\subsubsection{QMLE in practice}
 
 As an example, we consider the simple model
 \begin{equation}
@@ -801,7 +921,7 @@ summary(mle1)
 \subsection{Adaptive Bayes Estimation}
 Consider again the  diffusion process solution to
 \begin{equation} 
-\de X_t=b(X_t,\theta_2)\de t+\sigma(X_t,\theta_1)\de W_t,
+\de X_t=a(X_t,\theta_2)\de t+b(X_t,\theta_1)\de W_t,
 \end{equation}
 and the quasi likelihood defined in \eqref{qlik}.
 
@@ -855,7 +975,7 @@ coef(mle1)
 @
 %The argument \code{method="nomcmc"} in \code{adaBayes} performs numerical
 %integration, otherwise MCMC method is used.
-\subsubsection{Small Sample Size}
+\subsubsection{The Effect of Small Sample Size in Drift Estimation}
 It is known from the theory that the estimation of the drift in a diffusion process strongly depend on the length of the observation interval $[0,T]$.
 In our example above, we took $T=n^\frac13$, with $n = \Sexpr{n}$, which is approximatively  \Sexpr{round(n^(1/3),2)}. Now we reduce the sample size to $n=500$ and the value of $T$ is then $T=\Sexpr{round(500^(1/3),2)}$.
 We then apply both quasi-maximum likelihood and adaptive Bayes type estimators to these data
@@ -887,29 +1007,29 @@ in such a situation.
 This type of problem arises typically in high-frequency financial time series.
 
 Let $T \in (0,\infty)$ be a terminal time for possible observations. 
-We consider a two dimensional It\^o process $(X^1,X^2)$  
+We consider a two dimensional It\^o process $(X_1,X_2)$  
 satisfying the stochastic differential equations
 \begin{eqnarray*}
-\mbox{d}X_t^l &=&\mu_t^l \mbox{d}t + \sigma_t^l \mbox{d}W_t^l ,\quad
+\mbox{d}X_{l,t} &=&\mu_{l,t} \mbox{d}t + \sigma_{l,t} \mbox{d}W_{l,t} ,\quad
 t\in[0,T]\\
-X_0^l &=& x_0^l        \notag
+X_{l,0} &=& x_{l,0}        \notag
 \end{eqnarray*}
 for $l=1,2$. 
-Here $W^l$ denote standard Wiener processes with a 
+Here $W_l$ denote standard Wiener processes with a 
 progressively measurable correlation process 
 $\mbox{d}\langle W_1 , W_2 \rangle_t = \rho_t \mbox{dt}$,  
-$\mu^l_t$ and $\sigma_t^l$ are progressively measurable processes, 
-and $x^l_0$ are initial random variables independent of $(W^1,W^2)$.  
+$\mu_{l,t}$ and $\sigma_{l,t}$ are progressively measurable processes, 
+and $x_{l,0}$ are initial random variables independent of $(W_1,W_2)$.  
 Diffusion type processes are in the scope but this model 
 can express more sophisticated stochastic structures. 
 
 
-The process $X^l$ is supposed to be observed at 
+The process $X_l$ is supposed to be observed at 
 over the increasing sequence of times 
 $T^{l,i}$ $(i\in\mathbb{Z}_{\geq0})$ starting at $0$, up to time T. 
-Thus, the observables are $(T^{l,i},X^{l,i})$ with $T^{l,i}\leq T$. 
+Thus, the observables are $(T^{l,i},X_{l,i})$ with $T^{l,i}\leq T$. 
 Each $T^{l,j}$ may be a stopping time, so possibly depends on 
-the history of $(X^1,X^2)$ as well as the precedent stopping times.  
+the history of $(X_1,X_2)$ as well as the precedent stopping times.  
 Two sequences of stopping times 
 $T^{1,i}$ and $T^{2,j}$ are \textit{nonsynchronous},  and 
 irregularly spaced, in general. 
@@ -917,23 +1037,23 @@ In particular, \textcolor{red}{\code{cce}} can apply to estimation of the quadra
 stochastic process sampled regularly/irregularly.  
 
 
-The parameter of interest is the quadratic covariation between $X^1$ and $X^2$: 
+The parameter of interest is the quadratic covariation between $X_1$ and $X_2$: 
 
 \begin{equation}
 \theta=
-\langle X^1 , X^2 \rangle_T = \int_0^T \sigma_t^1 \sigma_t^2 \rho_t \mbox{d}t.
+\langle X_1 , X_2 \rangle_T = \int_0^T \sigma_{1,t} \sigma_{2,t} \rho_t \mbox{d}t.
 \end{equation}
 The target variable $\theta$ is random in general. 
 
 It can be estimated with the nonsynchronous covariance estimator 
 (Hayashi-Yoshida estimator) 
 \begin{equation}
-U_n= \sum_{i,j:T^{1,i}\leq T, T^{2,j}\leq T} (X_{T^{1,i}}^1-X_{T^{1,i-1}}^1)(X_{T^{2,j}}^2-X_{T^{2,j-1}}^2)
+U_n= \sum_{i,j:T^{1,i}\leq T, T^{2,j}\leq T} (X_{1,T^{1,i}}-X_{1,T^{1,i-1}})(X_{2,T^{2,j}}-X_{2,T^{2,j-1}})
 1_{\{ (T^{1,i-1},T^{1,i}] 
 \bigcap (T^{2,j-1},T^{2,j}]  \neq \emptyset  \}}.
 \end{equation}
-That is, the product of any pair of increments $(X_{T^{1,i}}^1-X_{T^{1,i-1}}^1)$ and
-$(X_{T^{2,j}}^2-X_{T^{2,j-1}}^2)$ will make a contribution 
+That is, the product of any pair of increments $(X_{1,T^{1,i}}-X_{1,T^{1,i-1}})$ and
+$(X_{2,T^{2,j}}-X_{2,T^{2,j-1}})$ will make a contribution 
 to the sum only when 
 the respective observation intervals $(T^{1,i-1},T^{1,i}] $ and $ (T^{2,j-1},T^{2,j}] $ are overlapping 
 with each other. 
@@ -948,22 +1068,22 @@ See \citet{hay-yos05,hay-yos04,hay-yos06,hay-yos08} for details.
 We will demonstrate how to apply \textcolor{red}{\code{cce}} function to 
 nonsynchronous high-frequency data by simulation. 
 As an example, consider a two dimensional stochastic process 
-$(X^1_t,X^2_t)$ satisfying the stochastic differential equation
+$(X_{1,t},X_{2,t})$ satisfying the stochastic differential equation
 \begin{equation}
 \begin{split}
-\mbox{d}X^1_t = \sigma_{1,t} \mbox{d}B^1_t, \\
-\mbox{d}X^2_t = \sigma_{2,t} \mbox{d}B^2_t. 
+\mbox{d}X_{1,t} = \sigma_{1,t} \mbox{d}B_{1,t}, \\
+\mbox{d}X_{2,t} = \sigma_{2,t} \mbox{d}B_{2,t}. 
 \end{split}
 \end{equation}
-Here $B^1_t$ and $B^2_t$ denote two standard Wiener processes, 
+Here $B_{1,t}$ and $B_{2,t}$ denote two standard Wiener processes, 
 however they are correlated as 
 \begin{eqnarray}
-B^1_t &=& W^1_t,\\
-B^2_t &=&  \int_0^t \rho_s \mbox{d} W^1_s +
-  \int_0^t \sqrt{ 1- \rho_s^2} \mbox{d} W^2_s,
+B_{1,t} &=& W_{1,t},\\
+B_{2,t} &=&  \int_0^t \rho_s \mbox{d} W_{1,s} +
+  \int_0^t \sqrt{ 1- \rho_s^2} \mbox{d} W_{2,s},
 \end{eqnarray}
-where  $W^1_t$ and $W^2_t$ are independent Wiener processes,  and 
-$\rho_t$ is the correlation function between $B^1_t$ and $B^2_t$. 
+where  $W_{1,t}$ and $W_{2,t}$ are independent Wiener processes,  and 
+$\rho_t$ is the correlation function between $B_{1,t}$ and $B_{2,t}$. 
 We consider $\sigma_{l,t},l=1,2$ and $\rho_t$ 
 of the following form in this example:
 \begin{eqnarray*}
@@ -971,7 +1091,7 @@ of the following form in this example:
  \sigma_{2,t} &=& \sqrt{1+t^2}, \\
  \rho_t &=& \frac{1}{\sqrt{2}}.
 \end{eqnarray*}
-To simulate the stochastic process $(X^1_t,X^2_t)$, we first build the model 
+To simulate the stochastic process $(X_{1,t},X_{2,t})$, we first build the model 
 by $\tt setModel$ as before. 
 It should be noted that the method of generating 
 nonsynchronous data can be replaced by a simpler one but 
@@ -1127,20 +1247,20 @@ cce(Y)
 \subsection{Change-Point Analysis}
 Consider a multidimensional stochastic differential equation of the form
 $$
-\de Y_t = b_t \de t + \sigma(X_t,\theta) \de W_t,\ \ t\in[0,T], 
+\de Y_t = a_t \de t + b(X_t,\theta) \de W_t,\ \ t\in[0,T], 
 $$
-where $W_t$ \textcolor{red}{is an} $r$-dimensional Wiener process and $b_t$ and $X_t$ are multidimensional processes and $\sigma$ is the diffusion coefficient (volatility) matrix.
+where $W_t$ \textcolor{red}{is an} $r$-dimensional Wiener process and $a_t$ and $X_t$ are multidimensional processes and $b$ is the diffusion coefficient (volatility) matrix.
 When $Y=X$ the problem is a diffusion model.
-The process $b_t$ may have jumps but should not explode and it is treated as a nuisance in this model.
+The process $a_t$ may have jumps but should not explode and it is treated as a nuisance in this model.
 The change-point problem for the volatility is formalized as follows
 $$
 Y_t=
 \Bigg\{
 \begin{array}{ll}
-Y_0+\int_0^t b_s \de s+\int_0^t \sigma(X_s,\theta_0^*) \de W_s
+Y_0+\int_0^t a_s \de s+\int_0^t b(X_s,\theta_0^*) \de W_s
 & \mbox{ for } t\in[0,\tau^*)
 \\
-Y_{\tau^*}+\int_{\tau^*}^t b_s \de s+\int_{\tau^*}^t \sigma(X_s,\theta_1^*) \de W_s
+Y_{\tau^*}+\int_{\tau^*}^t a_s \de s+\int_{\tau^*}^t b(X_s,\theta_1^*) \de W_s
 & \mbox{ for } t\in[\tau^*,T]. 
 \end{array}
 $$
@@ -1173,25 +1293,25 @@ The change-point estimator  of $\tau^*$ is
 \Phi_n(t;\hat{\theta}_0,\hat{\theta}_1).
 \end{eqnarray*}
 
-\subsection{Example  of Volatility Change-Point Estimation}
+\subsubsection{Example  of Volatility Change-Point Estimation for 2-Dimensional SDE's}
 One example of model that can be analyzed by this technique is, for example, the 2-dimensional stochastic differential equation
 $$
 \left(\begin{array}{c}
-\de X_t^1\\ \de X_t^2 
+\de X_{1,t}\\ \de X_{2,t} 
 \end{array}\right)
 = 
 \left(\begin{array}{c}
-b_1(X^1_t) \\ 
-b_2(X^2_t) \\ 
+b_1(X_{1,t}) \\
+b_2(X_{2,t}) \\ 
 \end{array}\right) \de t
 +
-\left[\begin{array}{cc}
-\theta_{1.k}  \cdot  X_t^1&0  \cdot  X_t^1 \\ 
-0  \cdot  X_t^2&\theta_{2.k}  \cdot  X_t^2 \\ 
-\end{array}\right]
-\left(\begin{array}{c}
-\de W_t^1\\ \de W_t^2 
+\left(\begin{array}{cc}
+\theta_{1.k}  \cdot  X_{1,t}&0  \cdot  X_{1,t} \\ 
+0  \cdot  X_{2,t}&\theta_{2.k}  \cdot  X_{2,t} \\ 
 \end{array}\right)
+\left(\begin{array}{c}
+\de W_{1,t}\\ \de W_{2,t} 
+\end{array}\right),\quad \textcolor{red}{ t\in[0,T],}
 $$
 where $b_1(\cdot)$ and $b_2(\cdot)$ are any functions and $\theta_{1.k}$ and $\theta_{2.k}$ the value of the parameters before ($k=0$) and after $k=1$) the change-point. 
 Just for simplicity and in order to simulate some data, we specify some specific form for $b_1(\cdot)$ and $b_2(\cdot)$ but this information will not be used in the change-point analysis.
@@ -1199,25 +1319,25 @@ For example, we will simulate
 the following 2-dimensional stochastic differential equation
 $$
 \left(\begin{array}{c}
- \de X_t^1\\ \de X_t^2 
+ \de X_{1,t}\\ \de X_{2,t} 
  \end{array}\right)
  = 
 \left(\begin{array}{c}
- \sin(X^1_t) \\ 
- 3 - X^2_t \\ 
+ \sin(X_{1,t}) \\
+ 3 - X_{2,t} \\ 
  \end{array}\right) \de t
  +
-\left[\begin{array}{cc}
- \theta_{1.k}  \cdot  X_t^1&0  \cdot  X_t^1 \\ 
- 0  \cdot  X_t^2&\theta_{2.k}  \cdot  X_t^2 \\ 
- \end{array}\right]
+\left(\begin{array}{cc}
+ \theta_{1.k}  \cdot  X_{1,t}&0  \cdot  X_{1,t} \\ 
+ 0  \cdot  X_{2,t}&\theta_{2.k}  \cdot  X_{2,t} \\ 
+ \end{array}\right)
 \left(\begin{array}{c}
- \de W_t^1\\ \de W_t^2 
+ \de W_{1,t}\\ \de W_{2,t} 
  \end{array}\right),\quad \textcolor{red}{ t\in[0,T],}
 $$
 $$
-X^1_0=1.0,\quad
-X^2_0=1.0,\quad
+X_{1,0}=1.0,\quad
+X_{2,0}=1.0,\quad
 $$
 with change-point instant at time $\tau=0.4$ \textcolor{red}{and $T=10$}.   First, we describe the model to be simulated
 <<cpoint1, echo=TRUE,results=hide>>=
@@ -1302,12 +1422,12 @@ A two stage change-point estimation approach is also possible as explained in  \
 \subsection{LASSO Model Selection}
 Let $X_t$ be a  diffusion process solution to
 $$
-\de X_t = b(\alpha, X_t) \de t + \sigma(\beta,X_t)  \de W_t
+\de X_t = a( X_t,\alpha) \de t + b(X_t,\beta)  \de W_t
 $$
 $$\alpha=(\alpha_1,...,\alpha_{p})'\in\Theta_p\subset \mathbb{R}^p, \quad p\geq1$$
 $$\beta=(\beta_1,...,\beta_q)'\in\Theta_q\subset \mathbb{R}^q, \quad q\geq1$$
 with $b:\Theta_p\times\mathbb{R}^d\to \mathbb{R}^d$, $\sigma:\Theta_q\times \mathbb{R}^d\to \mathbb{R}^d\times \mathbb{R}^m$ and $W_t,t\in [0,T]$, is a standard Brownian motion in $\mathbb{R}^m$. 
-We assume that the functions $b$ and $\sigma$ are known up to   $\alpha$ and $\beta$.
+We assume that the functions $a$ and $b$ are known up to   $\alpha$ and $\beta$.
 We denote by $\theta=(\alpha,\beta)\in\Theta_p\times \Theta_q=\Theta$ the parametric vector and with $\theta_0=(\alpha_0,\beta_0)$ its unknown true value. 
 Let $\mathbb{H}_n({\bf X}_n,\theta) = \ell_n({\bf X}_n,\theta)$ from equation \eqref{qlik}.
 The quasi-MLE $\tilde{\theta}_n$ for this model is the solution of the following problem
@@ -1331,7 +1451,7 @@ The tuning parameters should be chosen as in \citet{Zou06} in the following way
 \end{equation}
 where $\tilde \alpha_{n,j}$ and  $\tilde \beta_{n,k}$ are the unpenalized QML estimator of $\alpha_j$ and $\beta_k$ respectively, $\delta_1, \delta_2>0$ and usually taken unitary.
 
-\subsection{An Example of Use}
+\subsubsection{An Example of Model Selection for Interest Rates Data}
 The \code{lasso} method is implemented in the \pkg{yuima} package.
 Let us consider the full CKLS model
 $$\de X_t = (\alpha+\beta X_t)\de t + \sigma X_t^\gamma\de W_t$$
