@@ -14,7 +14,7 @@
 \SweaveOpts{prefix.string=yuima, echo=TRUE, eval=FALSE}
 
 % USE THIS INSTEAD IF YOU WANT TO EXECUTE R CODE
-%\SweaveOpts{prefix.string=yuima, echo=TRUE, eval=TRUE}
+\SweaveOpts{prefix.string=yuima, echo=TRUE, eval=TRUE}
 
 %% before editing this file get the new version, type this command on Terminal
 %% in the same directory where this Rnw-file lives
@@ -851,6 +851,13 @@ We remark that the expansion of $\dE[g(\tilde{F}^{(\ep)})G^{(\ep)}]$ is also pos
 for a functional $G^{(\ep)}$ having a stochastic expansion like (\ref{130206-8}). 
 Thus our method works even under the existence of a stochastic discount factor. 
 
+<<>>=
+library(fExoticOptions)
+LevyAsianApproxOption(TypeFlag = "c", S = xinit, SA = xinit, X = K, 
+      Time = 1, time = 1, r = 0.0, b = 1, sigma = e)@price
+TurnbullWakemanAsianApproxOption(TypeFlag = "c", S = xinit, SA = xinit, 
+X = K, Time = 1, time = 1, r = 0.0, b = 1, sigma = e,tau=0)@price
+@
 {\bf STEFANO: add comparison with other approx formulas}\par
 
 
