@@ -1442,7 +1442,15 @@ Notice that, even if the estimated parameters are not too accurate because we us
 A two stage change-point estimation approach is also possible as explained in  \citet{iacyos09}.
 
 \subsection{LASSO Model Selection}
-{\bf STEFANO: EXPLAIN WHAT LASSO MEANS}\par
+The Least Absolute Shrinkage and Selection Operator (LASSO) is a useful and well studied approach to the problem of model selection and its major advantage is the simultaneous execution of both parameter estimation and variable selection (see \citet{Tib96}; \citet{Knight00}; \citet{Efron}). 
+
+To simplify the idea: take a full specified regression model
+$$ Y = \theta_0 +  \theta_1 X_1+  \theta_2 X_2 + \cdots +  \theta_k X_k$$
+perform least squares estimation under $L_1$ constraints, i.e.
+
+$$\hat\theta = \arg\min_\theta \left\{(Y-\theta X)^T (Y-\theta X) + \sum_{i=1}^k |\theta_i|\right\}$$ 
+
+model selection occurs when some of the $\theta_i$ are estimated as zeros. The same idea can be applied to diffusion processes.
 Let $X_t$ be a  diffusion process solution to
 $$
 \de X_t = a( X_t,\alpha) \de t + b(X_t,\beta)  \de W_t
