@@ -14,7 +14,7 @@
 \SweaveOpts{prefix.string=yuima, echo=TRUE, eval=FALSE}
 
 % USE THIS INSTEAD IF YOU WANT TO EXECUTE R CODE
-%\SweaveOpts{prefix.string=yuima, echo=TRUE, eval=TRUE}
+\SweaveOpts{prefix.string=yuima, echo=TRUE, eval=TRUE}
 
 %% before editing this file get the new version, type this command on Terminal
 %% in the same directory where this Rnw-file lives
@@ -845,7 +845,7 @@ We remark that the expansion of $\dE[g(\tilde{F}^{(\ep)})G^{(\ep)}]$ is also pos
 for a functional $G^{(\ep)}$ having a stochastic expansion like (\ref{130206-8}). 
 Thus our method works even under the existence of a stochastic discount factor. 
 
-
+{\bf STEFANO: add comparison with other approx formulas}\par
 
 
 \section{Inference for Stochastic Processes}\label{sec5}
@@ -973,7 +973,7 @@ coef(mle1)
 @
 %The argument \code{method="nomcmc"} in \code{adaBayes} performs numerical
 %integration, otherwise MCMC method is used.
-\subsubsection{The Effect of Small Sample Size in Drift Estimation}
+\subsubsection{The Effect of Small Sample Size on Drift Estimation}
 It is known from the theory that the estimation of the drift in a diffusion process strongly depend on the length of the observation interval $[0,T]$.
 In our example above, we took $T=n^\frac13$, with $n = \Sexpr{n}$, which is approximatively  \Sexpr{round(n^(1/3),2)}. Now we reduce the sample size to $n=500$ and then $T=\Sexpr{round(500^(1/3),2)}$.
 We then apply both quasi-maximum likelihood and adaptive Bayes type estimators to these data
@@ -1421,7 +1421,7 @@ Notice that, even if the estimated parameters are not too accurate because we us
 A two stage change-point estimation approach is also possible as explained in  \citet{iacyos09}.
 
 \subsection{LASSO Model Selection}
-{\bf: STEFANO: EXPLAIN WHAT LASSO MEANS}\par
+{\bf STEFANO: EXPLAIN WHAT LASSO MEANS}\par
 Let $X_t$ be a  diffusion process solution to
 $$
 \de X_t = a( X_t,\alpha) \de t + b(X_t,\beta)  \de W_t
