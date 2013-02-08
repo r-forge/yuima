@@ -14,7 +14,7 @@
 \SweaveOpts{prefix.string=yuima, echo=TRUE, eval=FALSE}
 
 % USE THIS INSTEAD IF YOU WANT TO EXECUTE R CODE
-\SweaveOpts{prefix.string=yuima, echo=TRUE, eval=TRUE}
+%\SweaveOpts{prefix.string=yuima, echo=TRUE, eval=TRUE}
 
 %% before editing this file get the new version, type this command on Terminal
 %% in the same directory where this Rnw-file lives
@@ -801,8 +801,8 @@ Set the model  (\ref{asy01}) and the functional (\ref{yuima:func1}) as follows:
 <<echo=TRUE, print=FALSE, results=hide>>=
 model <- setModel(drift = "x", diffusion = matrix( "x*e", 1,1))
 T <- 1
-xinit <- 1
-K <- 1
+xinit <- 150
+K <- 100
 f <- list( expression(x/T), expression(0))
 F <- 0
 e <- 0.5
@@ -841,8 +841,10 @@ asymp
 @
 Then the sums 
 <<echo=TRUE, print=FALSE>>=
-asymp$d0 + e * asymp$d1  # 1st order asymp. exp. of asian call price
-asymp$d0 + e * asymp$d1+ e^2* asymp$d2  # 2nd order asymp. exp. of asian call price
+asy1 <- asymp$d0 + e * asymp$d1  # 1st order asymp. exp. of asian call price
+asy1
+asy2 <- asymp$d0 + e * asymp$d1+ e^2* asymp$d2  # 2nd order asymp. exp. of asian call price
+asy2
 @
 give the first and second order asymptotic expansions, respectively.  
 
@@ -850,19 +852,22 @@ give the first and second order asymptotic expansions, respectively.
 We remark that the expansion of $\dE[g(\tilde{F}^{(\ep)})G^{(\ep)}]$ is also possible by the same method 
 for a functional $G^{(\ep)}$ having a stochastic expansion like (\ref{130206-8}). 
 Thus our method works even under the existence of a stochastic discount factor. 
-
+One can compare the result of the asymptotic expansion with other well known techniques like Edgeworth series expansion for the log-normal distribution as proposed, e.g.,  in \citet{Levy92}. This approximation is available through the package \pkg{fExoticOptions}.
+%%% https://www.rocq.inria.fr/mathfi/Premia/free-version/doc/premia-doc/pdf_html/asian_doc/index.html#x1-80005.1.1
 <<>>=
 library(fExoticOptions)
-LevyAsianApproxOption(TypeFlag = "c", S = xinit, SA = xinit, X = K, 
+levy <- LevyAsianApproxOption(TypeFlag = "c", S = xinit, SA = xinit, X = K, 
       Time = 1, time = 1, r = 0.0, b = 1, sigma = e)@price
-TurnbullWakemanAsianApproxOption(TypeFlag = "c", S = xinit, SA = xinit, 
-X = K, Time = 1, time = 1, r = 0.0, b = 1, sigma = e,tau=0)@price
+levy
 @
-{\bf STEFANO: add comparison with other approx formulas}\par
+and the relative difference between the two approximations is \Sexpr{round((asy2-levy)/asy2*100,1)}\%.
 
+Of course, \pkg{yuima} approach is more general as Levy approximation only holds when the process $X_t$ is the geometric Brownian motion.
+
+\textcolor{red}{NAKAHIRO: ADD REMARK about 92 paper?}
 
 \section{Inference for Stochastic Processes}\label{sec5}
-The \pkg{yuima} implements several optimal techniques for parametric, semi- and non-parametric estimation of (multidimensional) stochastic differential equations.
+The \pkg{yuima} implements several optimal techniques for parametric, semi- and non-parametric estimation of (multidimensional) stochastic differential equations. Most of the techniques presented below apply to high frequency data, i.e. when $\Delta_n$, the time lag between to consecutive observations of the process, converges to zero as  the number  $n$ of observations       increases.
 
 \subsection{How to input data into a \code{yuima} object}
 Although most of the examples in this section are given on simulated data, the main way to fill up the \code{data} slot of a \code{yuima} object is to use the function \code{setYuima}. The function \code{setYuima} sets various slots of the \code{yuima} object. In particular, to estimate a \code{yuima.model} called \code{mod} on the data \code{X} one can use a code like this \code{my.yuima <- setYuima(data=setData(X), model=mod)} and then pass \code{my.yuima} to the inference functions as described in what follows.
@@ -876,19 +881,19 @@ str(x@data)
 @
 
 \subsection{Quasi Maximum Likelihood Estimation}
-{\bf NAKAHIRO: ADD SOMETHING ON ASYMPT DISTRIBUTION \& SAMPLING SCHEME} \par
-Consider the multidimensional diffusion process
+Consider a multidimensional diffusion process
 \begin{equation}
 \label{eq:sdemle}
-\de X_t = a(X_t,\theta_2)\de t + b(X_t,\theta_1) \de W_t
+\de X_t = a(X_t,\theta_2)\de t + b(X_t,\theta_1) \de W_t,\quad X_0=x_0,
 \end{equation}
 where $W_t$ is an {$r$}-dimensional standard Wiener process 
-independent of the initial value $X_0=x_0$. 
-Moreover, $\theta_1\in\Theta_1\subset \mathbb{R}^p, p\geq1$,
-$\theta_2\in\Theta_2\subset \mathbb{R}^q, q\geq1$,
+independent of the initial variable $X_0$. 
+Moreover, $\theta_1\in\Theta_1\subset \mathbb{R}^p$, 
+$\theta_2\in\Theta_2\subset \mathbb{R}^q$,
 $a:\mathbb{R}^d\times\Theta_2 \to \mathbb{R}^d$ and $b:\mathbb{R}^d\times\Theta_1 \to \mathbb{R}^d\times \mathbb{R}^r$. 
-
-Quasi-MLE assumes the following approximation of the true log-likelihood for multidimensional diffusions
+The naming of $\theta_2$ and $\theta_1$ is theoretically natural in view of the optimal convergence rates of the estimators for these parameters.
+Given sample data ${\bf X}_n = (X_{t_i})_{i=0,\ldots,n}$ with $t_i = i\Delta_n$,
+QMLE (Quasi Maximum Likelihood Estimator) makes use of the following approximation of the true log-likelihood for multidimensional diffusions
 {\small
 \begin{eqnarray}\label{qlik}
 \ell_n({\bf X}_n,\theta)
@@ -896,20 +901,20 @@ Quasi-MLE assumes the following approximation of the true log-likelihood for mul
 +\frac{1}{\Delta_n}
 \Sigma_{i-1}^{-1}(\theta_1)[\Delta X_i-\Delta_n a_{i-1}(\theta_2)]^{\otimes 2}\right\}
 \end{eqnarray}}
-where $\theta=(\theta_1, \theta_2)$, $\Delta X_i=X_{t_i}-X_{t_{i-1}}$, $\Sigma_i(\theta_1)=\Sigma(\theta_1,X_{t_i})$, $a_i(\theta_2)=a(X_{t_i},\theta_2)$, $\Sigma=b^{\otimes 2}$, \textcolor{red}{$A^{\otimes 2}= A A^T$} and $A^{-1}$ the inverse of $A$, $A[B]^{\otimes 2} = B^T A B$.  Then, \citep[see e.g.,][]{Yoshida92, Kessler97}, the QML estimator of $\theta$ is
+where $\theta=(\theta_1, \theta_2)$, $\Delta X_i=X_{t_i}-X_{t_{i-1}}$, $\Sigma_i(\theta_1)=\Sigma(\theta_1,X_{t_i})$, $a_i(\theta_2)=a(X_{t_i},\theta_2)$, $\Sigma=b^{\otimes 2}$, \textcolor{red}{$A^{\otimes 2}= A A^T$} and $A^{-1}$ the inverse of $A$, $A[B]^{\otimes 2} = B^T A B$.  Then, \citep[see e.g.,][]{Yoshida92, Kessler97}, the QMLE of $\theta$ is
 \textcolor{red}{$$\hat\theta=\arg\max_\theta \ell_n({\bf X}_n,\theta)$$}
 
-\textcolor{red}{The \pkg{yuima} package implements QML estimation via the  \code{qmle} function. The interface and the output of the \code{qmle} function are made as similar as possible to those of the standard \code{mle} function in the \pkg{stats4} package of the basic \proglang{R} system. The main arguments to  \code{qmle} consist of a \code{yuima} object and initial values (\code{start}) for the optimizer. The \code{yuima} object must contain the slots \code{model} and \code{data}. The \code{start} argument must be specified as a named list, where the  names of the  elements of the list  correspond to the names of the parameters as they appear in the \code{yuima} object. Optionally, one can specify named lists of \code{upper}  and \code{lower} bounds
+\textcolor{red}{The \pkg{yuima} package implements QMLE via the  \code{qmle} function. The interface and the output of the \code{qmle} function are made as similar as possible to those of the standard \code{mle} function in the \pkg{stats4} package of the basic \proglang{R} system. The main arguments to  \code{qmle} consist of a \code{yuima} object and initial values (\code{start}) for the optimizer. The \code{yuima} object must contain the slots \code{model} and \code{data}. The \code{start} argument must be specified as a named list, where the  names of the  elements of the list  correspond to the names of the parameters as they appear in the \code{yuima} object. Optionally, one can specify named lists of \code{upper}  and \code{lower} bounds
 to identify the search region of the optimizer. The standard optimizer is \code{BFGS} when no bounds are specified. If bounds are specified then \code{L-BFGS-B} is used. More optimizers can be added in the  future.}
 
 \subsubsection{QMLE in practice}
 
 As an example, we consider the simple model
 \begin{equation}
-\de X_t = (2-\theta_2  X_t)  \de t + (1+X_t^2)^{\theta_1}  \de W_t
+\de X_t = (2-\theta_2  X_t)  \de t + (1+X_t^2)^{\theta_1}  \de W_t, \quad X_0=1
 \label{eq:model1}
 \end{equation}
-with $\theta_1=0.2$ and $\theta_2=0.3$. We generate sampled data $X_{t_i}$, with $t_i = i \cdot n^{-\frac23}$.
+with $\theta_1=0.2$ and $\theta_2=0.3$. Before calling \code{qmle}, we generate sampled data $X_{t_i}$, with $t_i = i \cdot n^{-\frac23}$:
 <<echo=TRUE, print=FALSE,results=hide>>=
 ymodel <- setModel(drift="(2-theta2*x)", diffusion="(1+x^2)^theta1")
 n <- 750
@@ -922,9 +927,9 @@ true.parameter = list(theta1 = 0.2, theta2 = 0.3))
 \textcolor{red}{Now the \code{yuima} object contains both the \code{model} and \code{data} slots. We set the initial values for the optimizer as $\theta_1=\theta_2=0.5$ and we specify them as a named list called \code{param.init}. We can now use the function \code{qmle} to estimate the parameters $\theta_1$ and $\theta_2$ as follows}
 <<echo=TRUE, print=FALSE,results=hide>>=
 param.init <- list(theta2=0.5,theta1=0.5)
-upp.par <-  list(theta1=0, theta2=0)
-low.par <-  list(theta1=1, theta2=1)
-mle1 <- qmle(yuima, start = param.init,  lower = upp.par, upper = low.par)
+low.par <-  list(theta1=0, theta2=0)
+upp.par <-  list(theta1=1, theta2=1)
+mle1 <- qmle(yuima, start = param.init,  lower = low.par, upper = upp.par)
 @
 \textcolor{red}{where \code{upp.par} and \code{low.par} are the upper and lower bounds of the search region used by the optimizer (\code{L-BFGS-B} in this case).} 
 \textcolor{red}{The} estimated coefficients are extracted from the output object \code{mle1} as follows
@@ -933,8 +938,12 @@ summary(mle1)
 @
 %Notice the interface and the output of the \code{qmle} is quite similar to the ones of the standard \code{mle} function of the \pkg{stats4} package of the base \proglang{R} system.
 
+\subsubsection{Theoretical remarks on QMLE, High-freq \& ergodicity}
+\textcolor{red}{XXXXX}
+
+
 \subsection{Adaptive Bayes Estimation}
-Consider again the  diffusion process solution to \eqref{eq:sdemle}
+Consider again the  diffusion process in \eqref{eq:sdemle}
 and the quasi likelihood defined in \eqref{qlik}.
 
 
@@ -983,11 +992,15 @@ bayes1 <- adaBayes(yuima, start=param.init, prior=prior)
 @
 and we can compare the adaptive Bayes estimates  with the QMLE estimates
 <<echo=TRUE>>=
-coef(bayes1)
-coef(mle1)
+coef(summary(bayes1))
+coef(summary(mle1))
 @
-%The argument \code{method="nomcmc"} in \code{adaBayes} performs numerical
-%integration, otherwise MCMC method is used.
+The argument \code{method="nomcmc"} in \code{adaBayes} performs numerical integration, otherwise MCMC method is used.
+
+\subsubsection{Theoretical remarks Adaptive Bayes}
+\textcolor{red}{XXXXX}
+
+
 \subsubsection{The Effect of Small Sample Size on Drift Estimation}
 It is known from the theory that the estimation of the drift in a diffusion process strongly depend on the length of the observation interval $[0,T]$.
 In our example above, we took $T=n^\frac13$, with $n = \Sexpr{n}$, which is approximatively  \Sexpr{round(n^(1/3),2)}. Now we reduce the sample size to $n=500$ and then $T=\Sexpr{round(500^(1/3),2)}$.
@@ -1007,8 +1020,8 @@ bayes2 <- adaBayes(yuima, start=param.init, prior=prior)
 @
 and we look at the estimates
 <<>>=
-coef(bayes2)
-coef(mle2)
+coef(summary(bayes2))
+coef(summary(mle2))
 @
 Compared to the results above, we see that the parameters in the diffusion coefficients are estimated with good quality while for the parameters in the drift the quality of estimation deteriorates. The adaptive Bayes estimator seems to perform a little better though.
 
@@ -1447,6 +1460,9 @@ t.est3
 @
 Notice that, even if the estimated parameters are not too accurate because we use a small subsets of observations, the change-point estimate remains good.
 A two stage change-point estimation approach is also possible as explained in  \citet{iacyos09}.
+
+\subsubsection{Add example of two stage estimation}
+\textcolor{red}{XXXXX}
 
 \subsection{LASSO Model Selection}
 The Least Absolute Shrinkage and Selection Operator (LASSO) is a useful and well studied approach to the problem of model selection and its major advantage is the simultaneous execution of both parameter estimation and variable selection (see \citet{Tib96}; \citet{Knight00}; \citet{Efron}). 
