@@ -364,7 +364,7 @@ str(X,vec.len=2)
 More details on how to change the default sampling scheme for the \code{simulate} method and how to perform subsampling will be given in Section \ref{sec:simul}.
 
 
-\subsection{User Specified State and Time Variables: NEW SECTION}
+\subsection{User Specified State and Time Variables}
 Suppose now that the user wants to specify her own model using a prescribed notation, e.g., some sdes like
 $$\de Y_s = -3 s Y_s \de s + \frac{1}{1+Y_s^2}\de W_s,$$
 where $a(s,y) = -3sy$ and $b(y) = 1/(1+y^2)$.
@@ -870,6 +870,7 @@ levy
 @
 and the relative difference between the two approximations is \Sexpr{round((asy2-levy)/asy2*100,1)}\%.
 
+\subsection{Asymptotic Expansion for General Stochastic Processes}
 Of course, \pkg{yuima} approach is more general in that the above Levy approximation only holds when the process $X_t$ is the geometric Brownian motion. We now give an example when the underlying process $X_t$ is the following CIR model
 $$
 \de X_t =  0.9 X_t \de t + \ep \sqrt{X_t} \de W_t, X0 = 1
@@ -926,19 +927,13 @@ ae.value2
 ae.time <- time2 - time1
 ae.time
 @
-As it can be seen, the contribution of the term corresponding to the second order of the asymptotic expansion give a real contribution to the approximation and the final approximated value \Sexpr{round(ae.value2,5)} can be compared with a Monte Carlo experiment with 1000000 replications
-<<>>=
-time3 <- proc.time()
-
-time4 <- proc.time()
-mc.time <- time4 - time3
-mc.time/ae.time*100
-@
+As it can be seen, the contribution of the term corresponding to the second order of the asymptotic expansion give a real contribution to the approximation and the final approximated value \Sexpr{round(ae.value2,5)} can be compared with a Monte Carlo estimate based on 1000000 replications 
+which is equal to \code{0.561059}, but more demanding in terms of cpu time. The relative difference among the two estimates is \Sexpr{round((ae.value2-0.561059)/0.561059*100,1)}\%.
 
 \section{Inference for Stochastic Processes}\label{sec5}
 The \pkg{yuima} implements several optimal techniques for parametric, semi- and non-parametric estimation of (multidimensional) stochastic differential equations. Most of the techniques presented below apply to high frequency data, i.e. when $\Delta_n$, the time lag between to consecutive observations of the process, converges to zero as  the number  $n$ of observations       increases.
 
-\subsection{How to input data into a \code{yuima} object}
+\subsection{How to Input Data Into a \code{yuima} Object}
 Although most of the examples in this section are given on simulated data, the main way to fill up the \code{data} slot of a \code{yuima} object is to use the function \code{setYuima}. The function \code{setYuima} sets various slots of the \code{yuima} object. In particular, to estimate a \code{yuima.model} called \code{mod} on the data \code{X} one can use a code like this \code{my.yuima <- setYuima(data=setData(X), model=mod)} and then pass \code{my.yuima} to the inference functions as described in what follows.
 
 
@@ -949,7 +944,7 @@ x <- setYuima(data=setData(data$Close))
 str(x@data)
 @
 
-\subsection{Quasi Maximum Likelihood Estimation}
+\subsection{Quasi Maximum Likelihood Estimation}\label{section-qmle}
 Consider a multidimensional diffusion process
 \begin{equation}
 \label{eq:sdemle}
@@ -981,7 +976,7 @@ exactly or approximately.
 The \pkg{yuima} package implements QMLE via the  \code{qmle} function. The interface and the output of the \code{qmle} function are made as similar as possible to those of the standard \code{mle} function in the \pkg{stats4} package of the basic \proglang{R} system. The main arguments to  \code{qmle} consist of a \code{yuima} object and initial values (\code{start}) for the optimizer. The \code{yuima} object must contain the slots \code{model} and \code{data}. The \code{start} argument must be specified as a named list, where the  names of the  elements of the list  correspond to the names of the parameters as they appear in the \code{yuima} object. Optionally, one can specify named lists of \code{upper}  and \code{lower} bounds
 to identify the search region of the optimizer. The standard optimizer is \code{BFGS} when no bounds are specified. If bounds are specified then \code{L-BFGS-B} is used. More optimizers can be added in the  future.
 
-\subsubsection{QMLE in practice}
+\subsubsection{QMLE in Practice}
 
 As an example, we consider the simple model
 \begin{equation}
@@ -1012,7 +1007,7 @@ summary(mle1)
 @
 %Notice the interface and the output of the \code{qmle} is quite similar to the ones of the standard \code{mle} function of the \pkg{stats4} package of the base \proglang{R} system.
 
-\subsubsection{Theoretical remarks on QMLE}%, High-freq \& ergodicity}
+\subsubsection{Theoretical Remarks on QMLE}%, High-freq \& ergodicity}
 Here are some theoretical remarks. 
 Consistency must be required when an estimator is applied; otherwise 
 the estimation would lose mathematical backing because 
@@ -1548,7 +1543,7 @@ t.est$tau
 t.est2 <- CPoint(noDriftModel,param1=t0,param2=t1)
 t.est2$tau
 @
-\subsubsection{An example of two stage estimation}
+\subsubsection{An Example of Two Stage Estimation}
 In practical situations, the initial values of the parameters are not known and there is the need to provide a preliminary estimators of them. One possible approach is the two stage change-point estimation approach as explained in  \citet{iacyos09}. The idea is to take a small subsets of observations at the very beginning and the end of the time series, estimate a
 change point and and then refine the estimation.
 
