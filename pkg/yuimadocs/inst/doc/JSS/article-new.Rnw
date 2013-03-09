@@ -1660,7 +1660,9 @@ $$\de X_t =  0.6 \de t + 0.12 X_t^{\frac32}\de W_t.$$
 Notice that this model is not an ergodic one, indicating that the LASSO method shows that the real data are indeed not stationary, but still in the family of CKLS models.
 
 \section{Miscellanea and Roadmap of YUIMA Project}\label{sec6}
-Other statistical techniques are already implemented or will be shortly released in the \pkg{yuima}. For example, a nice utility is the function \code{toLatex} for objects of class \code{yuima} and \code{yuima.model}. A simple writing like
+Other statistical techniques are already implemented in the developer version of the \pkg{yuima} package. Among these: the QMLE approach for stochastic differential equations with L\'evy component, the estimation for the fractional Ornstein-Uhlembeck model \citep{brouiac12}, 
+
+or will be shortly released in the \pkg{yuima}. For example, a nice utility is the function \code{toLatex} for objects of class \code{yuima} and \code{yuima.model}. A simple writing like
 \code{toLatex(my-yuima-obj)} produces the related \LaTeX{} code which can be copy and pasted in a mathematical paper.
 We also plan to open the the contribution to the YUIMA project to external developers in the near future.
 
