@@ -72,14 +72,14 @@
         Masaaki Fukasawa\\Osaka University\And
         Hideitsu Hino\\Waseda University\And
         Stefano M. Iacus\\University of Milan \AND 	
-        Kengo Kamatani\\The University of Tokyo \And
-        Yuta Koike\\The University of Tokyo\And
+        Kengo Kamatani\\University of Tokyo \And
+        Yuta Koike\\University of Tokyo\And
         Hiroki Masuda\\Kyushu University \And
-        Ryosuke Nomura\\The University of Tokyo\AND
+        Ryosuke Nomura\\University of Tokyo\AND
         Teppei Ogihara\\Osaka University \And
         Yasutaka Shimuzu\\Osaka University \And
         Masayuki Uchida\\Osaka University \And
-        Nakahiro Yoshida\\The University of Tokyo 
+        Nakahiro Yoshida\\University of Tokyo 
         }
 \title{The YUIMA Project: a Computational Framework for Simulation and Inference of Stochastic Differential Equations}
 
@@ -237,6 +237,9 @@ Development versions of the package are not supposed to be stable or functional,
 the occasional user should consider to install the stable version first.
 The package can be installed from R-Forge using
 \code{install.packages("yuima",repos="http://R-Forge.R-project.org")}.
+If, the R-Forge system does not provide binary builds of the \pkg{yuima} package, the
+user can also try 
+\code{install.packages("yuima",repos="http://R-Forge.R-project.org", type="source")}.
 
 
 \subsection{The Main Object and Classes}
@@ -399,7 +402,7 @@ plot(X)
 @
 
 \subsection{Multidimensional Processes}\label{sec:multi}
-Next is an example of a system of two stochastic differential equations for the couple $(X_{t,1}, X_{t,2})$ driven by three independent Brownian motions $(W_{t,1}, W_{t,2}, W_{t,3})$
+Next is an example of a system of two stochastic differential equations for the couple $(X_{1,t}, X_{2,t})$ driven by three independent Brownian motions $(W_{1,t}, W_{2,t}, W_{3,t})$
 $$
 \begin{aligned}
 \de X_{1,t} &= -3 X_{1,t} \de t + \de W_{1,t} + X_{2,t} \de W_{3,t}\\
@@ -411,7 +414,7 @@ $$
 \left(\begin{array}{c}\de X_{1,t} \\\de X_{2,t}\end{array}\right)=
 \left(\begin{array}{c} -3 X_{1,t} \\  -X_{1,t} - 2X_{2,t}\end{array}\right)\de t +
 \left(\begin{array}{ccc}1 & 0 & X_{2,t} \\X_{1,t} & 3 & 0\end{array}\right)
-\left(\begin{array}{c}\de W_{t,1} \\ \de W_{t,2} \\ \de W_{t,3}\end{array}\right)
+\left(\begin{array}{c}\de W_{1,t} \\ \de W_{2,t} \\ \de W_{3,t}\end{array}\right)
 $$
 For this system it now necessary to instruct \pkg{yuima} about the state variable on bot the left-hand side of the equation and the right-hand side of the equation, i.e. the \code{solve.variable}.
 <<echo=TRUE, print=FALSE,results=hide>>=
@@ -597,8 +600,8 @@ Sampling and subsampling can be specified jointly as arguments to the \code{simu
 Assume that we want to simulate this model
 $$
 \begin{aligned}
-\de X^1_t &= -\theta X^1_t \de t + \de W^1_t + X^2_t \de W^3_t\\
-\de X^2_t &= -(X^1_t + \gamma X^2_t) \de t + X^1_t \de W^1_t + \delta \de W^2_t
+\de X_{1,t} &= -\theta X_{1,t} \de t + \de W_{1,t} + X_{2,t} \de W_{3,t}\\
+\de X_{2,t} &= -(X_{1,t} + \gamma X_{2,t}) \de t + X_{1,t} \de W_{1,t} + \delta \de W_{2,t}
 \end{aligned}
 $$
 Now we prepare the model using the \code{setModel} constructor function
@@ -793,8 +796,10 @@ Monte Carlo methods require a huge number of simulations to get the desired accu
 calculation of the expectation, while the asymptotic expansion of $F^{(\ve)}$ gives very fast 
 and accurate approximation by analytic formulation.
 The \pkg{yuima}  package provides functions to construct the functional $F^{(\ve)}$, and automatic asymptotic expansion based on the Malliavin calculus.  starting from a  \pkg{yuima} object. 
-This asymptotic expansion approach to option pricing was proposed in \citep{Yoshida92b} 
-and many related papers are available today.  
+This asymptotic expansion approach to option pricing was proposed in early 1990's 
+( \citep{Yoshida92b}, \citep{Takahashi99}, \citep{Kunitomo01}), and 
+many related papers are available today. 
+
 
 Though our method can be applied to the nonlinear system (\ref{asy01})-(\ref{yuima:func1}), 
 just for an example, we shall consider 
@@ -853,7 +858,7 @@ asy1
 asy2 <- asymp$d0 + e * asymp$d1+ e^2* asymp$d2  # 2nd order asymp. exp. of asian call price
 asy2
 @
-give the first and second order asymptotic expansions, respectively.  
+give the first and second order asymptotic expansions, respectively.
  
 We remark that the expansion of $\dE[g(\tilde{F}^{(\ep)})G^{(\ep)}]$ is also possible by the same method 
 for a functional $G^{(\ep)}$ having a stochastic expansion like (\ref{130206-8}). 
@@ -870,7 +875,7 @@ levy
 @
 and the relative difference between the two approximations is \Sexpr{round((asy2-levy)/asy2*100,1)}\%.
 
-\subsection{Asymptotic Expansion for General Stochastic Processes}
+\subsubsection{Asymptotic Expansion for General Stochastic Processes}
 Of course, \pkg{yuima} approach is more general in that the above Levy approximation only holds when the process $X_t$ is the geometric Brownian motion. We now give an example when the underlying process $X_t$ is the following CIR model
 $$
 \de X_t =  0.9 X_t \de t + \ep \sqrt{X_t} \de W_t, X0 = 1
