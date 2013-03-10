@@ -1660,11 +1660,21 @@ $$\de X_t =  0.6 \de t + 0.12 X_t^{\frac32}\de W_t.$$
 Notice that this model is not an ergodic one, indicating that the LASSO method shows that the real data are indeed not stationary, but still in the family of CKLS models.
 
 \section{Miscellanea and Roadmap of YUIMA Project}\label{sec6}
-Other statistical techniques are already implemented in the developer version of the \pkg{yuima} package. Among these: the QMLE approach for stochastic differential equations with L\'evy component, the estimation for the fractional Ornstein-Uhlembeck model \citep{brouiac12}, 
-
-or will be shortly released in the \pkg{yuima}. For example, a nice utility is the function \code{toLatex} for objects of class \code{yuima} and \code{yuima.model}. A simple writing like
-\code{toLatex(my-yuima-obj)} produces the related \LaTeX{} code which can be copy and pasted in a mathematical paper.
-We also plan to open the the contribution to the YUIMA project to external developers in the near future.
+Other statistical techniques have been are already implemented in the developer version of the \pkg{yuima} package although not yet released into the current distribution. Among these we mention: the QMLE approach for stochastic differential equations with L\'evy noise \citep{shiyos06, ogiyos11}; the parametric estimation for the fractional Ornstein-Uhlembeck model \citep{brouiac12}; different simulation schemes as in \citep{Iacus08} for multidimensional diffusion processes; Lead-lag estimation \citep{HoffRosYo09}.
+ For example, a nice (yet incomplete) utility is the method \code{toLatex} for objects of class \code{yuima} and \code{yuima.model}. A simple writing like
+\code{toLatex(my-yuima-obj)} produces the related \LaTeX{} code which can be copy and pasted in a mathematical paper. For example,
+<<>>=
+a <- c("-3*x1","-x1-2*x2")
+b <- matrix(c("1","x1","0","3","x2","0"),2,3)
+modtex <- setModel(drift = a, diffusion = b, solve.variable = c("x1","x2"))
+toLatex(modtex)
+@
+which can be typesetted with  \LaTeX{} to produce
+<<echo=FALSE,results=tex>>=
+toLatex(modtex)
+@
+which can be used as a quick starting point for more complex editing of a mathematical paper.
+Another major plan is to open the  contribution to the YUIMA project to external developers in the near future as well as to include other estimation procedures for low frequency and/or sparse data and parallelization of the general infrastructure.
 
 
 
