@@ -70,7 +70,7 @@
 %% almost as usual
 \author{Alexandre Brouste\\University of Le Mans \And 
         Masaaki Fukasawa\\Osaka University\And
-        Hideitsu Hino\\Waseda University\And
+        Hideitsu Hino\\University of Tsukuba\And
         Stefano M. Iacus\\University of Milan \AND 	
         Kengo Kamatani\\University of Tokyo \And
         Yuta Koike\\University of Tokyo\And
@@ -169,12 +169,12 @@ options(width=60)
 
 
 \section{Introduction}
-The plan of the YUIMA Project is to construct the bases for a complete environment for simulation and inference for stochastic processes via an \proglang{R} \citep{ERRE} package called \pkg{yuima}.
+The plan of the YUIMA\footnote{YUIMA is both the acronym for \textit{Yoshida-Uchida-Iacus-Masuda-Andothers} but also the name of an important character in Buddhism religion (\url{http://www.kyohaku.go.jp/eng/syuzou/meihin/kaiga/chuugoku/item01.html}) whose approach to problems fits well this project.} Project is to construct the bases for a complete environment for simulation and inference for stochastic processes via an \proglang{R} \citep{ERRE} package called \pkg{yuima}.
 % The package \pkg{yuima} provides an object-oriented programming environment for simulation and statistical inference for stochastic processes by \proglang{R}.
 The \pkg{yuima} package adopts the  S4 system of classes and methods \citep{chambers98}.
  
 Under this framework, 
-the \pkg{yuima} package also supplies various functions 
+the \pkg{yuima} package also supplies various functions
 to carry out simulation and statistical analysis. 
 Both categories of procedures may depend on each other.
 Statistical inference often requires a simulation technique 
@@ -216,7 +216,7 @@ with general Hurst parameter, with or without jumps specified as L\'evy noise.
 
 
 The \pkg{yuima} package is intended to offer the basic infrastructure on which complex models and inference procedures can be built on. This paper explains the design of the \pkg{yuima} package and illustrates some examples of applications.
-The paper is organized as follows. Section \ref{sec2} is an overview about the package. Section \ref{sec3} describes the way in which models are specified in \pkg{yuima}. Section \ref{sec4} explains asymptotic expansion methods. Section \ref{sec5} is a review of basic inference procedures. 
+The paper is organized as follows. Section \ref{sec2} is an overview about the package. Section \ref{sec3} describes the way in which models are specified in \pkg{yuima}. Section \ref{sec:simul} describes how to simulate \code{yuima} models.   Section \ref{sec4} explains asymptotic expansion methods. Section \ref{sec5} is a review of basic inference procedures. 
 Finally, Section \ref{sec6} gives additional details and the roadmap of the YUIMA Project.
 
 
@@ -253,23 +253,23 @@ Figure \ref{fig:classes} represents the different classes and their slots.
 \label{fig:classes}
 \end{figure} 
 The different slots do not need to be all present at the same time. For example, in case one wants to simulate a stochastic process, only the slots \code{model} and \code{sampling} should be present, while the slot \code{data} will be filled by the simulator.
-We discuss in details the different objects separately in the next sections.
+We discuss in detail the different objects separately in the next sections.
 
-The general idea of the \pkg{yuima} package is to separate into different subclass objects the statistical model, the data and the statistical methods. As will be explained with several examples, the user may give a mathematical description of the statistical model with \code{setModel} which prepares a \code{yuima.model} object by filling the appropriate slots. If the aim is the simulation of the solution of the stochastic  differential equation specified in the \code{yuima.model} object then, using the method \code{simulate}, it is possible to obtain one trajectory of the process. As an output, a \code{yuima} object is created which contains the original model specified in the \code{yuima.model} object in the slot named \code{model} and two additional slots named \code{data}, for the simulated data, and \code{sampling} which contains the description of the simulation scheme used as well as other informations. The details of \code{simulate} will be explained in Section \ref{sec:simul} along with the use of method \code{setSampling} which allows to specify the type of sampling scheme to be used by the \code{simulate} method.
+The general idea of the \pkg{yuima} package is to separate into different subclass objects the statistical model, the data and the statistical methods. As will be explained with several examples, the user may give a mathematical description of the statistical model with \code{setModel} which prepares a \code{yuima.model} object by filling the appropriate slots. If the aim is the simulation of the solution of the stochastic  differential equation specified in the \code{yuima.model} object then, using the method \code{simulate}, it is possible to obtain one trajectory of the process. As an output, a \code{yuima} object (by ``\code{yuima} object'' we mean a, possibly incomplete, object of class \pkg{yuima}) is created which contains the original model specified in the \code{yuima.model} object in the slot named \code{model} and two additional slots named \code{data}, for the simulated data, and \code{sampling} which contains the description of the simulation scheme used as well as other informations. The details of \code{simulate} will be explained in Section \ref{sec:simul} along with the use of method \code{setSampling} which allows to specify the type of sampling scheme to be used by the \code{simulate} method.
 But \code{yuima} object may contain the slot \code{data} non only as the outcome of \code{simulate} but also because the user decides to analyse its own data. In this case the method \code{setData} is used to transform most types  of \proglang{R} time series object into a a proper \code{yuima.data} object.
-When the slots \code{data} and \code{model} are available, many other methods can be used to perform statistical analysis on these sde's models. These methods will be discussed in Section \ref{sec5}.
-Further, functionals of stochastic differential equations can be defined using the \code{setFunctional} method and evaluated using asymptotc expansion methods as explained in Section \ref{sec4}. The \code{setFunctional} method creates a \code{yuima.functional} object which is included along with a \code{yuima.model}  into a \code{yuima} object in order to be used for the evaluation of its asymptotic expansion.
+When the slots \code{data} and \code{model} are available, many other methods can be used to perform statistical analysis on these SDE's (stochastic differential equation) models. These methods will be discussed in Section \ref{sec5}.
+Further, functionals of stochastic differential equations can be defined using the \code{setFunctional} method and evaluated using asymptotic expansion methods as explained in Section \ref{sec4}. The \code{setFunctional} method creates a \code{yuima.functional} object which is included along with a \code{yuima.model}  into a \code{yuima} object in order to be used for the evaluation of its asymptotic expansion.
 
 
 \subsection{The \code{yuima.model} Class}\label{sec:model}
 At present, in \pkg{yuima}  three main classes of stochastic differential equations  can be easily specified.  Here we present  a brief
-overview of these models as they will be described in details in Section \ref{sec3}, but this allow to introduce an overall view of the slots of the \code{yuima.model} class.
+overview of these models as they will be described in detail in Section \ref{sec3}, but this allows to introduce an overall view of the slots of the \code{yuima.model} class.
 In \pkg{yuima} one can describe three main families of stochastic processes at present. These models can be one or multidimensional and eventually described as parametric models. Let $X_0=x_0$ be the initial value of the process, then, the main classes are as follows:
 \begin{itemize}
 \item diffusion models described as
 $$  \de X_t=a(t,X_t,\theta)dt + b(t,X_t,\theta)\de W_t, \quad X_0=x_0$$
  where $W_t$ is a standard Brownian motion;
-\item sde's driven by fractional Gaussian noise, with $H$ the Hurst parameter, described as
+\item SDE's driven by fractional Gaussian noise, with $H$ the Hurst parameter, described as
 $$ \de X_t=a(t,X_t,\theta)dt + b(t,X_t,\theta)\de W_t^{H}, \quad X_0=x_0;$$ 
 \item diffusion process with jumps and  L\'evy processes solution to
 $$
@@ -279,8 +279,8 @@ $$
 \end{aligned}, \quad X_0=x_0;
 $$
 \end{itemize}
- The functions $a(\cdot)$, $b(\cdot)$ and $c(\cdot)$ may have a different number of arguments. For example, if the model is homogeneous in time and drift and diffusion coefficients are entirely specified, then we will use the notaion $a(x)$ and $b(x)$ and describe the diffusion model simply as $\displaystyle \de X_t=a(X_t)dt + b(X_t)\de W_t$. And so forth. Detailed hypotheses and regularity conditions on the coefficients $a(\cdot)$, $b(\cdot)$ and $c(\cdot)$ for each class of models will be given in the next sections. Nevertheless, it is important to remark that these notations only matter the mathematical description of the model while each coefficient is passed to \pkg{yuima} methods as \proglang{R} mathematical expressions. It means that, for example, $a(t, X_t, \theta) = t\cdot \sqrt{\theta X_t}$ will be passed as \code{t*sqrt(x*theta)}, therefore, the order of the arguments is not relevant to \proglang{R} as well as its mathematical description as long as it is consistent through each specific section. Furhter, \pkg{yuima} is able to accept any user-specified notation for the state variable $x$ (for $X_t$) and the time variable $t$ and the remaining term of an \proglang{R} expression will be interpreted as parameter as will explained in Section \ref{sec:diff}.
-We are now able to give an overview of the mian slots of the most important class of the \pkg{yuima} package.
+ The functions $a(\cdot)$, $b(\cdot)$ and $c(\cdot)$ may have a different number of arguments. For example, if the model is homogeneous in time and drift and diffusion coefficients are entirely specified, then we will use the notaion $a(x)$ and $b(x)$ and describe the diffusion model simply as $\displaystyle \de X_t=a(X_t)dt + b(X_t)\de W_t$. And so forth. Detailed hypotheses and regularity conditions on the coefficients $a(\cdot)$, $b(\cdot)$ and $c(\cdot)$ for each class of models will be given in the next sections. Nevertheless, it is important to remark that these notations only matter to the mathematical description of the model while each coefficient is passed to \pkg{yuima} methods as \proglang{R} mathematical expressions. This means that, for example, $a(t, X_t, \theta) = t\cdot \sqrt{\theta X_t}$ will be passed as \code{t*sqrt(x*theta)}, therefore, the order of the arguments is not relevant to \proglang{R} as well as its mathematical description as long as it is consistent through each specific section. Furhter, \pkg{yuima} is able to accept any user-specified notation for the state variable $x$ (for $X_t$) and the time variable $t$ and the remaining term of an \proglang{R} expression will be interpreted as parameter as will be explained in Section \ref{sec:diff}.
+We are now able to give an overview of the main slots of the most important class of the \pkg{yuima} package.
 
 The \code{yuima.model} class contains information about the stochastic differential equation of interest. The constructor function \code{setModel} is
 used to give a mathematical description of the stochastic differential equation. 
@@ -298,7 +298,7 @@ To see inside its structure, one can use the \proglang{R} command \code{str} on 
   coefficient matrix relative to first noise;
 \item \code{hurst} is the Hurst index of the fractional Brownian motion, by default \code{0.5}  meaning a standard Brownian motion. More details will be given in Section \ref{sec:fgn};
 \item \code{parameter},  which is a short name for ``parameters'',  
-  is a list with the following entries (explained details in Section \ref{sec:par}):
+  is a list with the following entries (more details in Section \ref{sec:par}):
 \begin{itemize}
 \item \code{all} contains the names of all the parameters found 
    in the diffusion and drift coefficient;
@@ -311,26 +311,26 @@ To see inside its structure, one can use the \proglang{R} command \code{str} on 
 \item \code{measure} specifies the measure of the L\'evy noise (see Section \ref{sec:jump});
 \item \code{measure.type} a switch to specify how the L\'evy measure is described (see Section \ref{sec:jump});
 \item \code{state.variable} and \code{time.variable}, by default,
-  are assumed to be \code{x} and \code{t} but the user can freely choose them and they matter the right hand-side of the equation of the sde.
+  are assumed to be \code{x} and \code{t} but the user can freely choose them and they matter to the right hand-side of the equation of the SDE.
   The \code{yuima.model} class assumes that the user either uses default
-  names for \code{state.variable} and \code{time.variable} variables or specify his own names. All
-  the rest of the symbols are considered parameters and distributed accordingly
+  names for \code{state.variable} and \code{time.variable} variables or specifies his own names. All
+  other  symbols are considered parameters and distributed accordingly
   in the \code{parameter} slot. Example of use will be given in Section \ref{sec:diff};
-\item \code{jump.variable} the name of the variable used in the description of the L\'evy component (see Section \ref{sec:jump});
+\item \code{jump.variable} indicates the name of the variable used in the description of the L\'evy component (see Section \ref{sec:jump});
 \item \code{solve.variable} contains a vector of variable names, each element corresponds to the
    name of the solution variable (left-hand-side) of each equation in the model, in the corresponding order. An example of use can be found in Section \ref{sec:multi}.
 \item \code{noise.number} indicates the number of sources of noise.
-\item \code{xinit} initial value of the stochastic differential equation;
+\item \code{xinit} is the initial value of the stochastic differential equation;
 \item \code{equation.number} represents the number of equations, i.e., the number of one dimensional
   stochastic differential equations.
 \item \code{dimension} reports the dimensions of the parameter space. It is a list of the
   same length of \code{parameter} with the same names.
-\item \code{J.flag} for internal use only.
+\item \code{J.flag} is for internal use only.
 \end{itemize}
-As seen in the above, the parameter space is accurately described internally in a \code{yuima} object because in inference for stochastic differential equations, estimators of different parameters have different properties. Usually, the rate of convergence for estimators in the diffusion coefficient are similar to the ones in the i.i.d. sampling while estimators of parameters in the drift coefficient are slower or, in some cases, not even consistent. The \pkg{yuima} always tries to implement the best statistical inference for the given model under the observed sampling scheme.
+As seen in the above, the parameter space is accurately described internally in a \code{yuima} object because in inference for stochastic differential equations, estimators of different parameters have different properties. Usually, the rate of convergence for estimators in the diffusion coefficient are similar to the ones in the i.i.d. (independent and idensitcally distributed) sampling while estimators of parameters in the drift coefficient are slower or, in some cases, not even consistent. The \pkg{yuima} always tries to implement the best statistical inference for the given model under the observed sampling scheme.
 
 \section{Model Specification}\label{sec3}
-In order to show how general the approach is in the \pkg{yuima} package we present some examples. Throughout this section we assume that all the stochastic differential equations exists while in Section \ref{sec5} we will give precise regularity conditions needed to have a properly defined statistical model.
+In order to show how general the approach of the \pkg{yuima} package is, we present some examples. Throughout this section we assume that all the stochastic differential equations exist while in Section \ref{sec5} we will give  regularity conditions needed to have a properly defined statistical model.
 
 \subsection{One Dimensional Diffusion Processes}\label{sec:diff}
 Assume that we want to describe the following stochastic differential equation
@@ -344,15 +344,15 @@ library(yuima)
 <<echo=TRUE, print=FALSE,results=hide>>=
 mod1 <- setModel(drift = "-3*x", diffusion = "1/(1+x^2)")
 @ 
-By default, \pkg{yuima} assumes that the state variable is \code{x} and the time variable is \code{t} and the solve variable is again \code{x}. Notice that the left hand-side of the equation is implicit, this is why \code{yuima.model} has the slot \code{solve.variable.
-The user should not we worried about the warning raised by \pkg{yuima} at this stage, as this is just to inform the user about the implicit assumption on the solution variable.}
+By default, \pkg{yuima} assumes that the state variable is \code{x} and the time variable is \code{t} and the solve variable is again \code{x}. Notice that the left hand-side of the equation is implicit, this is why \code{yuima.model} has the slot \code{solve.variable}.
+The user should not be worried about the warning raised by \pkg{yuima} at this stage, as this is just to inform her on the implicit assumption on the solution variable.
 At this point, the package fills the proper slots of the \code{yuima} object
 <<>>=
 str(mod1)
 @
 
 From the above, it is possible to see that the jump coefficient is void and the Hurst parameter is set to 0.5, because this is a model where the driving process is the standard Brownian motion, i.e. a fractional Brownian motion if Hurst index $H=\frac12$.
-Now, with \code{mod1} in hands, it is very easy to simulate a trajectory by  Euler-Maruyama scheme of the process as follows
+Now, with \code{mod1} in hands, it is extremely easy to simulate a trajectory by  Euler-Maruyama scheme of the process as follows
 <<echo=TRUE, print=FALSE,fig=TRUE,width=9,height=4,results=hide>>=
 set.seed(123)
 X <- simulate(mod1)
@@ -368,7 +368,7 @@ More details on how to change the default sampling scheme for the \code{simulate
 
 
 \subsection{User Specified State and Time Variables}
-Suppose now that the user wants to specify her own model using a prescribed notation, e.g., some sdes like
+Suppose now that the user wants to specify her own model using a prescribed notation, e.g., some SDE's like
 $$\de Y_s = -3 s Y_s \de s + \frac{1}{1+Y_s^2}\de W_s,$$
 where $a(s,y) = -3sy$ and $b(y) = 1/(1+y^2)$.
 Then this model can be described in \pkg{yuima} as follows
@@ -416,7 +416,7 @@ $$
 \left(\begin{array}{ccc}1 & 0 & X_{2,t} \\X_{1,t} & 3 & 0\end{array}\right)
 \left(\begin{array}{c}\de W_{1,t} \\ \de W_{2,t} \\ \de W_{3,t}\end{array}\right)
 $$
-For this system it now necessary to instruct \pkg{yuima} about the state variable on bot the left-hand side of the equation and the right-hand side of the equation, i.e. the \code{solve.variable}.
+For this system it is now necessary to instruct \pkg{yuima} about the state variable on both the left-hand side of the equation and the right-hand side of the equation, i.e. there is the need to specify also the \code{solve.variable} for the left hand side of the SDE:
 <<echo=TRUE, print=FALSE,results=hide>>=
 sol <- c("x1","x2") # variable for numerical solution
 a <- c("-3*x1","-x1-2*x2")   # drift vector 
@@ -431,25 +431,35 @@ X <- simulate(mod3)
 plot(X, plot.type="single",lty=1:2)
 @
 
+Notice that the role of \code{solve.variable} is essential because it allows to specify the left hand side of an SDE equation. For example, if one wants to specify this model instead of the previous one
+
+$$
+\begin{aligned}
+\de X_{2,t} &= -3 X_{1,t} \de t + \de W_{1,t} + X_{2,t} \de W_{3,t}\\
+\de X_{1,t} &= -(X_{1,t} + 2 X_{2,t}) \de t + X_{1,t} \de W_{1,t} + 3 \de W_{2,t}
+\end{aligned}
+$$
+the \code{solve.variable} argument should be specified as \code{solve.variable=c("x2","x1")} in place of  \code{solve.variable=c("x1","x2")}, all the rest being the same as in model \code{mod3}.
+
 \noindent
 But it is also possible to specify more complex models like the following
- \begin{equation} \label{sabr}
+$$
  \begin{cases}
  & \mbox{d} X_{1,t} = X_{2,t} \left| X_{1,t} \right|^{2/3} \mbox{d}W_{1,t}, \\
  & \mbox{d}X_{2,t} = g(t)\mbox{d}X_{3,t}, \\
  & \mbox{d}X_{3,t} = X_{3,t}( \mu  \mbox{d}t + \sigma (\rho \mbox{d}W_{1,t} + \sqrt{1-\rho^2}
    \mbox{d}W_{2,t}))
  \end{cases}
- \end{equation}
+$$
 $$ (X_{1,0}, X_{2,0}, X_{3,0}) = (1.0,0.1,1.0)$$
  with $\mu = 0.1, \sigma = 0.2, \rho = -0.7 $ and $g(t) = 0.4 + (0.1 + 0.2t) e^{-2t}$,  for
  example, where $W = (W_1, W_2)$ is a 2-dimensional standard Brownian motion. In order to pass this model to \pkg{yuima} we need to rewrite it in matrix form.
  The solution  $X = (X_1, X_2, X_3)$ takes values on $\mathbb{R}_+^3$.
  This is a stochastic integral equation defined as
- \begin{equation}
+ $$
  X_t = X_0 +  \int_0^t a(s,X_s) \mbox{d}s + \int_0^t b(s,X_s) \mbox{d}W_s
- \end{equation}
- with 
+ $$
+ with
  \[
   a(s,x) = \left( \begin{array}{@{\,}c@{\,}} 0 \\ g(s) \mu x_3 \\ \mu x_3 \end{array} \right),
  \ \ 
@@ -494,7 +504,7 @@ diffusion = diff.coef.matrix, state.variable = c("x1", "x2", "x3"),
     solve.variable = c("x1", "x2", "x3"))
 str(sabr.mod@parameter)
 @
-The functions \code{f1}, \code{f2} and \code{f3} are defined in a way that, when the trajectory of the processes crosso zero from above, the trajectory is stopped ad zero. Notice that in this way the only visible parameter for \pkg{yuima} is \code{mu} as \code{rho} and \code{sig} are inside the bodies of the functions \code{f2} and \code{f3}. If we want to instruct \pkg{yuima} about these parameters, they should appear explicitly as arguments of the functions as explained by this \proglang{R} code
+The functions \code{f1}, \code{f2} and \code{f3} are defined in a way that, when the trajectory of the processes crosses zero from above, the trajectory is stopped at zero. Notice that in this way the only visible parameter for \pkg{yuima} is \code{mu} as \code{rho} and \code{sig} are inside the bodies of the functions \code{f2} and \code{f3}. If we want to instruct \pkg{yuima} about these parameters, they should appear explicitly as arguments of the functions as shown in the following \proglang{R} code
 <<echo=TRUE, print=FALSE,results=hide>>=
  f2 <- function(t, x1, x2, x3, rho, sig) {
      ret <- 0
@@ -524,8 +534,8 @@ The \pkg{yuima} allows for the description of stochastic differential equations 
 $$\de X_t =  a(X_t) \de t + b(X_t) \de W_t^H
 $$
 where $W^H=\left( W^H_t, t\geq 0 \right)$ is a normalized fractional Brownian motion (fBM), {\it i.e.} the zero mean Gaussian processes with covariance function
-$$\dE( W_s^H W_t^H )= \frac{1}{2} \left[ |s|^{2H}+|t|^{2H}- |t-s|^{2H}\right]$$ with Hurst exponent $H\in(0,1)$.  The fractional Brownian motion process is  neither Markovian nor a semimartingale for $H\neq\frac{1}{2}$ but
-remains Gaussian.  For $H > \frac12$, the solution $X_t$ above  presents the long-range dependance property that makes it useful for different applications in biology, physics, ethernet traffic or finance.
+$$\dE( W_s^H W_t^H )= \frac{1}{2} \left( |s|^{2H}+|t|^{2H}- |t-s|^{2H}\right)$$ with Hurst exponent $H\in(0,1)$.  The fractional Brownian motion process is  neither Markovian nor a semimartingale for $H\neq\frac{1}{2}$ but
+remains Gaussian.  For $H > \frac12$, the solution $X_t$ above  presents the long-range dependence property that makes it useful for different applications in biology, physics, ethernet traffic or finance.
 In order to specify a stochastic differential equation driven by fractional Gaussian noise it is necessary to specify the value of the Hurst parameter. For example, if we want to specify the following model
 $$\de Y_t =  3 Y_t \de t + \de W_t^H$$
 we proceed as follows
@@ -552,13 +562,29 @@ The user can choose between  two simulation schemes, namely the Cholesky method 
 \subsection{L\'evy Processes}\label{sec:jump}
 Jump processes can be specified in different ways in mathematics and hence in \pkg{yuima} package. 
 Let $Z_t$ be a  Compound Poisson Process (i.e., jumps size follow some distribution, like the Gaussian law and jumps occur at Poisson times).
-Then it is possible to consider the following SDE which involves jumps
-$$\de X_t =  a(X_t)\de t + b(X_t)\de W_t + \de Z_t$$
-In the next example we consider a compound Poisson process with intensity $\lambda=10$ with Gaussian jumps.
-This model can be specified in \code{setModel} using the argument  \code{measure.type="CP"} 
-A simple Ornstein-Uhlenbeck process with Gaussian jumps 
+Then it is possible to consider the simple following SDE which involves jumps
+$$\de X_t =  a(t,X_t,\theta)\de t + b(t,X_t,\theta)\de W_t + \de Z_t,$$
+or the more general representation
+\begin{equation}\label{eq:levy}
+\begin{aligned}
+\de X_t = & \,\,\, a(t,X_t,\theta)\de t + b(t,X_t,\theta)\de W_t + \int\limits_{|z|>1}\!\!\! c(X_{t-},z)\mu(\de t,\de z) \\
+&{}+\!\! \int\limits_{0<|z|\le 1}\!\!\!  c(X_{t-},z)\{\mu(\de t,\de z) - \nu(\de z)\de t\}
+\end{aligned}, \quad X_0=x_0,
+\end{equation}
+with $\mu$ a random measure associated with the jumps of $X$, that is,
+$$
+\mu(dt,dz)=\sum_{s>0}\mathbf{1}_{\{\Delta Z_s \ne 0\}}\delta_{(s,\Delta Z_s)}(dt,dz),
+$$
+where $\delta$ denotes the Dirac measure and $Z$ the driving pure-jump L\'evy process of the form
+$$
+Z_{t}=\int_{0}^{t}\int_{|z|\le 1}z\{\mu(ds,dz) - \nu(dz)ds\}+\int_{0}^{t}\int_{|z|>1}z\mu(ds,dz).
+$$
+The L\'evy measure $\nu$ is any measure satisfying $\nu(\{0\})=0$ and $\int(1\wedge |z|^2)\nu(dz)< \infty$.
+In the next example we consider a compound Poisson process with intensity $\lambda=10$ with Gaussian jumps as driving L\'evy process.
+This model can be specified in \code{setModel} using the argument  \code{measure.type="CP"} (fro Compound Poisson).
+A simple Ornstein-Uhlenbeck process with Gaussian jumps like this
 $$\de X_t = -\theta X_t \de t + \sigma \de W_t + \de Z_t$$
-is specified as
+is then specified as follows
 <<echo=TRUE, print=FALSE,fig=TRUE,width=9,height=4,results=hide>>=
 mod5 <- setModel(drift=c("-theta*x"), diffusion="sigma",
  jump.coeff="1", measure=list(intensity="10", df=list("dnorm(z, 0, 1)")),
@@ -569,7 +595,8 @@ plot(X)
 @
 
 \noindent
-Another possibility is to specify the jump component via the L\'evy measure. Without going into too much details, here is an example of specification of a simple Ornstein-Uhlenbeck  process with IG (Inverse Gaussian) L\'evy measure 
+Another possibility is to specify the jump component via the L\'evy measure $\nu(\cdot)$. 
+ Without going into too much details, here is an example of specification of a simple Ornstein-Uhlenbeck  process with IG (Inverse Gaussian) L\'evy measure $\nu(\cdot)$ and no Poisson component
 $$\de X_t = -x \de t + \de Z_t$$
 <<echo=TRUE, print=FALSE,fig=TRUE,width=9,height=4,results=hide>>=
 mod6 <- setModel(drift="-x", xinit=1, jump.coeff="1", 
@@ -579,25 +606,54 @@ X <- simulate(mod6, sampling=setSampling(Terminal=10, n=10000))
 plot(X)
 @
 
-\subsection{Specification of Generic Models}
+\noindent
+The argument \code{type="code"} stands for user defined code.
+\subsection{Specification of Generic Models in \pkg{yuima}}
 In general, the \pkg{yuima} package allows to specify a large family of models solutions to
-$$\de X_t =a(X_t)\de t +  b(X_t)\de W_t + c(X_t)\de Z_t$$
+$$\de X_t =a(t,X_t,\theta)\de t +  b(t,X_t,\theta)\de W_t + c(t,X_t,\theta)\de Z_t$$
 using the following interface
 <<echo=TRUE, print=FALSE,eval=FALSE>>=
 setModel(drift, diffusion, hurst = 0.5, jump.coeff,
  measure, measure.type, state.variable = "x",
  jump.variable = "z", time.variable = "t", solve.variable, xinit)
 @
+The coefficient $c()$ may also depend on the process $Z$, in this case the admissible form for the coefficient is $c(t,x,\theta, z) = c(t,x,\theta) \cdot z$. In the integral representation correspoding to formula \eqref{eq:levy} the coefficient $c(\cdot)$ is not allowed to depend on time though.
 The \pkg{yuima} package implements many multivariate Random Numbers Generators (RNG) which are needed to simulate L\'evy paths including
 \code{rIG} (Inverse Gaussian), \code{rNIG} (Normal Inverse Gaussian), \code{rbgamma} (Bilateral Gamma), \code{rngamma} (Normal Gamma) and \texttt{rstable} (Stable Laws).
 Other user-defined RNG can be used freely.
 
 \section{Simulation, Sampling and Subsampling}\label{sec:simul}
-The \code{simulate} function simulates \code{yuima} models according to Euler-Maruyama scheme in the presence of non-fractional diffusion noise and L\'evy jumps and uses the Cholesky or the Wood and Chan methods for the fractional Gaussian noise.
-The \code{simulate} function accepts several arguments including the description of the sampling structure, which is an object of type \code{yuima.sampling}. The \code{setSampling} allows for the specification of different sampling parameters including random sampling. Further, the \code{subsampling} allows us to subsample a trajectory of a simulated stochastic differential equation or a given time series in the \code{yuima.data} slot of a \code{yuima} object.
-Sampling and subsampling can be specified jointly as arguments to the \code{simulate} function. This is convenient if one wants to simulate data at very high frequency but then return only low frequency data for inference or other applications. In what follows we explain how to specify  arguments of these \pkg{yuima} functions.   Complete details can be found in  the man pages of the \pkg{yuima} package.
+The \code{simulate} function simulates \code{yuima} models according to Euler-Maruyama scheme in the presence of non-fractional diffusion noise and L\'evy jumps and uses the Cholesky or the Wood and Chan methods for the fractional Gaussian noise. For diffusion models without jumps, \pkg{yuima} also implements the space discretized Euler-Maruyama method, which is more efficient, in the sense of mean squared error approximation, than the usual time-discretized Euler-Maruyama scheme.
+The (time discretized) Euler-Maruyama simulation scheme defines a grid of times
+$0 = \tau_0 < \tau_1 < \cdots < \tau_j < \tau_{j+1} < \cdots$,
+and constructs an approximative solution $\{\tilde{X}_t, t\geq 0\}$ of the original process $\{X_t, t\geq 0\}$ given by
+$$
+ \tilde{X}_{\tau_{j+1}} = \tilde{X}_{\tau_j} +
+ b(\tau_j,\tilde{X}_{\tau_j})(\tau_{j+1} - \tau_j) + 
+ c(\tau_j, \tilde{X}_{\tau_j} )(W_{\tau_{j+1}}- W_{\tau_j}), \ \ j \geq 0.
+$$
+ As the interval $\tau_{j+1} - \tau_j$ is independent to  $\{W_t\}_{t \geq \tau_j}$ for each $j$,
+ $W_{\tau_{j+1}} - W_{\tau_j}$ has the same distribution as $\sqrt{\tau_{j+1} - \tau_j}N_j$,
+ where $N_j$ is an i.i.d. sequence of standard normal variables.
+ The basic discretization scheme is  equidistant, i.e. 
+ $\tau_{j+1} - \tau_j = T/n = \Delta_n$, for all $j \geq 0$.
+But the \code{simulate} method provides also space-discretized Euler-Maruyama method to solve SDE.
+ This is at the moment designed for 1 factor SDE only, i.e., the case the driving
+ Brownian motion $W$ is 1-dimensional. In this case, the discretization scheme $\{\tau_j\}$ 
+ is defined as
+$$
+\tau_0 = 0, \ \ \tau_{j+1} = \inf\{ t > \tau_j; |W_t - W_{\tau_j}| = \epsilon \}
+$$ for each $j \geq 0$. Internally, \code{simulate} takes
+$\epsilon^2 = T/n = \Delta_n$
+which coincides with the mean of the interval  $\tau_{j+1} - \tau_j$.
+This space-discretizing scheme is known to be 3 times efficient than the usual time-discretized scheme
+one in the sense of the mean squared error \citep{Fukasawa11}. To make use of the space-discretized Euler-Maruyama scheme, one should use the argument \code{space.discretized = TRUE} which by default, is set to \code{FALSE}.
+Other simulation scheme for 1-dimensional diffusion processes as explained in \citet{Iacus08} will be implemented in the near future.
 
-Assume that we want to simulate this model
+The \code{simulate} function accepts several arguments including the description of the sampling structure, which is an object of type \code{yuima.sampling}. The \code{setSampling} allows for the specification of different sampling parameters including random sampling. Further, the \code{subsampling} allows  to subsample a trajectory of a simulated stochastic differential equation or a given time series in the \code{yuima.data} slot of a \code{yuima} object.
+Sampling and subsampling can be specified jointly as arguments to the \code{simulate} function. This is convenient if one wants to simulate data at very high frequency but then return only low frequency data for inference or other applications. In what follows we explain how to specify  arguments of these \pkg{yuima} functions.   Complete details can be found in  the manual pages of the \pkg{yuima} package.
+
+Assume that we want to simulate the following model
 $$
 \begin{aligned}
 \de X_{1,t} &= -\theta X_{1,t} \de t + \de W_{1,t} + X_{2,t} \de W_{3,t}\\
@@ -615,17 +671,17 @@ Suppose now that we want to simulate the process on a regular grid on the interv
 <<>>=
 samp <- setSampling(Terminal=3, n=3000)
 @
-and look inside it
+and let us analyize its content
 <<>>=
 str(samp)
 @
 As seen from the output, the sampling structure is quite rich and we will show how to specify some of the slots later on.
-We now simulate this process specifying the \code{sampling} argument to \code{simulate}
+We  simulate this process by specifying the \code{sampling} argument in the \code{simulate} method
 <<>>=
 set.seed(123)
 X2 <- simulate(mymod, sampling=samp)
 @
-now the sampling structure is recorded along with the data in the \code{yuima} object \code{X2}
+the sampling structure is recorded along with the data in the \code{yuima} object \code{X2}
 <<>>=
 str(X2@sampling)
 @
@@ -637,8 +693,8 @@ random=list(rdist=c( function(x) rexp(x, rate=10),
 function(x) rexp(x, rate=20))) )
 str(newsamp)
 @
-In the above we have specified two independent exponential  distributions to represent Poisson arrival times. Notice that the slot \code{regular} is now set to \code{FALSE}.
-Now we subsample the original trajectory of \code{X2} using the \code{subsampling} function
+In the above we have specified two independent exponential  distributions to represent Poisson arrival times. Notice that the slot \code{regular} is  set to \code{FALSE}.
+We subsample the original trajectory of \code{X2} using the \code{subsampling} function
 <<sub2,fig=TRUE,width=9,height=5>>=
 newdata <- subsampling(X2, sampling=newsamp)
 plot(X2,plot.type="single", lty=c(1,3),ylab="X2")
@@ -646,7 +702,7 @@ points(get.zoo.data(newdata)[[1]],col="red")
 points(get.zoo.data(newdata)[[2]],col="green",pch=18)
 @
 
-Or we can operate a deterministic sampling specifying two different regular frequencies
+We can also operate a deterministic sampling by specifying two different regular frequencies
 <<sub3,fig=TRUE,width=9,height=5>>=
 newsamp <- setSampling(delta=c(0.1,0.2))
 newdata <- subsampling(X2, sampling=newsamp)
@@ -658,7 +714,7 @@ points(get.zoo.data(newdata)[[2]],col="green", pch=18)
 Again one can look at the structure of the sampling structure.
 
 Subsampling can be used within the \code{simulate} function. What is usually done in simulation studies, is to simulate the process at very high frequency but then use data for estimation at a lower frequency.
-This can be done in a single step in the following way.
+This can be done in a single step in the following way:
 <<sub4,fig=TRUE,width=9,height=5>>=
 set.seed(123)
 Y.sub <- simulate(mymod,sampling=setSampling(delta=0.001,n=1000),
@@ -670,7 +726,7 @@ points(get.zoo.data(Y.sub)[[1]],col="red")
 points(get.zoo.data(Y.sub)[[2]],col="green",pch=18)
 @
 
-In the previous code we have simulated the process twice just to show the effect of the subsampling but the reader should use only the line which outputs the simulation to \code{Y.sub} as seen in the next plot.
+In the previous code we have simulated the process twice just to show the effect of the subsampling, but the reader should use only the line which outputs the simulation to \code{Y.sub} as seen in the next plot.
 <<sub5,fig=TRUE,width=9,height=5>>=
 plot(Y.sub, plot.type="single")
 @
@@ -680,11 +736,11 @@ plot(Y.sub, plot.type="single")
 \section{Asymptotic Expansion}\label{sec4}
 For numerical computation of the expectation of a random variable,
 the Monte-Carlo method gives a universal solution although it is time consuming and involves 
- stochastic errors of certain scale 
-depending on the number of repetitions. 
-An alternative method is the asymptotic expansion, that can often give a solution with accuracy comparable or superior to  
-Monte-Carlo approaches, 
-besides, it has advantage in the computation time because of the approximation by an analytic formula. 
+ stochastic errors of a certain scale 
+depending on the number of replications. 
+An alternative tool is the asymptotic expansion method that can often give a solution with accuracy comparable or superior to  
+Monte-Carlo methods. The asymptotic expansion method
+has an advantage in the computational time because the approximation is given through an analytic formula.
 
 
 %The \pkg{yuima} 
@@ -731,7 +787,7 @@ in \eqref{yuima:func1}.
 %
  Similarly, for $F(x,\ve)=x$, 
 the functional becomes $F^{(\ve)}=X^{(\ve)}_T$ and the price of the European call option is 
-$\dE[\max(X^{(\ve)}_T-K,0)]$. This value has a closed form in the Black-Sholes economy but 
+$\dE[\max(X^{(\ve)}_T-K,0)]$. This value has a closed form in the Black-Sholes economy, but 
 it is necessary to apply some numerical method for pricing the Asian option even in this linear case.
 
 Returning to the general system (\ref{asy01})-(\ref{yuima:func1}), 
@@ -741,7 +797,7 @@ that is,
 b(\cdot,0)\>=\>0 \sskip\mbox{and}\sskip f_\alpha(\cdot,0)=0\sskip(\alpha=1,...,r).
 \eeas
 %
-Since $X^{(0)}_t$ is deterministic solution to the ordinary differential equation 
+Since $X^{(0)}_t$ is the deterministic solution to the ordinary differential equation
 \beas 
 \de X^{(0)}_t/\de t =a(X^{(0)}_t,0),&& X^{(0)}_0=x_0,
 \eeas
@@ -768,14 +824,14 @@ the asymptotic expansion of the (generalized) expectation
 \dE[g(\tilde{F}^{(\ep)})] &\sim& d_0(g)
 +\ep d_1(g)+\ep^2 d_2(g)+\cdots
 \eea
-as $\ep\downarrow0$ for measurable functions $g$ at most polynomial growth or 
-more generally for Schwartz distributions, 
-under the uniform nondegeneracy of the Malliavain covariance of $\tilde{F}^{(\ep)}$.
-\footnote{This condition ensures smoothness of the distribution of $\tilde{F}^{(\ep)}$. 
+as $\ep\downarrow0$ for measurable functions $g$ at most polynomial growth or, 
+more generally, for Schwartz distributions, 
+under the uniform nondegeneracy of the Malliavin covariance of $\tilde{F}^{(\ep)}$.
+\footnote{This condition ensures the smoothness of the distribution of $\tilde{F}^{(\ep)}$. 
 It should be remarked that the Watanabe's theory is more general than the present use 
 for the variable $\tilde{F}^{(\ep)}$ having a Gaussian principal part $\tilde{F}^{(0)}$. }
 %
-In the present situation, each $d_i(g)$ is expresses as 
+In the present situation, each $d_i(g)$ is expressed as 
 \beas 
 d_i(g) &=& \int g(z)p_i(z)\phi(z;0,v)dz,
 \eeas
@@ -795,14 +851,14 @@ As mentioned above,
 Monte Carlo methods require a huge number of simulations to get the desired accuracy of the
 calculation of the expectation, while the asymptotic expansion of $F^{(\ve)}$ gives very fast 
 and accurate approximation by analytic formulation.
-The \pkg{yuima}  package provides functions to construct the functional $F^{(\ve)}$, and automatic asymptotic expansion based on the Malliavin calculus.  starting from a  \pkg{yuima} object. 
+The \pkg{yuima}  package provides functions to construct the functional $F^{(\ve)}$ and perform automatic asymptotic expansion based on the Malliavin calculus  starting from a  \pkg{yuima} object. 
 This asymptotic expansion approach to option pricing was proposed in early 1990's 
 ( \citep{Yoshida92b}, \citep{Takahashi99}, \citep{Kunitomo01}), and 
-many related papers are available today. 
+several related papers are available today. 
 
 
 Though our method can be applied to the nonlinear system (\ref{asy01})-(\ref{yuima:func1}), 
-just for an example, we shall consider 
+just as an example, we shall consider 
 the Asian call option of the geometric Brownian motion of equation \eqref{eqyuima:gbm1} with $\mu=1$ and $x_0=1$, 
 and 
 \bea\label{130206-5} 
@@ -878,7 +934,7 @@ and the relative difference between the two approximations is \Sexpr{round((asy2
 \subsubsection{Asymptotic Expansion for General Stochastic Processes}
 Of course, \pkg{yuima} approach is more general in that the above Levy approximation only holds when the process $X_t$ is the geometric Brownian motion. We now give an example when the underlying process $X_t$ is the following CIR model
 $$
-\de X_t =  0.9 X_t \de t + \ep \sqrt{X_t} \de W_t, X0 = 1
+\de X_t =  0.9 X_t \de t + \ep \sqrt{X_t} \de W_t,\quad X_0 = 1
 $$
 and we calculate the asymptotic expansion of a european call option with strike price $K=10$ for $\ep=0.4$.
 
@@ -932,14 +988,14 @@ ae.value2
 ae.time <- time2 - time1
 ae.time
 @
-As it can be seen, the contribution of the term corresponding to the second order of the asymptotic expansion give a real contribution to the approximation and the final approximated value \Sexpr{round(ae.value2,5)} can be compared with a Monte Carlo estimate based on 1000000 replications 
+As it can be seen, the contribution of the term corresponding to the second order of the asymptotic expansion gives a real contribution to the approximation and the final approximated value \Sexpr{round(ae.value2,5)} can be compared with a Monte Carlo estimate based on 1000000 replications 
 which is equal to \code{0.561059}, but more demanding in terms of cpu time. The relative difference among the two estimates is \Sexpr{round((ae.value2-0.561059)/0.561059*100,1)}\%.
 
 \section{Inference for Stochastic Processes}\label{sec5}
 The \pkg{yuima} implements several optimal techniques for parametric, semi- and non-parametric estimation of (multidimensional) stochastic differential equations. Most of the techniques presented below apply to high frequency data, i.e. when $\Delta_n$, the time lag between to consecutive observations of the process, converges to zero as  the number  $n$ of observations       increases.
 
 \subsection{How to Input Data Into a \code{yuima} Object}
-Although most of the examples in this section are given on simulated data, the main way to fill up the \code{data} slot of a \code{yuima} object is to use the function \code{setYuima}. The function \code{setYuima} sets various slots of the \code{yuima} object. In particular, to estimate a \code{yuima.model} called \code{mod} on the data \code{X} one can use a code like this \code{my.yuima <- setYuima(data=setData(X), model=mod)} and then pass \code{my.yuima} to the inference functions as described in what follows.
+Although most of the examples in this section are given on simulated data, the main way to fill up the \code{data} slot of a \code{yuima} object is to use the function \code{setYuima}. The function \code{setYuima} sets various slots of the \code{yuima} object. In particular, to estimate a \code{yuima.model} called \code{mod} on the data \code{X} one can use a code like this \code{my.yuima <- setYuima(data=setData(X), model=mod)} and then pass \code{my.yuima} to the inference functions as described in the following.
 
 
 For example, assuming that an Internet connection is available, the following simple list of commands downloads data from the internet and constructs a \code{yuima} object with the \code{data} slot containing the time series.
@@ -961,7 +1017,7 @@ Moreover, $\theta_1\in\Theta_1\subset \mathbb{R}^p$,
 $\theta_2\in\Theta_2\subset \mathbb{R}^q$,
 $a:\mathbb{R}^d\times\Theta_2 \to \mathbb{R}^d$ and $b:\mathbb{R}^d\times\Theta_1 \to \mathbb{R}^d\times \mathbb{R}^r$. 
 The naming of $\theta_2$ and $\theta_1$ is theoretically natural in view of the optimal convergence rates of the estimators for these parameters.
-Given sampled data ${\bf X}_n = (X_{t_i})_{i=0,\ldots,n}$ with $t_i = i\Delta_n$,
+Given sampled data ${\bf X}_n = (X_{t_i})_{i=0,\ldots,n}$ with $t_i = i\Delta_n$, $\Delta_n \to 0$ as $n\to \infty$,
 QMLE (Quasi Maximum Likelihood Estimator) makes use of the following approximation of the true log-likelihood for multidimensional diffusions
 {\small
 \begin{eqnarray}\label{qlik}
@@ -998,7 +1054,7 @@ set.seed(123)
 yuima <- simulate(yuima, xinit = 1, 
 true.parameter = list(theta1 = 0.2, theta2 = 0.3))
 @
-Now the \code{yuima} object contains both the \code{model} and \code{data} slots. We set the initial values for the optimizer as $\theta_1=\theta_2=0.5$ and we specify them as a named list called \code{param.init}. We can now use the function \code{qmle} to estimate the parameters $\theta_1$ and $\theta_2$ as follows
+Now the \code{yuima} object contains both the \code{model} and the \code{data} slots. We set the initial values for the optimizer as $\theta_1=\theta_2=0.5$ and we specify them as a named list called \code{param.init}. We can now use the function \code{qmle} to estimate the parameters $\theta_1$ and $\theta_2$ as follows
 <<echo=TRUE, print=FALSE,results=hide>>=
 param.init <- list(theta2=0.5,theta1=0.5)
 low.par <-  list(theta1=0, theta2=0)
@@ -1013,25 +1069,24 @@ summary(mle1)
 %Notice the interface and the output of the \code{qmle} is quite similar to the ones of the standard \code{mle} function of the \pkg{stats4} package of the base \proglang{R} system.
 
 \subsubsection{Theoretical Remarks on QMLE}%, High-freq \& ergodicity}
-Here are some theoretical remarks. 
-Consistency must be required when an estimator is applied; otherwise 
-the estimation would lose mathematical backing because 
+Consistency of an estimator is always a  required property; otherwise 
+the estimation would loose mathematical backing because 
 the more data the observer obtains, the worse the estimator behaves. 
-For consistency of $\hat{\theta}_1$, we are assuming 
+For the consistency of $\hat{\theta}_1$, we are assuming 
 $\Delta_n\to0$ as $n\to\infty$. Indeed, under this condition, $\hat{\theta}_1$ 
 has asymptotically (mixed) normality 
 \citep{GenonCatalotJacod93, UchidaYoshida12}. 
-On the other hand, one needs $T=n\Delta_n\to\infty$ for consistency of 
-$\hat{\theta}_2$ because 
+On the other hand, one needs $T=n\Delta_n\to\infty$ for the consistency of 
+$\hat{\theta}_2$ since 
 the Fisher information for $\theta_2$ is finite for a finite $T$ 
 and consistent estimation of $\theta_2$ is theoretically impossible. 
 When $T\to\infty$, usually ergodicity is assumed to ensure a law of large numbers and as a result 
-we obtain 
-consistency of $\hat{\theta}_2$, moreover asymptotic normality. 
+the  
+consistency of $\hat{\theta}_2$ is obtained. Moreover, asymptotic normality is also established. 
 We assume the condition $n\Delta_n^p\to0$ for $p=2$ 
 while applying the quasi log-likelihood (\ref{qlik}) based on the local Gaussian approximation. 
 In practical applications, reduction of the parameter's dimension and relaxing 
-the above condition to $n\Delta_n^p\to0$ for $p$ bigger than $2$ are very important. 
+the above condition to $n\Delta_n^p\to0$ for $p$ larger than $2$ are extremely important.
 Adaptive estimation methods were proposed for $p=3$ and for any $p$ 
 in \citep{Yoshida92} and \citep{UchidaYoshida11}, respectively, with the convergence of moments 
 by a large deviation argument. 
@@ -1050,28 +1105,27 @@ and the quasi likelihood defined in \eqref{qlik}.
 
 The adaptive Bayes type estimator is defined as follows. 
 First we choose an initial arbitrary value $\theta_2^\star\in\Theta_2$ and 
-pretend $\theta_1$ is the unknown parameter to 
-make the Bayesian type estimator $\tilde{\theta}_1$ as 
+pretend $\theta_1$ is the unknown parameter for which we construct the Bayesian type estimator $\tilde{\theta}_1$ as  follows
 \begin{equation} 
 \tilde{\theta}_1
 =  
-\Big[\int_{\Theta_1}\exp\{\ell_n(\mathbf{ x}_n,(\theta_1,\theta_2^\star))\}
-\pi_1(\theta_1)d\theta_1 \Big]^{-1} \int_{\Theta_1} \theta_1 \exp \{\ell_n(\mathbf{ x}_n,(\theta_1,\theta_2^\star))
+\Big[\int_{\Theta_1}\exp\{\ell_n(\mathbf{ X}_n,(\theta_1,\theta_2^\star))\}
+\pi_1(\theta_1)d\theta_1 \Big]^{-1} \int_{\Theta_1} \theta_1 \exp \{\ell_n(\mathbf{ X}_n,(\theta_1,\theta_2^\star))
 \}\pi_1(\theta_1)d\theta_1
 \end{equation}
 where 
 $\pi_1$ is a prior density on $\Theta_1$. 
 According to the asymptotic theory 
-under hight-frequent samplings, any function $\pi_1$ can be used
+under high-frequency samplings, any function $\pi_1$ can be used
 if it is positive on $\Theta_1$. 
-For estimation of $\theta_2$, we use $\tilde{\theta}_1$ 
+For the estimation of $\theta_2$, we use $\tilde{\theta}_1$ 
 to reform the quasi-likelihood function. That is,
 the Bayes type estimator for $\theta_2$ is defined by 
 \begin{equation} 
 \tilde{\theta}_2
 = 
-\Big[\int_{\Theta_2}\exp\{ \ell_n(\mathbf{ x}_n,(\tilde{\theta}_1,\theta_2))\}
-\pi_2(\theta_2)d\theta_2 \Big]^{-1} \int_{\Theta_2} \theta_2 \exp \{\ell_n(\mathbf{ x}_n,(\tilde{\theta}_1,\theta_2))\}
+\Big[\int_{\Theta_2}\exp\{ \ell_n(\mathbf{ X}_n,(\tilde{\theta}_1,\theta_2))\}
+\pi_2(\theta_2)d\theta_2 \Big]^{-1} \int_{\Theta_2} \theta_2 \exp \{\ell_n(\mathbf{ X}_n,(\tilde{\theta}_1,\theta_2))\}
 \pi_2(\theta_2)d\theta_2
 \end{equation}
 where 
@@ -1099,19 +1153,18 @@ coef(summary(mle1))
 @
 The argument \code{method="nomcmc"} in \code{adaBayes} performs numerical integration, otherwise MCMC method is used.
 
-The argument \code{method="nomcmc"} in \code{adaBayes} performs numerical integration, otherwise MCMC method is used.
 
 \subsubsection{Theoretical Remarks on Adaptive Bayes Estimator}
 Under the same conditions, the adaptive Bayes estimator $\tilde{\theta}_1$ and
 $\tilde{\theta}_2$ perform in the same way as $\hat{\theta}_1$ and $\hat{\theta}_2$, respectively. 
 See the remark in Section \ref{section-qmle} 
-and also \citep{Yoshida92} and \citep{UchidaYoshida12} for details. 
+and also \citet{Yoshida92} and \citet{UchidaYoshida12} for details. 
 
 
 
 
 \subsubsection{The Effect of Small Sample Size on Drift Estimation}\label{small.sample}
-It is known from the theory that the estimation of the drift in a diffusion process strongly depend on the length of the observation interval $[0,T]$.
+It is known from the theory that the estimation of the drift in a diffusion process strongly depends on the length of the observation interval $[0,T]$.
 In our example above, we took $T=n^\frac13$, with $n = \Sexpr{n}$, which is approximatively   \Sexpr{round(n^(1/3),2)}. Now we reduce the sample size to $n=500$ and then $T=\Sexpr{round(500^(1/3),2)}$.
 We then apply both quasi-maximum likelihood and adaptive Bayes type estimators to these data
 <<>>=
@@ -1160,12 +1213,12 @@ Diffusion type processes are in the scope but this model
 can express more sophisticated stochastic structures. 
 
 
-The process $X_l$ is supposed to be observed at 
+The process $X_l$ is supposed to be observed  
 over the increasing sequence of times 
 $T^{l,i}$ $(i\in\mathbb{Z}_{\geq0})$ starting at $0$, up to time T. 
 Thus, the observables are $(T^{l,i},X_{l,i})$ with $T^{l,i}\leq T$. 
-Each $T^{l,j}$ may be a stopping time, so possibly depends on 
-the history of $(X_1,X_2)$ as well as the precedent stopping times.  
+Each $T^{l,j}$ may be a stopping time, so it possibly depends on 
+the history of $(X_1,X_2)$ as well as on the precedent stopping times.  
 Two sequences of stopping times 
 $T^{1,i}$ and $T^{2,j}$ are \textit{nonsynchronous},  and 
 irregularly spaced, in general. 
@@ -1179,9 +1232,8 @@ The parameter of interest is the quadratic covariation between $X_1$ and $X_2$:
 \theta=
 \langle X_1 , X_2 \rangle_T = \int_0^T \sigma_{1,t} \sigma_{2,t} \rho_t \mbox{d}t.
 \end{equation}
-The target variable $\theta$ is random in general. 
-
-It can be estimated with the nonsynchronous covariance estimator 
+The target variable $\theta$ is random in general and
+it can be estimated with the nonsynchronous covariance estimator 
 (Hayashi-Yoshida estimator) 
 \begin{equation}
 U_n= \sum_{i,j:T^{1,i}\leq T, T^{2,j}\leq T} (X_{1,T^{1,i}}-X_{1,T^{1,i-1}})(X_{2,T^{2,j}}-X_{2,T^{2,j-1}})
@@ -1191,10 +1243,9 @@ U_n= \sum_{i,j:T^{1,i}\leq T, T^{2,j}\leq T} (X_{1,T^{1,i}}-X_{1,T^{1,i-1}})(X_{
 That is, the product of any pair of increments $(X_{1,T^{1,i}}-X_{1,T^{1,i-1}})$ and
 $(X_{2,T^{2,j}}-X_{2,T^{2,j-1}})$ will make a contribution 
 to the sum only when 
-the respective observation intervals $(T^{1,i-1},T^{1,i}] $ and $ (T^{2,j-1},T^{2,j}] $ are overlapping 
-with each other. 
+the respective observation intervals $(T^{1,i-1},T^{1,i}] $ and $ (T^{2,j-1},T^{2,j}] $ are overlapping.
 %The estimator $U_n$ was proposed by Hayashi and Yoshida  and 
-It is known that $U_n$ is consist and has asymptotically mixed normal 
+It is known that $U_n$ is consistent and has asymptotically mixed normal 
 distribution 
 as $n\to\infty$ if the maximum length between two consecutive observing times 
 tends to $0$. 
@@ -1246,7 +1297,7 @@ cor.rho <- function(t,x1=0, x2=0) sqrt(1/2)
 diff.coef.matrix <- matrix( c( "diff.coef.1(t,x1,x2)", 
 "diff.coef.2(t,x1,x2) * cor.rho(t,x1,x2)", "", 
 "diff.coef.2(t,x1,x2) * sqrt(1-cor.rho(t,x1,x2)^2)"),2,2)
-# Model sde using yuima.model
+# Model SDE using yuima.model
 cor.mod <- setModel(drift = c("",""), diffusion = diff.coef.matrix,
  solve.variable=c("x1","x2"))
 @ 
@@ -1269,7 +1320,7 @@ For the sampling scheme, we will consider the independent Poisson sampling.
 That is, each configuration of the sampling times $T^{l,i}$ is realized 
 as the Poisson random measure with intensity $np_l$, 
 and the two random measures are independent each other as well as 
-the stochastic processes. Under this scheme data become asynchronous. It is known that 
+the stochastic processes. Under this scheme the data become asynchronous. It is known that 
 \begin{equation}
 n^{1/2} ( U_n -\theta) \rightarrow N(0,c),
 \end{equation}
@@ -1304,7 +1355,8 @@ yuima <- setYuima(model=cor.mod, sampling=yuima.samp)
 X <- simulate(yuima)
 @
 \code{cce} takes the sample and returns 
-an estimate of the quadratic covariation. For example, for the complete data
+an estimate of the quadratic covariation. For example, for the complete data, we obtain the
+following estimates
 <<>>=
 cce(X)
 @
@@ -1388,11 +1440,11 @@ Consider a multidimensional stochastic differential equation of the form
 $$
 \de Y_t = a_t \de t + b(X_t,\theta) \de W_t,\ \ t\in[0,T], 
 $$
-where $W_t$ is an $r$-dimensional Wiener process and $a_t$ and $X_t$ are multidimensional processes, $\theta\in\Theta\subset \mathbb{R}^p$,  $b:\mathbb{R}^d\times\Theta \to \mathbb{R}^d\times \mathbb{R}^r$, is the diffusion coefficient (volatility) matrix.
+where $W_t$ is a $r$-dimensional Wiener process and $a_t$ and $X_t$ are multidimensional processes, $\theta\in\Theta\subset \mathbb{R}^p$,  $b:\mathbb{R}^d\times\Theta \to \mathbb{R}^d\times \mathbb{R}^r$, is the diffusion coefficient (volatility) matrix.
 
 
 
-When $Y=X$ the problem is a diffusion model.
+When $Y=X$ the model above is a diffusion model.
 The process $a_t$ may have jumps but should not explode and it is treated as a nuisance in this model.
 The change-point problem for the volatility is formalized as follows
 $$
@@ -1481,7 +1533,7 @@ $$
 X_{1,0}=1.0,\quad
 X_{2,0}=1.0,\quad
 $$
-with change-point instant at time $\tau=0.4$  and $T=10$.   First, we describe the model to be simulated
+with change-point instant at time $\tau=4$  and $T=10$.   First, we describe the model to be simulated
 <<cpoint1, echo=TRUE,results=hide>>=
 diff.matrix <- matrix(c("theta1.k*x1","0*x2","0*x1","theta2.k*x2"), 2, 2)
 drift.c <- c("sin(x1)", "3-x2")
@@ -1532,7 +1584,7 @@ The composed trajectory appears as follows
 plot(yuima)
 @
 
-As said, the change-point analysis do not consider the information coming from the drift part of the model and \pkg{yuima} ignores this internally.
+As said, the change-point analysis does not consider the information coming from the drift part of the model and \pkg{yuima} ignores this internally.
 Just to make clear that the information on the drift term is not considered by the function \code{CPoint}, we redefine the \code{yuima} model removing the information coming from the drift and then adding back the data.
 <<cpoint4b>>=
 noDriftModel <- setModel(drift=c("0", "0"), diffusion=diff.matrix,
@@ -1541,15 +1593,16 @@ noDriftModel <- setModel(drift=c("0", "0"), diffusion=diff.matrix,
 noDriftModel <- setYuima(noDriftModel, data=yuima@data)
 noDriftModel@model@drift
 @
-First we show that there is no difference in using the complete model or the model without drift. For simplicity, we assume the true values of the parameters for $\theta_{1.k}$ and $\theta_{1.k}$
+First we show that there is no difference in using the complete model or the model without drift. For simplicity, we assume to know the true values of the parameters for $\theta_{1.k}$ and $\theta_{1.k}$ 
 <<cpoint5>>=
 t.est <- CPoint(yuima,param1=t0,param2=t1)
 t.est$tau
 t.est2 <- CPoint(noDriftModel,param1=t0,param2=t1)
 t.est2$tau
 @
+As it can be seen, the above estimates of the change point are the same for the complete model \code{yuima} and the model without drift \code{noDriftModel}.
 \subsubsection{An Example of Two Stage Estimation}
-In practical situations, the initial values of the parameters are not known and there is the need to provide a preliminary estimators of them. One possible approach is the two stage change-point estimation approach as explained in  \citet{iacyos09}. The idea is to take a small subsets of observations at the very beginning and the end of the time series, estimate a
+In practical situations, the initial values of the parameters are not known and there is the need to provide a preliminary estimators of them. One possible approach is the two stage change-point estimation approach as explained in  \citet{iacyos09}. The idea is to take a small subset of observations at the very beginning and the end of the time series, estimate a
 change point and and then refine the estimation.
 
 To this aim, the \pkg{yuima} package contains two  functions
@@ -1571,7 +1624,7 @@ t.est3 <- CPoint(noDriftModel,param1=t0.est,param2=t1.est)
 t.est3
 @
 Notice that, even if the estimated parameters are not too accurate because we use a small subsets of observations, the change-point estimate remains good.
-We can now refine the estimate of the change point and the parameters but iterating the above procedure.
+We can now refine the estimate of the change point and the parameters by iterating the above procedure.
 <<>>=
 qmleL(noDriftModel, t=t.est3$tau, start=list(theta1.k=0.1, theta2.k=0.1),
 lower=list(theta1.k=0, theta2.k=0), upper=list(theta1.k=1, theta2.k=1), 
@@ -1584,7 +1637,6 @@ t12s.est <- coef(estR)
 t2s.est3 <- CPoint(noDriftModel,param1=t02s.est,param2=t12s.est)
 t2s.est3
 @
-
 \subsection{LASSO Model Selection}
 The Least Absolute Shrinkage and Selection Operator (LASSO) is a useful and well studied approach to the problem of model selection and its major advantage is the simultaneous execution of both parameter estimation and variable selection (see \citet{Tib96}; \citet{Knight00}; \citet{Efron}). 
 
@@ -1604,8 +1656,8 @@ $$\beta=(\beta_1,...,\beta_q)'\in\Theta_q\subset \mathbb{R}^q, \quad q\geq1$$
 with $b:\Theta_p\times\mathbb{R}^d\to \mathbb{R}^d$, $\sigma:\Theta_q\times \mathbb{R}^d\to \mathbb{R}^d\times \mathbb{R}^m$ and $W_t,t\in [0,T]$, is a standard Brownian motion in $\mathbb{R}^m$. 
 We assume that the functions $a$ and $b$ are known up to   $\alpha$ and $\beta$.
 We denote by $\theta=(\alpha,\beta)\in\Theta_p\times \Theta_q=\Theta$ the parametric vector and with $\theta_0=(\alpha_0,\beta_0)$ its unknown true value. 
-Let $\mathbb{H}_n({\bf X}_n,\theta) = \ell_n({\bf X}_n,\theta)$ from equation \eqref{qlik}.
-The quasi-MLE $\hat{\theta}$ for this model is the solution of the following problem
+Let $\mathbb{H}_n({\bf X}_n,\theta) = -\ell_n({\bf X}_n,\theta)$ from equation \eqref{qlik}.
+The QMLE $\hat{\theta}$ for this model is the solution of the following problem
 $$
 \hat{\theta}=(\hat\alpha,\hat\beta)'=\arg\min_\theta \mathbb{H}_n({\bf X}_n,\theta)
 $$ 
@@ -1617,6 +1669,7 @@ with
 $$
 \mathcal{F}(\theta)=(\theta-\hat{\theta})^T\ddot{\mathbb{H}}_n({\bf X}_n, \hat\theta)(\theta-\hat{\theta})+\sum_{j=1}^p\lambda_{n,j}|\alpha_j| +\sum_{k=1}^q\gamma_{n,k}|\beta_k|
 $$
+and $\ddot{\mathbb{H}}_n$ is the matrix of second partial derivatives of $\mathbb{H}$ with respect to the vector $\theta$.
 For more details see \citet{DegIac10b}.
 The tuning parameters should be chosen as in \citet{Zou06} in the following way
 \begin{equation}
@@ -1624,11 +1677,11 @@ The tuning parameters should be chosen as in \citet{Zou06} in the following way
 \lambda_{n,j} = \lambda_0 |\hat \alpha_{j}|^{-\delta_1}, \qquad
 \gamma_{n,k} = \gamma_0 |\hat \beta_{j}|^{-\delta_2}
 \end{equation}
-where $\hat \alpha_{j}$ and  $\hat \beta_{k}$ are the unpenalized QML estimator of $\alpha_j$ and $\beta_k$ respectively, $\delta_1, \delta_2>0$ and usually taken unitary.
+where $\hat \alpha_{j}$ and  $\hat \beta_{k}$ are the unpenalized QMLE's of $\alpha_j$ and $\beta_k$ respectively, $\delta_1, \delta_2>0$ and usually taken unitary.
 
 \subsubsection{An Example of Model Selection for Interest Rates Data}
 The \code{lasso} method is implemented in the \pkg{yuima} package.
-Let us consider the full CKLS model
+Let us consider the full CKLS model \citep{CKLS92}
 $$\de X_t = (\alpha+\beta X_t)\de t + \sigma X_t^\gamma\de W_t$$
 and let us try to estimate the parameter on  the U.S. Interest Rates monthly data from 06/1964 to 12/1989. We prepare the data, the model and the constraints for optimization
 <<results=hide>>=
@@ -1644,7 +1697,8 @@ start <- list(alpha=1, beta =-.1, sigma =.1, gamma =1)
 low <- list(alpha=-5, beta =-5, sigma =-5, gamma =-5)
 upp <- list(alpha=8, beta =8, sigma =8, gamma =8)
 @
-and now we apply the \code{lasso} function
+where \code{lambda10} stores the penaly terms $\lambda_0$ and $\gamma_0$ of \eqref{eq:penalty} of the LASSO method.
+Now we apply the \code{lasso} function
 <<echo=TRUE,results=hide>>=
 lasso10 <- lasso(yuima, lambda10, start=start, lower=low, upper=upp,
    method="L-BFGS-B")
@@ -1660,9 +1714,9 @@ $$\de X_t =  0.6 \de t + 0.12 X_t^{\frac32}\de W_t.$$
 Notice that this model is not an ergodic one, indicating that the LASSO method shows that the real data are indeed not stationary, but still in the family of CKLS models.
 
 \section{Miscellanea and Roadmap of YUIMA Project}\label{sec6}
-Other statistical techniques have been are already implemented in the developer version of the \pkg{yuima} package although not yet released into the current distribution. Among these we mention: the QMLE approach for stochastic differential equations with L\'evy noise \citep{shiyos06, ogiyos11}; the parametric estimation for the fractional Ornstein-Uhlembeck model \citep{brouiac12}; different simulation schemes as in \citep{Iacus08} for multidimensional diffusion processes; Lead-lag estimation \citep{HoffRosYo09}.
+Other statistical techniques have been are already implemented in the developer version of the \pkg{yuima} package although not yet released into the current distribution. Among these we mention: the QMLE approach for stochastic differential equations with L\'evy noise \citep{shiyos06, ogiyos11}; the parametric estimation for the fractional Ornstein-Uhlembeck model \citep{brouiac12}; different simulation schemes as in \citep{Iacus08} for multidimensional diffusion processes; Lead-lag estimation \citep{HoffRosYo09}; hypotheses testing via $\phi$-divergence \citep{degiac12}.
  For example, a nice (yet incomplete) utility is the method \code{toLatex} for objects of class \code{yuima} and \code{yuima.model}. A simple writing like
-\code{toLatex(my-yuima-obj)} produces the related \LaTeX{} code which can be copy and pasted in a mathematical paper. For example,
+\code{toLatex(my-yuima-obj)} produces the related \LaTeX{} code which can be copied and pasted in a mathematical paper. For example,
 <<>>=
 a <- c("-3*x1","-x1-2*x2")
 b <- matrix(c("1","x1","0","3","x2","0"),2,3)
