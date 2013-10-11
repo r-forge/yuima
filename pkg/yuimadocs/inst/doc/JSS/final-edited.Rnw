@@ -46,6 +46,7 @@
 \usepackage{latexsym}
 \usepackage{amsmath}
 
+\usepackage{float}
 \def\be{\begin{equation}}
 \def\ee{\end{equation}}
 \def\bea{\begin{eqnarray}}
@@ -224,11 +225,11 @@ Although we assume that the reader of this paper has a basic knowledge of the \p
 if he/she knows stochastic differential equations intuitively or symbolically. 
 
 
-\section{The \pkg{yuima} Package}\label{sec2}
+\section{The \pkg{yuima} package}\label{sec2}
 The package \pkg{yuima} depends on some other packages, like  \pkg{zoo} \citep{zoo}, which can be installed separately.
 The package \pkg{zoo} is used internally to store time series data. This dependence may change in the future adopting a more flexible class for internal storage of time series.
 
-\subsection{How to Obtain the Package}
+\subsection{How to obtain the package}
 The \pkg{yuima} package is hosted on R-Forge and the web page
 of the Project is  \url{http://r-forge.r-project.org/projects/yuima}.
 The  R-Forge page contains the latest development version, and stable
@@ -242,11 +243,11 @@ user can also try
 \code{install.packages("yuima",repos="http://R-Forge.R-project.org", type="source")}.
 
 
-\subsection{The Main Object and Classes}
+\subsection{The main object and classes}
 Before discussing the methods for simulation and inference for stochastic processes solutions to stochastic differential equations, here we discuss the main classes in the package.
 As mentioned there are different classes of objects defined in the \pkg{yuima} package and
 the main class is called the \code{yuima-class}. This class  is composed of several slots.
-Figure \ref{fig:classes} represents the different classes and their slots.
+Figure~\ref{fig:classes} represents the different classes and their slots.
 \begin{figure}[th]
 \centering{\includegraphics[width=\textwidth]{yuima-class}}
 \caption{The main classes in the \pkg{yuima} package.}
@@ -261,7 +262,7 @@ When the slots \code{data} and \code{model} are available, many other methods ca
 Further, functionals of stochastic differential equations can be defined using the \code{setFunctional} method and evaluated using asymptotic expansion methods as explained in Section \ref{sec4}. The \code{setFunctional} method creates a \code{yuima.functional} object which is included along with a \code{yuima.model}  into a \code{yuima} object in order to be used for the evaluation of its asymptotic expansion.
 
 
-\subsection{The \code{yuima.model} Class}\label{sec:model}
+\subsection{The \code{yuima.model} class}\label{sec:model}
 At present, in \pkg{yuima}  three main classes of stochastic differential equations  can be easily specified.  Here we present  a brief
 overview of these models as they will be described in detail in Section \ref{sec3}, but this allows to introduce an overall view of the slots of the \code{yuima.model} class.
 In \pkg{yuima} one can describe three main families of stochastic processes at present. These models can be one or multidimensional and eventually described as parametric models. Let $X_0=x_0$ be the initial value of the process, then, the main classes are as follows:
@@ -329,17 +330,17 @@ To see inside its structure, one can use the \proglang{R} command \code{str} on 
 \end{itemize}
 As seen in the above, the parameter space is accurately described internally in a \code{yuima} object because in inference for stochastic differential equations, estimators of different parameters have different properties. Usually, the rate of convergence for estimators in the diffusion coefficient are similar to the ones in the i.i.d. (independent and identically distributed) sampling while estimators of parameters in the drift coefficient are slower or, in some cases, not even consistent. The \pkg{yuima} package always tries to implement the best statistical inference for the given model under the observed sampling scheme.
 
-\section{Model Specification}\label{sec3}
+\section{Model specification}\label{sec3}
 In order to show how general the approach of the \pkg{yuima} package is, we present some examples. Throughout this section we assume that all the stochastic differential equations exist while in Section \ref{sec5} we will give  regularity conditions needed to have a properly defined statistical model.
 
-\subsection{One Dimensional Diffusion Processes}\label{sec:diff}
+\subsection{One dimensional diffusion processes}\label{sec:diff}
 Assume that we want to describe the following stochastic differential equation
 $$\de X_t = -3 X_t \de t + \frac{1}{1+X_t^2}\de W_t.$$
 In the above $a(x) = -3 x$ and $b(x) = \frac{1}{1+x^2}$ according to the notation of previous section and $W_t$ is a standard Wiener process.
 This can be described in \pkg{yuima} by specifying the drift and diffusion coefficients as plain
 \proglang{R} expressions passed as strings
 <<print=FALSE,echo=FALSE,results=hide>>=
-library(yuima)
+library("yuima")
 @ 
 <<echo=TRUE, print=FALSE,results=hide>>=
 mod1 <- setModel(drift = "-3*x", diffusion = "1/(1+x^2)")
@@ -351,13 +352,29 @@ At this point, the package fills the proper slots of the \code{yuima} object
 str(mod1)
 @
 
-From the above, it is possible to see that the jump coefficient is void and the Hurst parameter is set to 0.5, because this is a model where the driving process is the standard Brownian motion, i.e. a fractional Brownian motion if Hurst index $H=\frac12$.
+From the above, it is possible to see that the jump coefficient is void and the Hurst parameter is set to 0.5, because this is a model where the driving process is the standard Brownian motion, i.e., a fractional Brownian motion if Hurst index $H=\frac12$.
 Now, with \code{mod1} in hands, it is extremely easy to simulate a trajectory by  Euler-Maruyama scheme of the process as follows
-<<echo=TRUE, print=FALSE,fig=TRUE,width=9,height=4,results=hide>>=
+<<sim-mod1,echo=TRUE, print=FALSE,results=hide>>=
 set.seed(123)
 X <- simulate(mod1)
+@
+which can be plotted using the command \code{plot}
+<<plot-mod1,echo=TRUE, print=FALSE,fig=FALSE,results=hide>>=
 plot(X)
 @
+and the result is shown in Figure~\ref{fig:plot-mod1}.
+\begin{figure}[H]
+<<echo=FALSE, print=FALSE,results=hide>>=
+pdf("plot-mod1.pdf",width=9,height=4)
+par(mar=c(4,4,0,0))
+plot(X)
+dev.off()
+@
+\includegraphics[width=\textwidth]{plot-mod1}
+\caption{The \code{plot} function is used to draw a trajectory of a simulated \code{yuima} object.}
+\label{fig:plot-mod1}
+\end{figure} 
+
 
 \noindent
 The \code{simulate} function fills in addition the two slots \code{data} and \code{sampling} of the \code{yuima} object. 
@@ -367,7 +384,7 @@ str(X,vec.len=2)
 More details on how to change the default sampling scheme for the \code{simulate} method and how to perform subsampling will be given in Section \ref{sec:simul}.
 
 
-\subsection{User Specified State and Time Variables}
+\subsection{User specified state and time variables}
 Suppose now that the user wants to specify her own model using a prescribed notation, e.g., some SDE's like
 $$\de Y_s = -3 s Y_s \de s + \frac{1}{1+Y_s^2}\de W_s,$$
 where $a(s,y) = -3sy$ and $b(y) = 1/(1+y^2)$.
@@ -382,7 +399,7 @@ str(mod1b)
 @
 Once again, the user may use the \code{simulate} method to perform simulation.
 
-\subsection{Specification of Parametric Models}\label{sec:par}
+\subsection{Specification of parametric models}\label{sec:par}
 Assume now that we want to specify a parametric model like this
 $$\de X_t = -\theta X_t \de t + \frac{1}{1+X_t^\gamma}\de W_t$$
 where $a(x,\theta) = -\theta x$ and $b(x,\gamma) = 1/(1+x^\gamma)$.
@@ -395,13 +412,26 @@ so, in this case, \code{theta} and \code{gamma}, which are different form \code{
 str(mod2)
 @
 In order to simulate the parametric model it is necessary to specify the values of the parameters $\theta$ and $\gamma$ as shown in the next code chunk
-<<echo=TRUE, print=FALSE,fig=TRUE,height=4,results=hide>>=
+<<sim-mod2,echo=TRUE, print=FALSE,fig=FALSE,results=hide>>=
 set.seed(123)
 X <- simulate(mod2,true.param=list(theta=1,gamma=3))
 plot(X)
 @
+and the trajectory can be seen in Figure~\ref{fig:plot-mod2}.
+\begin{figure}[H]
+<<plot-mod2,echo=FALSE, print=FALSE,results=hide>>=
+pdf("plot-mod2.pdf",width=9,height=4)
+par(mar=c(4,4,0,0))
+plot(X)
+dev.off()
+@
+\includegraphics[width=\textwidth]{plot-mod2}
+\caption{A trajectory simulated from the parametric model  \code{mod2}.}
+\label{fig:plot-mod2}
+\end{figure} 
 
-\subsection{Multidimensional Processes}\label{sec:multi}
+
+\subsection{Multidimensional processes}\label{sec:multi}
 Next is an example of a system of two stochastic differential equations for the couple $(X_{1,t}, X_{2,t})$ driven by three independent Brownian motions $(W_{1,t}, W_{2,t}, W_{3,t})$
 $$
 \begin{aligned}
@@ -416,7 +446,7 @@ $$
 \left(\begin{array}{ccc}1 & 0 & X_{2,t} \\X_{1,t} & 3 & 0\end{array}\right)
 \left(\begin{array}{c}\de W_{1,t} \\ \de W_{2,t} \\ \de W_{3,t}\end{array}\right)
 $$
-For this system it is now necessary to instruct \pkg{yuima} about the state variable on both the left-hand side of the equation and the right-hand side of the equation, i.e. there is the need to specify also the \code{solve.variable} for the left hand side of the SDE:
+For this system it is now necessary to instruct \pkg{yuima} about the state variable on both the left-hand side of the equation and the right-hand side of the equation, i.e., there is the need to specify also the \code{solve.variable} for the left hand side of the SDE:
 <<echo=TRUE, print=FALSE,results=hide>>=
 sol <- c("x1","x2") # variable for numerical solution
 a <- c("-3*x1","-x1-2*x2")   # drift vector 
@@ -424,15 +454,24 @@ b <- matrix(c("1","x1","0","3","x2","0"),2,3)  #  diffusion matrix
 mod3 <- setModel(drift = a, diffusion = b, solve.variable = sol)
 @
 Looking at the structure of the \code{noise.number} slot in \code{mod3}, one can see that this is now set to 3 which is taken as the number of columns of the diffusion matrix.
-Again, this model can be easily simulated
-<<echo=TRUE, print=FALSE,fig=TRUE,width=9,height=4,results=hide>>=
+Again, this model can be easily simulated and the trajectory can be seen in Figure~\ref{fig:plot-mod3}.
+<<sim-mod3,echo=TRUE, print=FALSE,fig=FALSE,results=hide>>=
 set.seed(123)
 X <- simulate(mod3)
 plot(X, plot.type="single",lty=1:2)
 @
-
+<<plot-mod3,echo=FALSE, fig=FALSE, print=FALSE,results=hide>>=
+pdf("plot-mod3.pdf",width=9,height=4)
+par(mar=c(4,4,0,0))
+plot(X, plot.type="single",lty=1:2)
+dev.off()
+@
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{plot-mod3}
+\caption{A trajectory of the multidimensional SDE described in \code{mod3}.}
+\label{fig:plot-mod3}
+\end{figure} 
 Notice that the role of \code{solve.variable} is essential because it allows to specify the left hand side of an SDE equation. For example, if one wants to specify this model instead of the previous one
-
 $$
 \begin{aligned}
 \de X_{2,t} &= -3 X_{1,t} \de t + \de W_{1,t} + X_{2,t} \de W_{3,t}\\
@@ -529,17 +568,17 @@ str(sabr.mod@parameter)
 @
 
 
-\subsection{Fractional Gaussian Noise}\label{sec:fgn}
+\subsection{Fractional gaussian noise}\label{sec:fgn}
 The \pkg{yuima} allows for the description of stochastic differential equations driven by fractional Brownian motion of the following type
 $$\de X_t =  a(X_t) \de t + b(X_t) \de W_t^H
 $$
-where $W^H=\left( W^H_t, t\geq 0 \right)$ is a normalized fractional Brownian motion (fBM), {\it i.e.} the zero mean Gaussian processes with covariance function
+where $W^H=\left( W^H_t, t\geq 0 \right)$ is a normalized fractional Brownian motion (fBM), {\it i.e.}, the zero mean Gaussian processes with covariance function
 $$\dE( W_s^H W_t^H )= \frac{1}{2} \left( |s|^{2H}+|t|^{2H}- |t-s|^{2H}\right)$$ with Hurst exponent $H\in(0,1)$.  The fractional Brownian motion process is  neither Markovian nor a semimartingale for $H\neq\frac{1}{2}$ but
 remains Gaussian.  For $H > \frac12$, the solution $X_t$ above  presents the long-range dependence property that makes it useful for different applications in biology, physics, ethernet traffic or finance.
-In order to specify a stochastic differential equation driven by fractional Gaussian noise it is necessary to specify the value of the Hurst parameter. For example, if we want to specify the following model
+In order to specify a stochastic differential equation driven by fractional Gaussian noise it is necessary to specify the value of the Hurst parameter. For example, if we want to specify the following  fractional Ornstein-Uhlenbeck model
 $$\de Y_t =  3 Y_t \de t + \de W_t^H$$
-we proceed as follows
-<<echo=TRUE, print=FALSE,fig=TRUE,width=9,height=6,results=hide>>=
+we can proceed as follows
+<<sim-mod4AB, echo=TRUE, print=FALSE,fig=FALSE,results=hide>>=
 mod4A <- setModel(drift="3*y", diffusion=1, hurst=0.3, solve.var="y")
 mod4B <- setModel(drift="3*y", diffusion=1, hurst=0.7, solve.var="y")
 set.seed(123)
@@ -550,6 +589,22 @@ par(mar=c(2,3,1,1))
 plot(X1,main="H=0.3")
 plot(X2,main="H=0.7")
 @
+and the two trajectories can be seen in Figure~\ref{fig:plot-mod4AB}.
+\begin{figure}[H]
+<<plot-mod4AB,echo=FALSE, print=FALSE,results=hide>>=
+pdf("plot-mod4AB.pdf",width=9,height=6)
+par(mfrow=c(2,1))
+par(mar=c(2,3,1,1))
+plot(X1,main="H=0.3")
+plot(X2,main="H=0.7")
+dev.off()
+@
+\includegraphics[width=\textwidth]{plot-mod4AB}
+\caption{Trajectories of the fractional Ornstein-Uhlenbeck process for different values of the Hurst parameter.}
+\label{fig:plot-mod4AB}
+\end{figure} 
+
+
 
 \noindent
 In this case, the appropriate slot is now filled
@@ -559,7 +614,7 @@ str(mod4A)
 @
 The user can choose between  two simulation schemes, namely the Cholesky method and \citet{WoodChan} method. This is done via the argument \code{methodfGn} in the \code{simulate} method. The default simulation scheme is Wood and Chan and it is chosen by setting \code{methodfGn="WoodChan"}, the other simply by setting \code{methodfGn} to \code{Cholesky}.
 
-\subsection{L\'evy Processes}\label{sec:jump}
+\subsection{L\'evy processes}\label{sec:jump}
 Jump processes can be specified in different ways in mathematics and hence in \pkg{yuima} package. 
 Let $Z_t$ be a  Compound Poisson Process (i.e., jumps size follow some distribution, like the Gaussian law and jumps occur at Poisson times).
 Then it is possible to consider the simple following SDE which involves jumps
@@ -584,8 +639,8 @@ In the next example we consider a compound Poisson process with intensity $\lamb
 This model can be specified in \code{setModel} using the argument  \code{measure.type="CP"} (fro Compound Poisson).
 A simple Ornstein-Uhlenbeck process with Gaussian jumps like this
 $$\de X_t = -\theta X_t \de t + \sigma \de W_t + \de Z_t$$
-is then specified as follows
-<<echo=TRUE, print=FALSE,fig=TRUE,width=9,height=4,results=hide>>=
+is then specified as follows (the trajectory is shown in Figure~\ref{fig:plot-mod5})
+<<sim-mod5,echo=TRUE, print=FALSE,fig=FALSE,results=hide>>=
 mod5 <- setModel(drift=c("-theta*x"), diffusion="sigma",
  jump.coeff="1", measure=list(intensity="10", df=list("dnorm(z, 0, 1)")),
  measure.type="CP", solve.variable="x")
@@ -593,22 +648,43 @@ set.seed(123)
 X <- simulate(mod5, true.p=list(theta=1,sigma=3),sampling=setSampling(n=1000))
 plot(X)
 @
-
+\begin{figure}[H]
+<<plot-mod5,echo=FALSE, print=FALSE,results=hide>>=
+pdf("plot-mod5.pdf",width=9,height=4)
+par(mar=c(4,4,0,0))
+plot(X)
+dev.off()
+@
+\includegraphics[width=\textwidth]{plot-mod5}
+\caption{A trajectory of the Ornstein-Uhlenbeck process with jumps following a compound Poisson process with Gaussian jumps as defined in \code{mod5}.}
+\label{fig:plot-mod5}
+\end{figure} 
+%%
 \noindent
 Another possibility is to specify the jump component via the L\'evy measure $\nu(\cdot)$. 
- Without going into too much details, here is an example of specification of a simple Ornstein-Uhlenbeck  process with IG (Inverse Gaussian) L\'evy measure $\nu(\cdot)$ and no Poisson component
+ Without going into too much details, here is an example of specification of a simple Ornstein-Uhlenbeck  process with IG (Inverse Gaussian) L\'evy measure $\nu(\cdot)$ and no Poisson component (see Figure~\ref{fig:plot-mod6})
 $$\de X_t = -x \de t + \de Z_t$$
-<<echo=TRUE, print=FALSE,fig=TRUE,width=9,height=4,results=hide>>=
+<<sim-mod6,echo=TRUE, print=FALSE,fig=FALSE,results=hide>>=
 mod6 <- setModel(drift="-x", xinit=1, jump.coeff="1", 
   measure.type="code", measure=list(df="rIG(z, 1, 0.1)"))
 set.seed(123)
 X <- simulate(mod6, sampling=setSampling(Terminal=10, n=10000)) 
 plot(X)
 @
-
 \noindent
 The argument \code{type="code"} stands for user defined code.
-\subsection{Specification of Generic Models in \pkg{yuima}}
+\begin{figure}[H]
+<<plot-mod6,echo=FALSE, print=FALSE,results=hide>>=
+pdf("plot-mod6.pdf",width=9,height=4)
+par(mar=c(4,4,0,0))
+plot(X)
+dev.off()
+@
+\includegraphics[width=\textwidth]{plot-mod6}
+\caption{A trajectory of the pure jump process with inverse Gaussian L\'evy measure for jumps as defined in \code{mod6}.}
+\label{fig:plot-mod6}
+\end{figure} 
+\subsection{Specification of generic models in \pkg{yuima}}
 In general, the \pkg{yuima} package allows to specify a large family of models solutions to
 $$\de X_t =a(t,X_t,\theta)\de t +  b(t,X_t,\theta)\de W_t + c(t,X_t,\theta)\de Z_t$$
 using the following interface
@@ -622,7 +698,7 @@ The \pkg{yuima} package implements many multivariate Random Numbers Generators (
 \code{rIG} (Inverse Gaussian), \code{rNIG} (Normal Inverse Gaussian), \code{rbgamma} (Bilateral Gamma), \code{rngamma} (Normal Gamma) and \texttt{rstable} (Stable Laws).
 Other user-defined RNG can be used freely.
 
-\section{Simulation, Sampling and Subsampling}\label{sec:simul}
+\section{Simulation, sampling and subsampling}\label{sec:simul}
 The \code{simulate} function simulates \code{yuima} models according to Euler-Maruyama scheme in the presence of non-fractional diffusion noise and L\'evy jumps and uses the Cholesky or the Wood and Chan methods for the fractional Gaussian noise. For diffusion models without jumps, \pkg{yuima} also implements the space discretized Euler-Maruyama method, which is more efficient, in the sense of mean squared error approximation, than the usual time-discretized Euler-Maruyama scheme.
 The (time discretized) Euler-Maruyama simulation scheme defines a grid of times
 $0 = \tau_0 < \tau_1 < \cdots < \tau_j < \tau_{j+1} < \cdots$,
@@ -635,7 +711,7 @@ $$
  As the interval $\tau_{j+1} - \tau_j$ is independent to  $\{W_t\}_{t \geq \tau_j}$ for each $j$,
  $W_{\tau_{j+1}} - W_{\tau_j}$ has the same distribution as $\sqrt{\tau_{j+1} - \tau_j}N_j$,
  where $N_j$ is an i.i.d. sequence of standard normal variables.
- The basic discretization scheme is  equidistant, i.e. 
+ The basic discretization scheme is  equidistant, i.e., 
  $\tau_{j+1} - \tau_j = T/n = \Delta_n$, for all $j \geq 0$.
 But the \code{simulate} method provides also space-discretized Euler-Maruyama method to solve SDE.
  This is at the moment designed for 1 factor SDE only, i.e., the case the driving
@@ -694,28 +770,52 @@ function(x) rexp(x, rate=20))) )
 str(newsamp)
 @
 In the above we have specified two independent exponential  distributions to represent Poisson arrival times. Notice that the slot \code{regular} is  set to \code{FALSE}.
-We subsample the original trajectory of \code{X2} using the \code{subsampling} function
-<<sub2,fig=TRUE,width=9,height=5>>=
+We subsample the original trajectory of \code{X2} using the \code{subsampling} function (see Figure~\ref{fig:plot-sub2})
+<<sub2,echo=TRUE, print=FALSE,fig=FALSE,results=hide>>=
 newdata <- subsampling(X2, sampling=newsamp)
 plot(X2,plot.type="single", lty=c(1,3),ylab="X2")
 points(get.zoo.data(newdata)[[1]],col="red")
 points(get.zoo.data(newdata)[[2]],col="green",pch=18)
 @
-
-We can also operate a deterministic sampling by specifying two different regular frequencies
-<<sub3,fig=TRUE,width=9,height=5>>=
+<<plot-sub2,echo=FALSE, fig=FALSE, print=FALSE,results=hide>>=
+pdf("plot-sub2.pdf",width=9,height=4)
+par(mar=c(4,4,0,0))
+plot(X2,plot.type="single", lty=c(1,3),ylab="X2")
+points(get.zoo.data(newdata)[[1]],col="red")
+points(get.zoo.data(newdata)[[2]],col="green",pch=18)
+dev.off()
+@
+We can also operate a deterministic sampling by specifying two different regular frequencies (see Figure~\ref{fig:plot-sub3})
+<<sub3,echo=TRUE, print=FALSE,fig=FALSE,results=hide>>=
 newsamp <- setSampling(delta=c(0.1,0.2))
 newdata <- subsampling(X2, sampling=newsamp)
 plot(X2,plot.type="single", lty=c(1,3),ylab="X2")
 points(get.zoo.data(newdata)[[1]],col="red")
 points(get.zoo.data(newdata)[[2]],col="green", pch=18)
 @
-
+<<plot-sub3,echo=FALSE, fig=FALSE, print=FALSE,results=hide>>=
+pdf("plot-sub3.pdf",width=9,height=4)
+par(mar=c(4,4,0,0))
+plot(X2,plot.type="single", lty=c(1,3),ylab="X2")
+points(get.zoo.data(newdata)[[1]],col="red")
+points(get.zoo.data(newdata)[[2]],col="green", pch=18)
+dev.off()
+@
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{plot-sub2}
+\caption{An example of Poisson random sub-sampling: green and red dots are sampled according to two different and independent Poisson processes.}
+\label{fig:plot-sub2}
+\end{figure} 
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{plot-sub3}
+\caption{An example of deterministic sub-sampling: the frequency of red dots is two times the one of the green dots.}
+\label{fig:plot-sub3}
+\end{figure} 
 Again one can look at the structure of the sampling structure.
 
-Subsampling can be used within the \code{simulate} function. What is usually done in simulation studies, is to simulate the process at very high frequency but then use data for estimation at a lower frequency.
+Subsampling can be used within the \code{simulate} function. What is usually done in simulation studies, is to simulate the process at very high frequency but then use data for estimation at a lower frequency (see Figure~\ref{fig:plot-sub4}).
 This can be done in a single step in the following way:
-<<sub4,fig=TRUE,width=9,height=5>>=
+<<sub4,fig=FALSE>>=
 set.seed(123)
 Y.sub <- simulate(mymod,sampling=setSampling(delta=0.001,n=1000),
 subsampling=setSampling(delta=0.01,n=100))
@@ -725,15 +825,37 @@ plot(Y, plot.type="single")
 points(get.zoo.data(Y.sub)[[1]],col="red")
 points(get.zoo.data(Y.sub)[[2]],col="green",pch=18)
 @
-
-In the previous code we have simulated the process twice just to show the effect of the subsampling, but the reader should use only the line which outputs the simulation to \code{Y.sub} as seen in the next plot.
-<<sub5,fig=TRUE,width=9,height=5>>=
+<<plot-sub4,echo=FALSE, fig=FALSE, print=FALSE,results=hide>>=
+pdf("plot-sub4.pdf",width=9,height=4)
+par(mar=c(4,4,0,0))
+plot(Y, plot.type="single")
+points(get.zoo.data(Y.sub)[[1]],col="red")
+points(get.zoo.data(Y.sub)[[2]],col="green",pch=18)
+dev.off()
+@
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{plot-sub4}
+\caption{An example of sub-sampling used within the \code{simulate} command.}
+\label{fig:plot-sub4}
+\end{figure} 
+In the previous code we have simulated the process twice just to show the effect of the subsampling, but the reader should use only the line which outputs the simulation to \code{Y.sub} as seen in Figure~\ref{fig:plot-sub5}.
+<<sub5,fig=FALSE>>=
 plot(Y.sub, plot.type="single")
 @
+<<plot-sub5,echo=FALSE, fig=FALSE, print=FALSE,results=hide>>=
+pdf("plot-sub5.pdf",width=9,height=4)
+par(mar=c(4,4,0,0))
+plot(Y.sub, plot.type="single")
+dev.off()
+@
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{plot-sub5}
+\caption{Plotting directly the sub-sampled trajectory  \code{Y.sub}.}
+\label{fig:plot-sub5}
+\end{figure} 
 
 
-
-\section{Asymptotic Expansion}\label{sec4}
+\section{Asymptotic expansion}\label{sec4}
 For numerical computation of the expectation of a random variable,
 the Monte-Carlo method gives a universal solution although it is time consuming and involves 
  stochastic errors of a certain scale 
@@ -851,9 +973,9 @@ As mentioned above,
 Monte Carlo methods require a huge number of simulations to get the desired accuracy of the
 calculation of the expectation, while the asymptotic expansion of $F^{(\ve)}$ gives very fast 
 and accurate approximation by analytic formulation.
-The \pkg{yuima}  package provides functions to construct the functional $F^{(\ve)}$ and perform automatic asymptotic expansion based on the Malliavin calculus  starting from a  \pkg{yuima} object. 
+The \pkg{yuima}  package provides functions to construct the functional $F^{(\ve)}$ and perform automatic asymptotic expansion based on the Malliavin calculus  starting from a  \code{yuima} object. 
 This asymptotic expansion approach to option pricing was proposed in early 1990's 
-( \citep{Yoshida92b}, \citep{Takahashi99}, \citep{Kunitomo01}), and 
+ \citep{Yoshida92b,Takahashi99,Kunitomo01}, and 
 several related papers are available today. 
 
 
@@ -921,17 +1043,17 @@ for a functional $G^{(\ep)}$ having a stochastic expansion like (\ref{130206-8})
 Thus our method works even under the existence of a stochastic discount factor. 
 
 
-One can compare the result of the asymptotic expansion with other well known techniques like Edgeworth series expansion for the log-normal distribution as proposed, e.g.,  in \citet{Levy92}. This approximation is available through the package \pkg{fExoticOptions}.
+One can compare the result of the asymptotic expansion with other well known techniques like Edgeworth series expansion for the log-normal distribution as proposed, e.g.,  in \citet{Levy92}. This approximation is available through the package \pkg{fExoticOptions} \citep{fExoticOptions}.
 %%% https://www.rocq.inria.fr/mathfi/Premia/free-version/doc/premia-doc/pdf_html/asian_doc/index.html#x1-80005.1.1
 <<>>=
-library(fExoticOptions)
+library("fExoticOptions")
 levy <- LevyAsianApproxOption(TypeFlag = "c", S = xinit, SA = xinit, X = K, 
       Time = 1, time = 1, r = 0.0, b = 1, sigma = e)@price
 levy
 @
 and the relative difference between the two approximations is \Sexpr{round((asy2-levy)/asy2*100,1)}\%.
 
-\subsubsection{Asymptotic Expansion for General Stochastic Processes}
+\subsubsection{Asymptotic expansion for general stochastic processes}
 Of course, \pkg{yuima} approach is more general in that the above Levy approximation only holds when the process $X_t$ is the geometric Brownian motion. We now give an example when the underlying process $X_t$ is the following CIR model
 $$
 \de X_t =  0.9 X_t \de t + \ep \sqrt{X_t} \de W_t,\quad X_0 = 1
@@ -991,10 +1113,10 @@ ae.time
 As it can be seen, the contribution of the term corresponding to the second order of the asymptotic expansion gives a real contribution to the approximation and the final approximated value \Sexpr{round(ae.value2,5)} can be compared with a Monte Carlo estimate based on 1000000 replications 
 which is equal to \code{0.561059}, but more demanding in terms of cpu time. The relative difference among the two estimates is \Sexpr{round((ae.value2-0.561059)/0.561059*100,1)}\%.
 
-\section{Inference for Stochastic Processes}\label{sec5}
-The \pkg{yuima} implements several optimal techniques for parametric, semi- and non-parametric estimation of (multidimensional) stochastic differential equations. Most of the techniques presented below apply to high frequency data, i.e. when $\Delta_n$, the time lag between to consecutive observations of the process, converges to zero as  the number  $n$ of observations       increases.
+\section{Inference for stochastic processes}\label{sec5}
+The \pkg{yuima} implements several optimal techniques for parametric, semi- and non-parametric estimation of (multidimensional) stochastic differential equations. Most of the techniques presented below apply to high frequency data, i.e., when $\Delta_n$, the time lag between to consecutive observations of the process, converges to zero as  the number  $n$ of observations       increases.
 
-\subsection{How to Input Data Into a \code{yuima} Object}
+\subsection{How to input data into a \code{yuima} object}
 Although most of the examples in this section are given on simulated data, the main way to fill up the \code{data} slot of a \code{yuima} object is to use the function \code{setYuima}. The function \code{setYuima} sets various slots of the \code{yuima} object. In particular, to estimate a \code{yuima.model} called \code{mod} on the data \code{X} one can use a code like this \code{my.yuima <- setYuima(data=setData(X), model=mod)} and then pass \code{my.yuima} to the inference functions as described in the following.
 
 
@@ -1005,7 +1127,7 @@ x <- setYuima(data=setData(data$Close))
 str(x@data)
 @
 
-\subsection{Quasi Maximum Likelihood Estimation}\label{section-qmle}
+\subsection{Quasi maximum likelihood estimation}\label{section-qmle}
 Consider a multidimensional diffusion process
 \begin{equation}
 \label{eq:sdemle}
@@ -1037,7 +1159,7 @@ exactly or approximately.
 The \pkg{yuima} package implements QMLE via the  \code{qmle} function. The interface and the output of the \code{qmle} function are made as similar as possible to those of the standard \code{mle} function in the \pkg{stats4} package of the basic \proglang{R} system. The main arguments to  \code{qmle} consist of a \code{yuima} object and initial values (\code{start}) for the optimizer. The \code{yuima} object must contain the slots \code{model} and \code{data}. The \code{start} argument must be specified as a named list, where the  names of the  elements of the list  correspond to the names of the parameters as they appear in the \code{yuima} object. Optionally, one can specify named lists of \code{upper}  and \code{lower} bounds
 to identify the search region of the optimizer. The standard optimizer is \code{BFGS} when no bounds are specified. If bounds are specified then \code{L-BFGS-B} is used. More optimizers can be added in the  future.
 
-\subsubsection{QMLE in Practice}
+\subsubsection{QMLE in practice}
 
 As an example, we consider the simple model
 \begin{equation}
@@ -1068,7 +1190,7 @@ summary(mle1)
 @
 %Notice the interface and the output of the \code{qmle} is quite similar to the ones of the standard \code{mle} function of the \pkg{stats4} package of the base \proglang{R} system.
 
-\subsubsection{Theoretical Remarks on QMLE}%, High-freq \& ergodicity}
+\subsubsection{Theoretical remarks on QMLE}%, High-freq \& ergodicity}
 Consistency of an estimator is always a  required property; otherwise 
 the estimation would loose mathematical backing because 
 the more data the observer obtains, the worse the estimator behaves. 
@@ -1098,7 +1220,7 @@ and Ogihara and Yoshida \citep{OgiharaYoshida2011}.
 
 
 
-\subsection{Adaptive Bayes Estimation}
+\subsection{Adaptive Bayes estimation}
 Consider again the  diffusion process in \eqref{eq:sdemle}
 and the quasi likelihood defined in \eqref{qlik}.
 
@@ -1154,7 +1276,7 @@ coef(summary(mle1))
 The argument \code{method="nomcmc"} in \code{adaBayes} performs numerical integration, otherwise MCMC method is used.
 
 
-\subsubsection{Theoretical Remarks on Adaptive Bayes Estimator}
+\subsubsection{Theoretical remarks on adaptive Bayes estimator}
 Under the same conditions, the adaptive Bayes estimator $\tilde{\theta}_1$ and
 $\tilde{\theta}_2$ perform in the same way as $\hat{\theta}_1$ and $\hat{\theta}_2$, respectively. 
 See the remark in Section \ref{section-qmle} 
@@ -1163,7 +1285,7 @@ and also \citet{Yoshida92} and \citet{UchidaYoshida12} for details.
 
 
 
-\subsubsection{The Effect of Small Sample Size on Drift Estimation}\label{small.sample}
+\subsubsection{The effect of small sample size on drift estimation}\label{small.sample}
 It is known from the theory that the estimation of the drift in a diffusion process strongly depends on the length of the observation interval $[0,T]$.
 In our example above, we took $T=n^\frac13$, with $n = \Sexpr{n}$, which is approximatively   \Sexpr{round(n^(1/3),2)}. Now we reduce the sample size to $n=500$ and then $T=\Sexpr{round(500^(1/3),2)}$.
 We then apply both quasi-maximum likelihood and adaptive Bayes type estimators to these data
@@ -1188,7 +1310,7 @@ coef(summary(mle2))
 Compared to the results above, we see that the parameters in the diffusion coefficients are estimated with good quality while for the parameters in the drift the quality of estimation deteriorates. The adaptive Bayes estimator seems to perform a little better though.
 
 
-\subsection{Asynchronous Covariance Estimation}
+\subsection{Asynchronous covariance estimation}
 Suppose that two It\^o processes are observed
 only at discrete times in a nonsynchronous manner.
 We are interested in estimating the covariance of the two processes accurately
@@ -1251,7 +1373,7 @@ as $n\to\infty$ if the maximum length between two consecutive observing times
 tends to $0$. 
 See \citet{hay-yos05,hay-yos04,hay-yos06,hay-yos08} for details. 
 
-\subsubsection{Example: Data Generation and Estimation by \pkg{yuima} Package}
+\subsubsection{Example: data generation and estimation by \pkg{yuima} package}
 We will demonstrate how to apply \code{cce} function to
 nonsynchronous high-frequency data by simulation. 
 As an example, consider a two dimensional stochastic process 
@@ -1355,15 +1477,25 @@ yuima <- setYuima(model=cor.mod, sampling=yuima.samp)
 X <- simulate(yuima)
 @
 \code{cce} takes the sample and returns 
-an estimate of the quadratic covariation. For example, for the complete data, we obtain the
+an estimate of the quadratic covariation. For example, for the complete data in Figure~\ref{fig:plot-cceplot1}, we obtain the
 following estimates
 <<>>=
 cce(X)
 @
-<<cceplot1,fig=TRUE,width=9,height=5>>=
+<<cceplot1,fig=FALSE>>=
 plot(X,main="complete data")
 @
-
+<<plot-cceplot1,echo=FALSE, fig=FALSE, print=FALSE,results=hide>>=
+pdf("plot-cceplot1.pdf",width=9,height=5)
+par(mar=c(4,4,0,0))
+plot(X,main="complete data")
+dev.off()
+@
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{plot-cceplot1}
+\caption{The complete simulated data.}
+\label{fig:plot-cceplot1}
+\end{figure} 
 We now apply random sampling in the following way: we define a new sampling structure via \code{setSampling} specifying in the argument \code{random} 
 a list which contains a vector of random distributions. For the $i$-th component of $X$ we specificy an exponential distribution with rate $n \cdot p_i/T$ for the random times. This will generate Poisson random times with the corresponding rate. 
 <<>>=
@@ -1373,16 +1505,27 @@ newsamp <- setSampling(
  random=list(rdist=c( function(x) rexp(x, rate=p1*n/Terminal), 
   function(x) rexp(x, rate=p1*n/Terminal))) )
 @
-Now we use the \code{subsampling} function to subsample the original data \code{X} into new asynchronous data \code{Y}
+Now we use the \code{subsampling} function to subsample the original data \code{X} into new asynchronous data \code{Y} (see Figure~\ref{fig:plot-cceplot2})
 <<>>=
 Y <- subsampling(X, sampling=newsamp)
 cce(Y)
 @ 
-<<cceplot2,fig=TRUE,width=9,height=5>>=
+<<cceplot2,fig=FALSE>>=
 plot(Y,main="asynchronous data")
 @
+<<plot-cceplot2,echo=FALSE, fig=FALSE, print=FALSE,results=hide>>=
+pdf("plot-cceplot2.pdf",width=9,height=5)
+par(mar=c(4,4,0,0))
+plot(Y,main="asynchronous data")
+dev.off()
+@
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{plot-cceplot2}
+\caption{The asynchronous data generated from the simulated ones using Poisson random sub-sampling.}
+\label{fig:plot-cceplot2}
+\end{figure} 
 
-\subsubsection{Asynchronous Estimation for Nonlinear Systems}
+\subsubsection{Asynchronous estimation for nonlinear systems}
 Consider now the two-dimensional system with nonlinear feedback
 $$
 \begin{aligned}
@@ -1415,7 +1558,7 @@ yuima.samp <- setSampling(Terminal = Terminal, n = n)
 yuima <- setYuima(model = cor.mod, sampling = yuima.samp) 
 yuima <- simulate(yuima, xinit=c(2,3)) 
 @
-We apply the same Poisson random sampling so that the object \code{Y} will contain  asynchronous data
+We apply the same Poisson random sampling so that the object \code{Y} will contain  asynchronous data (see Figure~\ref{fig:plot-cceplot3})
 <<>>=
 p1 <- 0.2
 p2 <- 0.3
@@ -1424,10 +1567,20 @@ random=list(rdist=c( function(x) rexp(x, rate=p1*n/Terminal),
 function(x) rexp(x, rate=p1*n/Terminal))) )
 Y <- subsampling(yuima, sampling = newsamp)
 @
-<<cceplot3,fig=TRUE,width=9,height=5>>=
+<<cceplot3,fig=FALSE>>=
 plot(Y,main="asynchronous data (non linear case)")
 @
-
+<<plot-cceplot3,echo=FALSE, fig=FALSE, print=FALSE,results=hide>>=
+pdf("plot-cceplot3.pdf",width=9,height=5)
+par(mar=c(4,4,0,0))
+plot(Y,main="asynchronous data (non linear case)")
+dev.off()
+@
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{plot-cceplot3}
+\caption{The asynchronous data for the nonlinear system.}
+\label{fig:plot-cceplot3}
+\end{figure} 
 The estimated covariance for the complete trajectory \code{yuima}
 is now compared with the one obtained on asyncronous data \code{Y}
 <<>>=
@@ -1435,7 +1588,7 @@ cce(yuima)
 cce(Y)
 @
 
-\subsection{Change-Point Analysis}
+\subsection{Change-point analysis}
 Consider a multidimensional stochastic differential equation of the form
 $$
 \de Y_t = a_t \de t + b(X_t,\theta) \de W_t,\ \ t\in[0,T], 
@@ -1487,7 +1640,7 @@ The change-point estimator  of $\tau^*$ is
 \Phi_n(t;\hat{\theta}_0,\hat{\theta}_1).
 \end{eqnarray*}
 
-\subsubsection{Example  of Volatility Change-Point Estimation for 2-Dimensional SDE's}
+\subsubsection{Example  of volatility change-point estimation for 2-dimensional SDE's}
 One example of model that can be analyzed by this technique is, for example, the 2-dimensional stochastic differential equation
 $$
 \left(\begin{array}{c}
@@ -1563,7 +1716,7 @@ x2 <- as.numeric(x2[length(x2)])
 @
 now we generate the second trajectory
  with parameters
-$\theta_{1.1}=0.2$ and  $\theta_{2.1}=0.4$. For this trajectory, the initial value is set to the last value of the first trajectory stored in \code{x1} and \code{x2} for the two component of the process.
+$\theta_{1.1}=0.2$ and  $\theta_{2.1}=0.4$. For this trajectory, the initial value is set to the last value of the first trajectory stored in \code{x1} and \code{x2} for the two component of the process (see Figure~\ref{fig:plot-cpoint4})
 <<cpoint3b,results=hide>>=
 t1 <- list(theta1.k=0.2, theta2.k=0.4)
 ysamp2 <- setSampling(Initial=n*pobs*0.01, n=n*(1-pobs), delta=0.01)
@@ -1578,12 +1731,21 @@ yuima2@data@zoo.data[[1]][-1])
 yuima@data@zoo.data[[2]] <- c(yuima1@data@zoo.data[[2]], 
 yuima2@data@zoo.data[[2]][-1])
 @ 
-
 The composed trajectory appears as follows
-<<cpoint4,fig=TRUE,width=9,height=5>>=
+<<cpoint4,fig=FALSE>>=
 plot(yuima)
 @
-
+<<plot-cpoint4,echo=FALSE, fig=FALSE, print=FALSE,results=hide>>=
+pdf("plot-cpoint4.pdf",width=9,height=5)
+par(mar=c(4,4,0,0))
+plot(yuima)
+dev.off()
+@
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{plot-cpoint4}
+\caption{The 2-dimensional trajectory with change point around $\tau=4$.}
+\label{fig:plot-cpoint4}
+\end{figure} 
 As said, the change-point analysis does not consider the information coming from the drift part of the model and \pkg{yuima} ignores this internally.
 Just to make clear that the information on the drift term is not considered by the function \code{CPoint}, we redefine the \code{yuima} model removing the information coming from the drift and then adding back the data.
 <<cpoint4b>>=
@@ -1601,7 +1763,7 @@ t.est2 <- CPoint(noDriftModel,param1=t0,param2=t1)
 t.est2$tau
 @
 As it can be seen, the above estimates of the change point are the same for the complete model \code{yuima} and the model without drift \code{noDriftModel}.
-\subsubsection{An Example of Two Stage Estimation}
+\subsubsection{An example of two stage estimation}
 In practical situations, the initial values of the parameters are not known and there is the need to provide a preliminary estimators of them. One possible approach is the two stage change-point estimation approach as explained in  \citet{iacyos09}. The idea is to take a small subset of observations at the very beginning and the end of the time series, estimate a
 change point and and then refine the estimation.
 
@@ -1637,12 +1799,12 @@ t12s.est <- coef(estR)
 t2s.est3 <- CPoint(noDriftModel,param1=t02s.est,param2=t12s.est)
 t2s.est3
 @
-\subsection{LASSO Model Selection}
-The Least Absolute Shrinkage and Selection Operator (LASSO) is a useful and well studied approach to the problem of model selection and its major advantage is the simultaneous execution of both parameter estimation and variable selection (see \citet{Tib96}; \citet{Knight00}; \citet{Efron}). 
+\subsection{LASSO model selection}
+The Least Absolute Shrinkage and Selection Operator (LASSO) is a useful and well studied approach to the problem of model selection and its major advantage is the simultaneous execution of both parameter estimation and variable selection \citep{Tib96,Knight00,Efron}. 
 
 To simplify the idea: take a full specified regression model
 $$ Y = \theta_0 +  \theta_1 X_1+  \theta_2 X_2 + \cdots +  \theta_k X_k$$
-perform least squares estimation under $L_1$ constraints, i.e.
+perform least squares estimation under $L_1$ constraints, i.e.,
 
 $$\hat\theta = \arg\min_\theta \left\{(Y-\theta X)^T (Y-\theta X) + \sum_{i=1}^k |\theta_i|\right\}$$ 
 
@@ -1679,14 +1841,14 @@ The tuning parameters should be chosen as in \citet{Zou06} in the following way
 \end{equation}
 where $\hat \alpha_{j}$ and  $\hat \beta_{k}$ are the unpenalized QMLE's of $\alpha_j$ and $\beta_k$ respectively, $\delta_1, \delta_2>0$ and usually taken unitary.
 
-\subsubsection{An Example of Model Selection for Interest Rates Data}
+\subsubsection{An example of model selection for interest rates data}
 The \code{lasso} method is implemented in the \pkg{yuima} package.
 Let us consider the full CKLS model \citep{CKLS92}
 $$\de X_t = (\alpha+\beta X_t)\de t + \sigma X_t^\gamma\de W_t$$
-and let us try to estimate the parameter on  the U.S. Interest Rates monthly data from 06/1964 to 12/1989. We prepare the data, the model and the constraints for optimization
-<<results=hide>>=
-library(Ecdat)
-data(Irates)
+and let us try to estimate the parameter on  the U.S. Interest Rates monthly data from 06/1964 to 12/1989 (see Figure~\ref{fig:plot-irates}). We prepare the data, the model and the constraints for optimization
+<<results=hide,fig=FALSE>>=
+library("Ecdat")
+data("Irates")
 rates <- Irates[,"r1"]
 plot(rates)
 X <- window(rates, start=1964.471, end=1989.333)
@@ -1698,6 +1860,17 @@ low <- list(alpha=-5, beta =-5, sigma =-5, gamma =-5)
 upp <- list(alpha=8, beta =8, sigma =8, gamma =8)
 @
 where \code{lambda10} stores the penaly terms $\lambda_0$ and $\gamma_0$ of \eqref{eq:penalty} of the LASSO method.
+<<plot-irates,echo=FALSE, fig=FALSE, print=FALSE,results=hide>>=
+pdf("plot-irates.pdf",width=9,height=4)
+par(mar=c(4,4,0,0))
+plot(rates)
+dev.off()
+@
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{plot-irates}
+\caption{The U.S. Interest Rates monthly data from 06/1964 to 12/1989.}
+\label{fig:plot-irates}
+\end{figure} 
 Now we apply the \code{lasso} function
 <<echo=TRUE,results=hide>>=
 lasso10 <- lasso(yuima, lambda10, start=start, lower=low, upper=upp,
@@ -1713,7 +1886,7 @@ the LASSO method selects the reduced model
 $$\de X_t =  0.6 \de t + 0.12 X_t^{\frac32}\de W_t.$$
 Notice that this model is not an ergodic one, indicating that the LASSO method shows that the real data are indeed not stationary, but still in the family of CKLS models.
 
-\section{Miscellanea and Roadmap of YUIMA Project}\label{sec6}
+\section{Miscellanea and roadmap of YUIMA project}\label{sec6}
 Other statistical techniques have been are already implemented in the developer version of the \pkg{yuima} package although not yet released into the current distribution. Among these we mention: the QMLE approach for stochastic differential equations with L\'evy noise \citep{shiyos06, ogiyos11}; the parametric estimation for the fractional Ornstein-Uhlembeck model \citep{brouiac12}; different simulation schemes as in \citep{Iacus08} for multidimensional diffusion processes; Lead-lag estimation \citep{HoffRosYo09}; hypotheses testing via $\phi$-divergence \citep{degiac12}.
  For example, a nice (yet incomplete) utility is the method \code{toLatex} for objects of class \code{yuima} and \code{yuima.model}. A simple writing like
 \code{toLatex(my-yuima-obj)} produces the related \LaTeX{} code which can be copied and pasted in a mathematical paper. For example,
