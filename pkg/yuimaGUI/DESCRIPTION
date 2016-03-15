@@ -1,0 +1,13 @@
+Package: yuimaGUI
+Type: Package
+Title: A graphical user interface for the yuima package
+Version: 0.4.1
+Author: Emanuele Guidotti
+Maintainer: Emanuele Guidotti <emanuele.guidotti@studenti.unimi.it>
+Description: The package provides a graphical user interface for the yuima package.
+License: GPL-2
+LazyData: TRUE
+Depends: R(>= 3.2.4), shiny, DT, quantmod, shinydashboard, shinyBS,
+        yuima, shinyjs
+NeedsCompilation: no
+Packaged: 2016-03-14 22:00:57 UTC; Emanuele
