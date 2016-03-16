@@ -678,8 +678,7 @@ server <- function(input, output, session) {
               aggregation = estimateSettings[[modName]][[symb]][["aggregation"]],
               threshold = estimateSettings[[modName]][[symb]][["threshold"]],
               session = session,
-              anchorId = "modelsAlert",
-              alertId = "modelsAlert_qmle"
+              anchorId = "modelsAlert"
             )
           }
         }
