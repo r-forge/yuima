@@ -1,2 +1,14 @@
-exportPattern("^[[:alpha:]]+")
+#exportPattern("^[[:alpha:]]+")
+export(yuimaGUI)
+
 importFrom(shiny, runApp)
+import("shinyBS")
+import("quantmod")
+import("DT")
+import("shinyjs")
+import("yuima")
+import("shinydashboard")
+
+
+
+
