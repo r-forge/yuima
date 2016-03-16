@@ -6,6 +6,5 @@ Author: YUIMA Project Team
 Maintainer: Emanuele Guidotti <emanuele.guidotti@studenti.unimi.it>
 Description: The package provides a graphical user interface for the yuima package.
 License: GPL-2
-Depends: R(>= 3.0.0), shiny, DT, quantmod, shinydashboard, shinyBS,
-        yuima, shinyjs
-
+Depends: R(>= 3.0.0), shiny, DT, shinydashboard, shinyBS,
+        yuima, quantmod, shinyjs
