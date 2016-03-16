@@ -1,10 +1,9 @@
 Package: yuimaGUI
 Type: Package
 Title: A Graphical User Interface for the Yuima Package
-Version: 0.4.2
+Version: 0.4.3
 Author: YUIMA Project Team
 Maintainer: Emanuele Guidotti <emanuele.guidotti@studenti.unimi.it>
-Description: The package provides a graphical user interface for the yuima package.
+Description: Provides a graphical user interface for the yuima package.
 License: GPL-2
-Depends: R(>= 3.0.0), shiny, DT, shinydashboard, shinyBS,
-        yuima, quantmod, shinyjs
+Depends: R(>= 3.0.0), shiny, DT, shinydashboard, shinyBS, yuima, quantmod, shinyjs
