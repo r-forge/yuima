@@ -319,7 +319,7 @@ changeBase <- function(param, StdErr, delta, original.data, paramName, modelName
 }
 
 
-addModel <- function(modName, symbName, data, delta, start, startMin, startMax, tries, seed, method="BFGS", fixed = list(), lower, upper, joint=FALSE, aggregation=TRUE, threshold=NULL, session, anchorId, alertId){
+addModel <- function(modName, symbName, data, delta, start, startMin, startMax, tries, seed, method="BFGS", fixed = list(), lower, upper, joint=FALSE, aggregation=TRUE, threshold=NULL, session, anchorId){
   info <- list(
     modName = modName,
     method=method,
@@ -354,7 +354,7 @@ addModel <- function(modName, symbName, data, delta, start, startMin, startMax, 
     QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #joint = joint, aggregation = aggregation,
                  threshold = threshold))
     if (class(QMLE)=="try-error"){
-      createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste("Unable to estimate", modName,"on", symbName), style = "danger")
+      createAlert(session = session, anchorId = anchorId, content = paste("Unable to estimate", modName,"on", symbName), style = "danger")
       return()
     }
   }
@@ -369,7 +369,7 @@ addModel <- function(modName, symbName, data, delta, start, startMin, startMax, 
       QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #joint = joint, aggregation = aggregation,
                    threshold = threshold))
       if (class(QMLE)=="try-error"){
-        createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste("Unable to estimate", modName,"on", symbName), style = "danger")
+        createAlert(session = session, anchorId = anchorId, content = paste("Unable to estimate", modName,"on", symbName), style = "danger")
         return()
       }
     #} else if (modName == "Brownian Motion" | modName == "Bm") {
@@ -386,49 +386,59 @@ addModel <- function(modName, symbName, data, delta, start, startMin, startMax, 
       m2logL_prec <- NA
       na_prec <- NA
       withProgress(message = 'Step: ', value = 0, {
-      for(iter in 1:tries){
-        incProgress(1/tries, detail = paste(iter,"(/", tries ,")"))
-        repeat{
-          for (i in miss)
-            start[[i]] <- runif(1, min = max(lower[[i]],ifelse(is.null(startMin[[i]]),-10,startMin[[i]])), max = min(upper[[i]],ifelse(is.null(startMax[[i]]), 10, startMax[[i]])))
-          QMLEtemp <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #joint = joint, aggregation = aggregation,
-                           threshold = threshold))
-          if (class(QMLEtemp)!="try-error")
-            break
-        }
-        repeat{
-          m2logL <- summary(QMLEtemp)@m2logL
-          coefTable <- summary(QMLEtemp)@coef
-          for (param in names(start))
-            start[[param]] <- as.numeric(coefTable[param,"Estimate"])
-          QMLEtemp <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #joint = joint, aggregation = aggregation,
-                           threshold = threshold))
-          if (class(QMLEtemp)=="try-error")
-            break
-          else if (summary(QMLEtemp)@m2logL>=0.999*m2logL)
-            break
-        }
-        if(is.na(m2logL_prec & class(QMLEtemp)!="try-error")){
-          QMLE <- QMLEtemp
-          m2logL_prec <- summary(QMLE)@m2logL
-          na_prec <- sum(is.na(coefTable))
-        }
-        else if (class(QMLEtemp)!="try-error"){
-          if (sum(is.na(coefTable)) < na_prec){
-            QMLE <- QMLEtemp
-            m2logL_prec <- summary(QMLE)@m2logL
-            na_prec <- sum(is.na(coefTable))
+        for(iter in 1:tries){
+          incProgress(1/tries, detail = paste(iter,"(/", tries ,")"))
+          for(j in 1:3){
+            for (i in miss)
+              start[[i]] <- runif(1, min = max(lower[[i]],startMin[[i]]), max = min(upper[[i]],startMax[[i]]))
+            QMLEtemp <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #joint = joint, aggregation = aggregation,
+                             threshold = threshold))
+            if (class(QMLEtemp)!="try-error")
+              break
           }
-          else if(summary(QMLEtemp)@m2logL < m2logL_prec & sum(is.na(coefTable))==na_prec){
-            QMLE <- QMLEtemp
-            m2logL_prec <- summary(QMLE)@m2logL
-            na_prec <- sum(is.na(coefTable))
+          if (class(QMLEtemp)!="try-error"){
+            repeat{
+              m2logL <- summary(QMLEtemp)@m2logL
+              coefTable <- summary(QMLEtemp)@coef
+              for (param in names(start))
+                start[[param]] <- as.numeric(coefTable[param,"Estimate"])
+              QMLEtemp <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #joint = joint, aggregation = aggregation,
+                               threshold = threshold))
+              if (class(QMLEtemp)=="try-error")
+                break
+              else if (summary(QMLEtemp)@m2logL>=0.999*m2logL)
+                break
+            }
+            if(is.na(m2logL_prec) & class(QMLEtemp)!="try-error"){
+              QMLE <- QMLEtemp
+              m2logL_prec <- summary(QMLE)@m2logL
+              na_prec <- sum(is.na(coefTable))
+            }
+            else if (class(QMLEtemp)!="try-error"){
+              if (sum(is.na(coefTable)) < na_prec){
+                QMLE <- QMLEtemp
+                m2logL_prec <- summary(QMLE)@m2logL
+                na_prec <- sum(is.na(coefTable))
+              }
+              else if(summary(QMLEtemp)@m2logL < m2logL_prec & sum(is.na(coefTable))==na_prec){
+                QMLE <- QMLEtemp
+                m2logL_prec <- summary(QMLE)@m2logL
+                na_prec <- sum(is.na(coefTable))
+              }
+            }
+          }
+          if (iter==tries & class(QMLEtemp)=="try-error"){
+            createAlert(session = session, anchorId = anchorId, content = paste("Unable to estimate", modName,"on", symbName), style = "danger")
+            return()
           }
         }
-      }
       })
     }
   }
+  
+  if(!exists("QMLE"))
+    return()
+  
   yuimaGUIdata$model[[symbName]][[ifelse(is.null(length(yuimaGUIdata$model[[symbName]])),1,length(yuimaGUIdata$model[[symbName]])+1)]] <<- list(
    model = model,
    qmle = QMLE,
