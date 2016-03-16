@@ -3,7 +3,7 @@ export(yuimaGUI)
 
 importFrom(shiny, runApp)
 import("shinyBS")
-import("quantmod")
+importFrom("quantmod",getSymbols)
 import("DT")
 import("shinyjs")
 import("yuima")
