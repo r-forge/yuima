@@ -593,20 +593,20 @@ server <- function(input, output, session) {
   })
   observeEvent(input$advancedSettingsButtonApplyModel,{
     estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["fixed"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsFixed
-    estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["start"]][[input$advancedSettingsParameter]] <<- ifelse(!is.na(input$advancedSettingsFixed),NA,input$advancedSettingsStart)
-    estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["startMin"]][[input$advancedSettingsParameter]] <<- ifelse(!is.na(input$advancedSettingsFixed) | !is.na(input$advancedSettingsStart),NA,input$advancedSettingsStartMin)
-    estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["startMax"]][[input$advancedSettingsParameter]] <<- ifelse(!is.na(input$advancedSettingsFixed) | !is.na(input$advancedSettingsStart),NA,input$advancedSettingsStartMax)
-    estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["lower"]][[input$advancedSettingsParameter]] <<- ifelse(!is.na(input$advancedSettingsFixed),NA,input$advancedSettingsLower)
-    estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["upper"]][[input$advancedSettingsParameter]] <<- ifelse(!is.na(input$advancedSettingsFixed),NA,input$advancedSettingsUpper)
+    estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["start"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsStart
+    estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["startMin"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsStartMin
+    estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["startMax"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsStartMax
+    estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["lower"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsLower
+    estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["upper"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsUpper
   })
   observeEvent(input$advancedSettingsButtonApplyAllModel,{
     for (symb in input$database4_rows_all){
       estimateSettings[[input$advancedSettingsModel]][[symb]][["fixed"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsFixed
-      estimateSettings[[input$advancedSettingsModel]][[symb]][["start"]][[input$advancedSettingsParameter]] <<- ifelse(!is.na(input$advancedSettingsFixed),NA,input$advancedSettingsStart)
-      estimateSettings[[input$advancedSettingsModel]][[symb]][["startMin"]][[input$advancedSettingsParameter]] <<- ifelse(!is.na(input$advancedSettingsFixed) | !is.na(input$advancedSettingsStart),NA,input$advancedSettingsStartMin)
-      estimateSettings[[input$advancedSettingsModel]][[symb]][["startMax"]][[input$advancedSettingsParameter]] <<- ifelse(!is.na(input$advancedSettingsFixed) | !is.na(input$advancedSettingsStart),NA,input$advancedSettingsStartMax)
-      estimateSettings[[input$advancedSettingsModel]][[symb]][["lower"]][[input$advancedSettingsParameter]] <<- ifelse(!is.na(input$advancedSettingsFixed),NA,input$advancedSettingsLower)
-      estimateSettings[[input$advancedSettingsModel]][[symb]][["upper"]][[input$advancedSettingsParameter]] <<- ifelse(!is.na(input$advancedSettingsFixed),NA,input$advancedSettingsUpper)
+      estimateSettings[[input$advancedSettingsModel]][[symb]][["start"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsStart
+      estimateSettings[[input$advancedSettingsModel]][[symb]][["startMin"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsStartMin
+      estimateSettings[[input$advancedSettingsModel]][[symb]][["startMax"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsStartMax
+      estimateSettings[[input$advancedSettingsModel]][[symb]][["lower"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsLower
+      estimateSettings[[input$advancedSettingsModel]][[symb]][["upper"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsUpper
     }
   })
   observeEvent(input$advancedSettingsButtonApplyGeneral,{
@@ -1471,7 +1471,133 @@ server <- function(input, output, session) {
     )
   }
 
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ########################Clustering
+  ########################
+  ########################
+  
+  ###Display available data
+  output$cluster_table_select <- DT::renderDataTable(options=list(scrollY = 150, scrollCollapse = FALSE, deferRender = TRUE, dom = 'frtS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
+    if (length(yuimaGUItable$series)==0){
+      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
+      return(NoData[-1,])
+    }
+    return (yuimaGUItable$series)
+  })
+  
+  ###Table of selected data to cluster
+  seriesToCluster <- reactiveValues(table=data.frame())
+  
+  ###Select Button
+  observeEvent(input$cluster_button_select, priority = 1, {
+    seriesToCluster$table <<- rbind(seriesToCluster$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% input$cluster_table_select_rows_selected) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToCluster$table)),])
+  })
+  
+  ###SelectAll Button
+  observeEvent(input$cluster_button_selectAll, priority = 1, {
+    seriesToCluster$table <<- rbind(seriesToCluster$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% input$cluster_table_select_rows_all) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToCluster$table)),])
+  })
+  
+  ###Display Selected Data
+  output$cluster_table_selected <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = TRUE, dom = 'frtS'), extensions = 'Scroller', rownames = FALSE, selection = "multiple",{
+    if (length(seriesToCluster$table)==0){
+      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
+      return(NoData[-1,])
+    }
+    return (seriesToCluster$table)
+  })
+  
+  ###Control selected data to be in yuimaGUIdata$series
+  observe({
+    if(length(seriesToCluster$table)!=0){
+      if (length(yuimaGUItable$series)==0)
+        seriesToCluster$table <<- data.frame()
+      else
+        seriesToCluster$table <<- seriesToCluster$table[which(as.character(seriesToCluster$table[,"Symb"]) %in% as.character(yuimaGUItable$series[,"Symb"])),]
+    }
+  })
+  
+  ###Delete Button
+  observeEvent(input$cluster_button_delete, priority = 1,{
+    if (!is.null(input$cluster_table_selected_rows_selected))
+      seriesToCluster$table <<- seriesToCluster$table[-which(rownames(seriesToCluster$table) %in% input$cluster_table_selected_rows_selected),]
+  })
+  
+  ###DeleteAll Button
+  observeEvent(input$cluster_button_deleteAll, priority = 1,{
+    seriesToCluster$table <<- seriesToCluster$table[-which(rownames(seriesToCluster$table) %in% input$cluster_table_selected_rows_all),]
+  })
+  
+  observeEvent(input$cluster_button_startCluster, {
+    closeAlert(session, "cluster_alert_dist")
+    if (length(rownames(seriesToCluster$table))!=0){
+      names_list <- rownames(seriesToCluster$table)
+      x <- yuimaGUIdata$series[[names_list[1]]]
+      for(i in names_list[-1])
+        x <- merge(x, yuimaGUIdata$series[[i]])
+      colnames(x) <- names_list
+      d <- switch(
+        input$cluster_distance,
+        "MOdist" = try(MOdist(na.omit(x))),
+        "MYdist" = try(MYdist(x))
+      )
+      if (class(d)=="try-error")
+        createAlert(session, anchorId = "cluster_alert", alertId = "cluster_alert_dist", content = "Error in clustering", style = "error")
+      else{
+        hc <- hclust(d)
+        labelColors <- c("#CDB380", "#036564", "#EB6841", "#EDC951")
+        dendrClick <- reactiveValues(y = NULL)
+        output$cluster_dendogram <- renderPlot({
+          if(!is.null(input$cluster_dendrogram_click$y))
+            dendrClick$y <- input$cluster_dendrogram_click$y
+          if(!is.null(dendrClick$y)){
+            clusMember = cutree(hc, h = dendrClick$y)
+            colLab <- function(n) {
+              if (is.leaf(n)) {
+                a <- attributes(n)
+                labCol <- labelColors[clusMember[which(names(clusMember) == a$label)]]
+                attr(n, "nodePar") <- c(a$nodePar, lab.col = labCol)
+              }
+              n
+            }
+            hc <- dendrapply(as.dendrogram(hc), colLab)
+          }
+          if(is.null(dendrClick$y)){
+            colDefault <- function(n){  
+              if (is.leaf(n))
+                attr(n, "nodePar") <- c(attributes(n)$nodePar, lab.col = labelColors[1])
+              return(n)
+            }
+            hc <- dendrapply(as.dendrogram(hc), colDefault)
+          }
+          par(bg="#471a1a", xaxt = "n", mar= c(10, 4, 4, 2)+0.1)
+          plot(hc, ylab = "", xlab = "", main = "Dendrogram", edgePar=list(col="grey50"), col.main = "#FFF68F")
+        })
+        output$cluster_scaling2D <- renderPlot({
+          points <- cmdscale(d)
+          if(!is.null(dendrClick$y))
+            g1 <- cutree(hclust(d), h = dendrClick$y)
+          else
+            g1 <- 1
+          par(bg="#471a1a", xaxt = "n", yaxt = "n", bty="n")
+          plot(points, col=labelColors[g1], pch=16, cex=2, main = "Multidimensional scaling", col.main = "#FFF68F", xlab="", ylab="")
+        })
+      }
+    }
+  })
+  
+  
+  
+  
 
 }
 

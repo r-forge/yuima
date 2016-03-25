@@ -53,7 +53,7 @@ th{
 	background: linear-gradient(#606D60, #202220, #606D60);
 }
 
-#finDataDelete, #finDataDeleteAll, #finDataSave, #yourFileDelete, #yourFileDeleteAll, #yourFileSave, #buttonSelect_models_Univariate, #buttonSelectAll_models_Univariate, #buttonDelete_models_Univariate, #buttonDeleteAll_models_Univariate, #databaseModelsDelete, #databaseModelsDeleteAll, #simulation_button_deleteModels, #simulation_button_deleteAllModels, #simulate_button_selectModels, #simulate_button_selectAllModels, #simulate_monitor_button_delete, #simulate_monitor_button_deleteAll, #simulate_monitor_button_showSimulation, #simulate_model_usr_button_select, #simulate_model_usr_button_selectAll, #simulate_model_usr_button_delete, #simulate_model_usr_button_deleteAll{
+#finDataDelete, #finDataDeleteAll, #finDataSave, #yourFileDelete, #yourFileDeleteAll, #yourFileSave, #buttonSelect_models_Univariate, #buttonSelectAll_models_Univariate, #buttonDelete_models_Univariate, #buttonDeleteAll_models_Univariate, #databaseModelsDelete, #databaseModelsDeleteAll, #simulation_button_deleteModels, #simulation_button_deleteAllModels, #simulate_button_selectModels, #simulate_button_selectAllModels, #simulate_monitor_button_delete, #simulate_monitor_button_deleteAll, #simulate_monitor_button_showSimulation, #simulate_model_usr_button_select, #simulate_model_usr_button_selectAll, #simulate_model_usr_button_delete, #simulate_model_usr_button_deleteAll, #cluster_button_select, #cluster_button_selectAll, #cluster_button_delete, #cluster_button_deleteAll{
   font-size: 110%;
   width: 100%;  
   color: black;
@@ -86,7 +86,7 @@ th{
 	background: radial-gradient(#a5bdc9, #184860, #061218);
 }
 
-#hideEstimatedModels, #showEstimatedModels, #EstimateModels, #simulate_simulateModels, #simulate_button_showMonitor, #simulate_button_hideMonitor {
+#EstimateModels, #simulate_simulateModels, #cluster_button_startCluster {
   width: 100%;  
 	color: #ffffff;
 	text-shadow: 1px 1px 1px #000;
