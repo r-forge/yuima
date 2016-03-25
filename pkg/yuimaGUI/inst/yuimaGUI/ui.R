@@ -9,7 +9,9 @@ sidebar<-dashboardSidebar(
              menuSubItem("Financial & Economic Data", tabName = "finData"),
              menuSubItem("Your Data", tabName = "yourData")
              ),
-    menuItem("Explorative Data Analysis", tabName = "eda", icon = icon("map")),
+    menuItem("Explorative Data Analysis", tabName = "eda", icon = icon("map"),
+             menuSubItem("Clustering", tabName = "cluster")
+             ),
     menuItem("Modelling & Model Selection", tabName = "models", icon = icon("sliders")),
     menuItem("Simulate", tabName = "simulate", icon = icon("area-chart")),
     hr(),
@@ -471,6 +473,44 @@ body<-dashboardBody(
           column(6,tags$button(type="button", id="simulate_button_apply_advancedSettings", class = "action-button", em("Apply"))),
           column(6,tags$button(type="button", id="simulate_button_applyAll_advancedSettings", class = "action-button", em("Apply All")))
         )
+      )
+    ),
+    ####################################################
+    tabItem(tabName = "cluster",
+      fluidRow(column(12,bsAlert("cluster_alert"))),
+      fluidRow(column(12,
+        column(4,
+          h4("Available data", style="color:#CDCECD"),
+          DT::dataTableOutput("cluster_table_select"),
+          br(),
+          fluidRow(
+            column(6,actionButton("cluster_button_select",label = "Select", align = "center")),
+            bsTooltip("cluster_button_select", title = "Select data to cluster", placement = "top"),
+            column(6,actionButton("cluster_button_selectAll",label = "Select All", align = "center")),
+            bsTooltip("cluster_button_selectAll", title = "Select all data that are displayed", placement = "top")
+          )
+        ),
+        column(4,
+          h4("Selected data", style="color:#CDCECD"),
+          DT::dataTableOutput("cluster_table_selected"),
+          br(),
+          fluidRow(
+            column(6,actionButton("cluster_button_delete",label = "Delete", align = "center")),
+            bsTooltip("cluster_button_delete", title = "Delete selected data", placement = "top"),
+            column(6,actionButton("cluster_button_deleteAll",label = "Delete All", align = "center")),
+            bsTooltip("cluster_button_deleteAll", title = "Delete all data that are displayed", placement = "top")
+          )
+        ),
+        column(4,br(),br(),br(),br(),
+          div(align="center",selectInput("cluster_distance", "Distance", choices = c("Markov Operator"="MOdist", "My distance"="MYdist"))),
+          br(),br(),br(),br(),br(),br(),
+          actionButton("cluster_button_startCluster", label = "Start Clustering", align = "center")
+        )
+      )),
+      br(),
+      fluidRow(
+        column(8, plotOutput("cluster_dendogram", click = "cluster_dendrogram_click")),        
+        column(4, plotOutput("cluster_scaling2D"))
       )
     )
     ########################new tab items below

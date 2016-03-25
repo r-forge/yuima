@@ -1,8 +1,11 @@
 require(shiny)
 require(DT)
+require(sde)
 require(quantmod)
 require(shinydashboard)
 require(shinyBS)
+require(shinyRGL)
+require(rgl)
 require(yuima)
 require(shinyjs)
 
@@ -390,7 +393,7 @@ addModel <- function(modName, symbName, data, delta, start, startMin, startMax, 
           incProgress(1/tries, detail = paste(iter,"(/", tries ,")"))
           for(j in 1:3){
             for (i in miss)
-              start[[i]] <- runif(1, min = max(lower[[i]],startMin[[i]]), max = min(upper[[i]],startMax[[i]]))
+              start[[i]] <- runif(1, min = max(lower[[i]],startMin[[i]], na.rm = TRUE), max = min(upper[[i]],startMax[[i]],na.rm = TRUE))
             QMLEtemp <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #joint = joint, aggregation = aggregation,
                              threshold = threshold))
             if (class(QMLEtemp)!="try-error")
@@ -406,7 +409,7 @@ addModel <- function(modName, symbName, data, delta, start, startMin, startMax, 
                                threshold = threshold))
               if (class(QMLEtemp)=="try-error")
                 break
-              else if (summary(QMLEtemp)@m2logL>=0.999*m2logL)
+              else if (summary(QMLEtemp)@m2logL>=m2logL*abs(sign(m2logL)-0.001))
                 break
             }
             if(is.na(m2logL_prec) & class(QMLEtemp)!="try-error"){
@@ -427,7 +430,7 @@ addModel <- function(modName, symbName, data, delta, start, startMin, startMax, 
               }
             }
           }
-          if (iter==tries & class(QMLEtemp)=="try-error"){
+          if (iter==tries & class(QMLEtemp)=="try-error" & !exists("QMLE")){
             createAlert(session = session, anchorId = anchorId, content = paste("Unable to estimate", modName,"on", symbName), style = "danger")
             return()
           }
@@ -531,5 +534,54 @@ delSimulation <- function(symb, n=1){
       yuimaGUIdata$simulation[[symb[i]]] <<- NULL
   }
 }
+
+
+
+MYdist <- function(object){
+  l <- length(colnames(object))
+  d <- matrix(ncol = l, nrow = l)
+  f <- function(x, dens){
+    res <- c()
+    for(xi in x){
+      if(xi %in% dens$x)
+        res <- c(res,dens$y[which(dens$x==xi)])
+      else{
+        if (xi > max(dens$x) | xi < min(dens$x))
+          res <- c(res,0)
+        else{
+          i_x1 <- which.min(abs(dens$x-xi))
+          i_x2 <- min(i_x1+1,length(dens$x))
+          res <- c(res, 0.5*(dens$y[i_x1]+dens$y[i_x2]))
+        }
+      }
+    }
+    return(res)
+  }
+  withProgress(message = 'Clustering: ', value = 0, {
+    k <- 1
+    for(i in 1:l)
+      for(j in i:l)
+        if (i!=j){
+          incProgress(2/(l*(l-1)), detail = paste(k,"(/", l*(l-1)/2 ,")"))
+          delta_i <- as.numeric(abs(mean(diff(index(object)[!is.na(object[,i])]))))
+          delta_j <- as.numeric(abs(mean(diff(index(object)[!is.na(object[,j])]))))
+          data_i <- Delt(na.omit(object[,i]))
+          data_i <- data_i[data_i!="Inf"]
+          data_j <- Delt(na.omit(object[,j]))
+          data_j <- data_j[data_j!="Inf"]
+          dens1 <-  density(data_i/sqrt(delta_i)+mean(data_i, na.rm = TRUE)*(1-1/sqrt(delta_i)), na.rm = TRUE)
+          dens2 <-  density(data_j/sqrt(delta_j)+mean(data_j, na.rm = TRUE)*(1-1/sqrt(delta_j)), na.rm = TRUE)
+          f_dist <- function(x) {abs(f(x,dens1)-f(x,dens2))}
+          npoints <- 1000
+          dist <- (max(tail(dens1$x,1), tail(dens2$x,1))-min(dens1$x[1],dens2$x[1]))/npoints*0.5*sum(f_dist(seq(from=min(dens1$x[1], dens2$x[1]), to=max(tail(dens1$x,1), tail(dens2$x,1)), length.out = npoints)))
+          d[j,i] <- ifelse(dist > 1, 1, dist)
+          k <- k + 1
+        }
+  })
+  rownames(d) <- colnames(object)
+  colnames(d) <- colnames(object)
+  return(as.dist(d))
+}
+
 
 
