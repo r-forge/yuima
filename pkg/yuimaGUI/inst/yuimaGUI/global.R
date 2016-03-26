@@ -4,17 +4,15 @@ require(sde)
 require(quantmod)
 require(shinydashboard)
 require(shinyBS)
-require(shinyRGL)
-require(rgl)
 require(yuima)
 require(shinyjs)
 
 
 if(!exists("yuimaGUItable"))
-  yuimaGUItable <<- reactiveValues(series=data.frame(), model=data.frame(), simulation=data.frame())
+  yuimaGUItable <<- reactiveValues(series=data.frame(),  model=data.frame(), simulation=data.frame())
 
 if(!exists("yuimaGUIdata"))
-  yuimaGUIdata <<- reactiveValues(series=list(), model=list(), simulation=list())
+  yuimaGUIdata <<- reactiveValues(series=list(), cp=list(), model=list(), simulation=list())
 
 if(!exists("estimateSettings"))
   estimateSettings <<- list()
@@ -559,29 +557,74 @@ MYdist <- function(object){
   }
   withProgress(message = 'Clustering: ', value = 0, {
     k <- 1
-    for(i in 1:l)
+    for(i in 1:l){
+      delta_i <- as.numeric(abs(mean(diff(index(object)[!is.na(object[,i])]))))
+      data_i <- Delt(na.omit(object[,i]))
+      data_i <- data_i[data_i!="Inf"]
+      dens1 <-  density(data_i/sqrt(delta_i)+mean(data_i, na.rm = TRUE)*(1/delta_i-1/sqrt(delta_i)), na.rm = TRUE)
       for(j in i:l)
         if (i!=j){
           incProgress(2/(l*(l-1)), detail = paste(k,"(/", l*(l-1)/2 ,")"))
-          delta_i <- as.numeric(abs(mean(diff(index(object)[!is.na(object[,i])]))))
           delta_j <- as.numeric(abs(mean(diff(index(object)[!is.na(object[,j])]))))
-          data_i <- Delt(na.omit(object[,i]))
-          data_i <- data_i[data_i!="Inf"]
           data_j <- Delt(na.omit(object[,j]))
           data_j <- data_j[data_j!="Inf"]
-          dens1 <-  density(data_i/sqrt(delta_i)+mean(data_i, na.rm = TRUE)*(1-1/sqrt(delta_i)), na.rm = TRUE)
-          dens2 <-  density(data_j/sqrt(delta_j)+mean(data_j, na.rm = TRUE)*(1-1/sqrt(delta_j)), na.rm = TRUE)
+          dens2 <-  density(data_j/sqrt(delta_j)+mean(data_j, na.rm = TRUE)*(1/delta_j-1/sqrt(delta_j)), na.rm = TRUE)
           f_dist <- function(x) {abs(f(x,dens1)-f(x,dens2))}
           npoints <- 1000
           dist <- (max(tail(dens1$x,1), tail(dens2$x,1))-min(dens1$x[1],dens2$x[1]))/npoints*0.5*sum(f_dist(seq(from=min(dens1$x[1], dens2$x[1]), to=max(tail(dens1$x,1), tail(dens2$x,1)), length.out = npoints)))
           d[j,i] <- ifelse(dist > 1, 1, dist)
           k <- k + 1
         }
+    }
   })
   rownames(d) <- colnames(object)
   colnames(d) <- colnames(object)
   return(as.dist(d))
 }
+
+
+
+CPanalysis <- function(x, method = c("lSQ", "KS"), pvalue = 0.01){
+  if (pvalue > 0.1){
+    pvalue <- 0.1
+    warning("pvalue re-defined: 0.1")
+  }
+  if(method=="lSQ"){
+    tau <- cpoint(x)$tau0
+    return(list(tau=tau, pvalue=NA))
+  }
+  if(method=="KS"){
+    x_incr <- na.omit(Delt(x))
+    x_incr_num <- as.numeric(x_incr)
+    tau <- c()
+    p.value<-c()	
+    nTot <-length(x_incr_num)
+    n0 <- 1
+    repeat{
+      ks<-c()
+      for (i in seq(from = n0, to=(nTot-1), by = as.integer(1+(nTot-n0)/1000))){
+        ks[i]<- suppressWarnings(ks.test(x_incr_num[n0:i],x_incr_num[(i+1):nTot])$p.value)
+      }
+      ifelse(
+        min(ks, na.rm=TRUE) > pvalue,
+        {
+          break
+        },
+        {
+          n0 <- which.min(ks)
+          tau <- c(index(x_incr)[n0], tau)
+          p.value <- c(ks[n0], p.value)
+        }
+      )
+    }
+    if (length(tau)==0){
+      tau <- NA
+      p.value <- NA
+    }
+    return (list(tau=tau,pvalue=p.value))
+  }  
+}
+
 
 
 

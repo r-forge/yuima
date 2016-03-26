@@ -1,11 +1,11 @@
 .skin-blue .main-header .logo {
-                              background-color: #0F0F0E;
+                              background-color: black;
                               }
 .skin-blue .main-header .navbar {
-                              background-color: #0F0F0E;
+                              background-color: black;
                               }   
 .skin-blue .main-sidebar {
-                              background-color: #0F0F0E;
+                              background-color: black;
                               font-family: "Times New Roman", Times, serif;
                               }
 .content-wrapper, .right-side {
@@ -33,7 +33,7 @@ th{
 	background: linear-gradient(#606D60, #202220, #606D60);
 }
 
-#advancedSettingsButtonApplyDelta, #advancedSettingsButtonApplyAllDelta, #advancedSettingsButtonApplyModel, #advancedSettingsButtonApplyAllModel, #advancedSettingsButtonApplyGeneral, #advancedSettingsButtonApplyAllModelGeneral, #advancedSettingsButtonApplyAllGeneral, #buttonApplyRange, #buttonApplyAllRange, #simulate_button_apply_nsim, #simulate_button_applyAll_nsim, #simulate_button_apply_xinit, #simulate_button_applyAll_xinit, #simulate_button_apply_range, #simulate_button_applyAll_range, #simulate_button_apply_advancedSettings, #simulate_button_applyAll_advancedSettings, #simulate_showSimulation_button_saveTrajectory, #simulate_showSimulation_button_saveHist{
+#advancedSettingsButtonApplyDelta, #advancedSettingsButtonApplyAllDelta, #advancedSettingsButtonApplyModel, #advancedSettingsButtonApplyAllModel, #advancedSettingsButtonApplyGeneral, #advancedSettingsButtonApplyAllModelGeneral, #advancedSettingsButtonApplyAllGeneral, #buttonApplyRange, #buttonApplyAllRange, #simulate_button_apply_nsim, #simulate_button_applyAll_nsim, #simulate_button_apply_xinit, #simulate_button_applyAll_xinit, #simulate_button_apply_range, #simulate_button_applyAll_range, #simulate_button_apply_advancedSettings, #simulate_button_applyAll_advancedSettings, #simulate_showSimulation_button_saveTrajectory, #simulate_showSimulation_button_saveHist, #cluster_button_saveDendogram, #cluster_button_saveScaling2D{
   width: 100%;
   color: #ffffff;
 	text-shadow: 1px 1px 1px #000;
@@ -53,7 +53,7 @@ th{
 	background: linear-gradient(#606D60, #202220, #606D60);
 }
 
-#finDataDelete, #finDataDeleteAll, #finDataSave, #yourFileDelete, #yourFileDeleteAll, #yourFileSave, #buttonSelect_models_Univariate, #buttonSelectAll_models_Univariate, #buttonDelete_models_Univariate, #buttonDeleteAll_models_Univariate, #databaseModelsDelete, #databaseModelsDeleteAll, #simulation_button_deleteModels, #simulation_button_deleteAllModels, #simulate_button_selectModels, #simulate_button_selectAllModels, #simulate_monitor_button_delete, #simulate_monitor_button_deleteAll, #simulate_monitor_button_showSimulation, #simulate_model_usr_button_select, #simulate_model_usr_button_selectAll, #simulate_model_usr_button_delete, #simulate_model_usr_button_deleteAll, #cluster_button_select, #cluster_button_selectAll, #cluster_button_delete, #cluster_button_deleteAll{
+#finDataDelete, #finDataDeleteAll, #finDataSave, #yourFileDelete, #yourFileDeleteAll, #yourFileSave, #buttonSelect_models_Univariate, #buttonSelectAll_models_Univariate, #buttonDelete_models_Univariate, #buttonDeleteAll_models_Univariate, #databaseModelsDelete, #databaseModelsDeleteAll, #simulation_button_deleteModels, #simulation_button_deleteAllModels, #simulate_button_selectModels, #simulate_button_selectAllModels, #simulate_monitor_button_delete, #simulate_monitor_button_deleteAll, #simulate_monitor_button_showSimulation, #simulate_model_usr_button_select, #simulate_model_usr_button_selectAll, #simulate_model_usr_button_delete, #simulate_model_usr_button_deleteAll, #cluster_button_select, #cluster_button_selectAll, #cluster_button_delete, #cluster_button_deleteAll, #changepoint_button_select, #changepoint_button_selectAll, #changepoint_button_delete, #changepoint_button_deleteAll{
   font-size: 110%;
   width: 100%;  
   color: black;
@@ -71,7 +71,7 @@ th{
 	background: linear-gradient(#202220, #159609, #202220);
 }
 
-#advancedSettingsButton, #simulate_button_advancedSettings, #usr_model_button_delete {
+#advancedSettingsButton, #simulate_button_advancedSettings {
   width: 40%;
   height: 39px;
   color: #ffffff;
@@ -79,14 +79,21 @@ th{
 	background: linear-gradient(#202220, #963131, #202220);
 }
 
-#simulate_model_usr_button_save,#usr_model_button_save {
+#simulate_model_usr_button_save, #usr_model_button_save {
+  width: 40%;
+  height: 39px;
+  color: #ffffff;
+	background: radial-gradient(#061218, #184860, #061218);
+}
+
+#usr_model_button_delete {
   width: 30%;
   height: 39px;
   color: #ffffff;
-	background: radial-gradient(#a5bdc9, #184860, #061218);
+	background: radial-gradient(#202220, #963131, #202220);
 }
 
-#EstimateModels, #simulate_simulateModels, #cluster_button_startCluster {
+#EstimateModels, #simulate_simulateModels, #cluster_button_startCluster, #changepoint_button_startEstimation {
   width: 100%;  
 	color: #ffffff;
 	text-shadow: 1px 1px 1px #000;
