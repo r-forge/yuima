@@ -1539,7 +1539,9 @@ server <- function(input, output, session) {
   
   observeEvent(input$cluster_button_startCluster, {
     closeAlert(session, "cluster_alert_dist")
-    if (length(rownames(seriesToCluster$table))!=0){
+    if (length(rownames(seriesToCluster$table))<=2)
+      createAlert(session, anchorId = "cluster_alert", alertId = "cluster_alert_dist", content = "Select at least 3 series", style = "error")
+    if (length(rownames(seriesToCluster$table))>2){
       names_list <- rownames(seriesToCluster$table)
       x <- yuimaGUIdata$series[[names_list[1]]]
       for(i in names_list[-1])
@@ -1550,11 +1552,12 @@ server <- function(input, output, session) {
         "MOdist" = try(MOdist(na.omit(x))),
         "MYdist" = try(MYdist(x))
       )
+      shinyjs::toggle("cluster_charts", condition = (class(d)!="try-error"))
       if (class(d)=="try-error")
         createAlert(session, anchorId = "cluster_alert", alertId = "cluster_alert_dist", content = "Error in clustering", style = "error")
       else{
         hc <- hclust(d)
-        labelColors <- c("#CDB380", "#036564", "#EB6841", "#EDC951")
+        labelColors <- c("#CDB380", "#FF0000", "#036564", "#FF00FF", "#EB6841", "#7FFFD4", "#EDC951","#FF8000", "#FFE4E1", "#A2CD5A", "#71C671", "#AAAAAA", "#555555", "#FFA07A", "#8B6508", "#FFC125", "#FFFACD", "#808000",   "#458B00", "#54FF9F", "#43CD80", "#008B8B", "#53868B", "#B0E2FF", "#0000FF", "#F8F8FF", "#551A8B", "#AB82FF", "#BF3EFF", "#FF83FA", "#8B1C62", "#CD6839", "#8E8E38", "#1E1E1E")
         dendrClick <- reactiveValues(y = NULL)
         output$cluster_dendogram <- renderPlot({
           if(!is.null(input$cluster_dendrogram_click$y))
@@ -1579,8 +1582,17 @@ server <- function(input, output, session) {
             }
             hc <- dendrapply(as.dendrogram(hc), colDefault)
           }
-          par(bg="#471a1a", xaxt = "n", mar= c(10, 4, 4, 2)+0.1)
-          plot(hc, ylab = "", xlab = "", main = "Dendrogram", edgePar=list(col="grey50"), col.main = "#FFF68F")
+          output$cluster_button_saveDendogram <- downloadHandler(
+            filename = "Dendrogram.png",
+            content = function(file) {
+              png(file, width = 960)
+              par(bg="black", xaxt = "n", mar= c(10, 4, 4, 2)+0.1)
+              plot(hc, ylab = "", xlab = "", main = "Dendrogram", edgePar=list(col="grey50"), col.main = "#FFF68F", col.axis="grey")
+              dev.off()
+            }
+          )
+          par(bg="black", xaxt = "n", mar= c(10, 4, 4, 2)+0.1)
+          plot(hc, ylab = "", xlab = "", main = "Dendrogram", edgePar=list(col="grey50"), col.main = "#FFF68F", col.axis="grey")
         })
         output$cluster_scaling2D <- renderPlot({
           points <- cmdscale(d)
@@ -1588,7 +1600,16 @@ server <- function(input, output, session) {
             g1 <- cutree(hclust(d), h = dendrClick$y)
           else
             g1 <- 1
-          par(bg="#471a1a", xaxt = "n", yaxt = "n", bty="n")
+          output$cluster_button_saveScaling2D <- downloadHandler(
+            filename = "Multidimensional scaling.png",
+            content = function(file) {
+              png(file)
+              par(bg="black", xaxt = "n", yaxt = "n", bty="n")
+              plot(points, col=labelColors[g1], pch=16, cex=2, main = "Multidimensional scaling", col.main = "#FFF68F", xlab="", ylab="")
+              dev.off()
+            }
+          )
+          par(bg="black", xaxt = "n", yaxt = "n", bty="n")
           plot(points, col=labelColors[g1], pch=16, cex=2, main = "Multidimensional scaling", col.main = "#FFF68F", xlab="", ylab="")
         })
       }
@@ -1596,6 +1617,104 @@ server <- function(input, output, session) {
   })
   
   
+  
+  ########################Clustering
+  ########################
+  ########################
+  
+  ###Display available data
+  output$changepoint_table_select <- DT::renderDataTable(options=list(scrollY = 150, scrollCollapse = FALSE, deferRender = TRUE, dom = 'frtS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
+    if (length(yuimaGUItable$series)==0){
+      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
+      return(NoData[-1,])
+    }
+    return (yuimaGUItable$series)
+  })
+  
+  ###Table of selected data to change point
+  seriesToChangePoint <- reactiveValues(table=data.frame())
+  
+  ###Select Button
+  observeEvent(input$changepoint_button_select, priority = 1, {
+    seriesToChangePoint$table <<- rbind(seriesToChangePoint$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% input$changepoint_table_select_rows_selected) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToChangePoint$table)),])
+  })
+  
+  ###SelectAll Button
+  observeEvent(input$changepoint_button_selectAll, priority = 1, {
+    seriesToChangePoint$table <<- rbind(seriesToChangePoint$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% input$changepoint_table_select_rows_all) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToChangePoint$table)),])
+  })
+  
+  ###Display Selected Data
+  output$changepoint_table_selected <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = TRUE, dom = 'frtS'), extensions = 'Scroller', rownames = FALSE, selection = "multiple",{
+    if (length(seriesToChangePoint$table)==0){
+      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
+      return(NoData[-1,])
+    }
+    return (seriesToChangePoint$table)
+  })
+  
+  ###Control selected data to be in yuimaGUIdata$series
+  observe({
+    if(length(seriesToChangePoint$table)!=0){
+      if (length(yuimaGUItable$series)==0)
+        seriesToChangePoint$table <<- data.frame()
+      else
+        seriesToChangePoint$table <<- seriesToChangePoint$table[which(as.character(seriesToChangePoint$table[,"Symb"]) %in% as.character(yuimaGUItable$series[,"Symb"])),]
+    }
+  })
+  
+  ###Delete Button
+  observeEvent(input$changepoint_button_delete, priority = 1,{
+    if (!is.null(input$changepoint_table_selected_rows_selected))
+      seriesToChangePoint$table <<- seriesToChangePoint$table[-which(rownames(seriesToChangePoint$table) %in% input$changepoint_table_selected_rows_selected),]
+  })
+  
+  ###DeleteAll Button
+  observeEvent(input$changepoint_button_deleteAll, priority = 1,{
+    seriesToChangePoint$table <<- seriesToChangePoint$table[-which(rownames(seriesToChangePoint$table) %in% input$changepoint_table_selected_rows_all),]
+  })
+  
+  observe({
+    shinyjs::toggle("changepoint_pvalue", condition = (input$changepoint_method=="KS"))
+    shinyjs::toggle("changepoint_charts", condition = (length(names(yuimaGUIdata$cp))!=0))
+  })
+  
+  output$changepoint_symb <- renderUI({
+    selectInput("changepoint_symb", "Symbol", choices = sort(names(yuimaGUIdata$cp)))  
+  })
+  
+  observeEvent(input$changepoint_button_startEstimation, {
+    if (length(rownames(seriesToChangePoint$table))!=0)
+      withProgress(message = 'Analyzing: ', value = 0, {
+        for (i in rownames(seriesToChangePoint$table)){
+          incProgress(1/length(rownames(seriesToChangePoint$table)), detail = i)
+          yuimaGUIdata$cp[[i]] <<- CPanalysis(x=getData(i), method = input$changepoint_method, pvalue = input$changepoint_pvalue/100)
+        }
+      })
+  })
+  
+
+  output$changepoint_plot_series <- renderPlot({
+    if(!is.null(input$changepoint_symb))
+      if ((input$changepoint_symb %in% rownames(yuimaGUItable$series))){
+        par(bg="black")
+        plot(getData(input$changepoint_symb), main=input$changepoint_symb, xlab="Index", ylab=NA, log=switch(input$changepoint_scale,"Linear"="","Logarithmic (Y)"="y", "Logarithmic (X)"="x", "Logarithmic (XY)"="xy"), col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
+        abline(v=yuimaGUIdata$cp[[input$changepoint_symb]]$tau, col = "yellow")
+        grid(col="grey")
+      }
+  })
+  
+  output$changepoint_plot_incr <- renderPlot({
+    if(!is.null(input$changepoint_symb))
+      if ((input$changepoint_symb %in% rownames(yuimaGUItable$series))){
+        x <- Delt(getData(input$changepoint_symb))
+        x <- x[x!="Inf"]
+        par(bg="black")
+        plot(x, main=paste(input$changepoint_symb, " - Percentage Increments"), xlab="Index", ylab=NA, log=switch(input$changepoint_scale,"Linear"="","Logarithmic (Y)"="", "Logarithmic (X)"="x", "Logarithmic (XY)"="x"), col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
+        abline(v=yuimaGUIdata$cp[[input$changepoint_symb]]$tau, col = "yellow")
+        grid(col="grey")
+      }
+  })
   
   
 

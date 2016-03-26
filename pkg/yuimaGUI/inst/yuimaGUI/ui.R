@@ -10,6 +10,7 @@ sidebar<-dashboardSidebar(
              menuSubItem("Your Data", tabName = "yourData")
              ),
     menuItem("Explorative Data Analysis", tabName = "eda", icon = icon("map"),
+             menuSubItem("Change Point Estimation", tabName = "changepoint"),
              menuSubItem("Clustering", tabName = "cluster")
              ),
     menuItem("Modelling & Model Selection", tabName = "models", icon = icon("sliders")),
@@ -481,37 +482,81 @@ body<-dashboardBody(
       fluidRow(column(12,
         column(4,
           h4("Available data", style="color:#CDCECD"),
-          DT::dataTableOutput("cluster_table_select"),
-          br(),
-          fluidRow(
-            column(6,actionButton("cluster_button_select",label = "Select", align = "center")),
-            bsTooltip("cluster_button_select", title = "Select data to cluster", placement = "top"),
-            column(6,actionButton("cluster_button_selectAll",label = "Select All", align = "center")),
-            bsTooltip("cluster_button_selectAll", title = "Select all data that are displayed", placement = "top")
-          )
+          DT::dataTableOutput("cluster_table_select")
         ),
         column(4,
           h4("Selected data", style="color:#CDCECD"),
-          DT::dataTableOutput("cluster_table_selected"),
-          br(),
-          fluidRow(
-            column(6,actionButton("cluster_button_delete",label = "Delete", align = "center")),
-            bsTooltip("cluster_button_delete", title = "Delete selected data", placement = "top"),
-            column(6,actionButton("cluster_button_deleteAll",label = "Delete All", align = "center")),
-            bsTooltip("cluster_button_deleteAll", title = "Delete all data that are displayed", placement = "top")
-          )
+          DT::dataTableOutput("cluster_table_selected")
         ),
         column(4,br(),br(),br(),br(),
-          div(align="center",selectInput("cluster_distance", "Distance", choices = c("Markov Operator"="MOdist", "My distance"="MYdist"))),
-          br(),br(),br(),br(),br(),br(),
-          actionButton("cluster_button_startCluster", label = "Start Clustering", align = "center")
+          div(align="center",selectInput("cluster_distance", "Distance", choices = c("Markov Operator"="MOdist", "My distance"="MYdist")))
         )
       )),
       br(),
-      fluidRow(
-        column(8, plotOutput("cluster_dendogram", click = "cluster_dendrogram_click")),        
-        column(4, plotOutput("cluster_scaling2D"))
-      )
+      fluidRow(column(12,
+        column(2,actionButton("cluster_button_select",label = "Select", align = "center")),
+        bsTooltip("cluster_button_select", title = "Select data to cluster", placement = "top"),
+        column(2,actionButton("cluster_button_selectAll",label = "Select All", align = "center")),
+        bsTooltip("cluster_button_selectAll", title = "Select all data that are displayed", placement = "top"),
+        column(2,actionButton("cluster_button_delete",label = "Delete", align = "center")),
+        bsTooltip("cluster_button_delete", title = "Delete selected data", placement = "top"),
+        column(2,actionButton("cluster_button_deleteAll",label = "Delete All", align = "center")),
+        bsTooltip("cluster_button_deleteAll", title = "Delete all data that are displayed", placement = "top"),           
+        column(4,actionButton("cluster_button_startCluster", label = "Start Clustering", align = "center"))
+      )),
+      shinyjs::hidden(div(id="cluster_charts",
+        br(),br(),
+        hr(class = "hrHeader"),
+        br(),
+        fluidRow(column(12,
+          column(8, plotOutput("cluster_dendogram", click = "cluster_dendrogram_click")),        
+          column(4, plotOutput("cluster_scaling2D"))
+        )),
+        br(),
+        fluidRow(column(12,
+          column(2),
+          column(4, div(align="center", downloadButton("cluster_button_saveDendogram", label = "Save dendrogram"))),        
+          column(3),
+          column(2, div(align="center", downloadButton("cluster_button_saveScaling2D", label = "Save chart")))
+        ))
+      ))
+    ),
+    tabItem(tabName = "changepoint",
+      fluidRow(column(12,bsAlert("changepoint_alert"))),
+      fluidRow(column(12,
+        column(4,
+          h4("Available data", style="color:#CDCECD"),
+          DT::dataTableOutput("changepoint_table_select")
+        ),
+        column(4,
+          h4("Selected data", style="color:#CDCECD"),
+          DT::dataTableOutput("changepoint_table_selected")
+        ),
+        column(4,br(),br(),br(),br(),
+          div(align="center", selectInput("changepoint_method", "Method", choices = c("Least Squares"="lSQ", "Kolmogorov-Smirnov"="KS"))),
+          shinyjs::hidden(div(align="center", sliderInput("changepoint_pvalue", label = "p-value (%)", value=1, min=0, max=10, step = 0.1)))
+        )
+      )),
+      br(),
+      fluidRow(column(12,
+        column(2,actionButton("changepoint_button_select",label = "Select", align = "center")),
+        bsTooltip("changepoint_button_select", title = "Select data", placement = "top"),
+        column(2,actionButton("changepoint_button_selectAll",label = "Select All", align = "center")),
+        bsTooltip("changepoint_button_selectAll", title = "Select all data that are displayed", placement = "top"),
+        column(2,actionButton("changepoint_button_delete",label = "Delete", align = "center")),
+        bsTooltip("changepoint_button_delete", title = "Delete selected data", placement = "top"),
+        column(2,actionButton("changepoint_button_deleteAll",label = "Delete All", align = "center")),
+        bsTooltip("changepoint_button_deleteAll", title = "Delete all data that are displayed", placement = "top"),
+        column(4,actionButton("changepoint_button_startEstimation", label = "Start Analysis", align = "center"))
+      )),
+      br(),br(),
+      fluidRow(column(12,div(id="changepoint_charts",
+        hr(class = "hrHeader"),
+        uiOutput("changepoint_symb", align="center"),
+        selectInput("changepoint_scale", label = "Scale", choices=c("Linear","Logarithmic (Y)","Logarithmic (X)", "Logarithmic (XY)"), width = "150px"),
+        column(6,plotOutput("changepoint_plot_series")),
+        column(6,plotOutput("changepoint_plot_incr"))
+      )))
     )
     ########################new tab items below
   )
