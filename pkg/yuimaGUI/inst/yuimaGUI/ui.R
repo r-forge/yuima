@@ -5,23 +5,25 @@ header<-dashboardHeader(
 sidebar<-dashboardSidebar(
   sidebarMenu(
     menuItem("Home", tabName = "home", icon = icon("home")),
-    menuItem("Data I/O", tabName = "data", icon = icon("upload"),
+    menuItem("Data I/O", tabName = "data_section", icon = icon("upload"),
              menuSubItem("Financial & Economic Data", tabName = "finData"),
              menuSubItem("Your Data", tabName = "yourData")
              ),
-    menuItem("Explorative Data Analysis", tabName = "eda", icon = icon("map"),
+    menuItem("Explorative Data Analysis", tabName = "eda_section", icon = icon("map"),
              menuSubItem("Change Point Estimation", tabName = "changepoint"),
              menuSubItem("Clustering", tabName = "cluster")
+             #REMOVE# menuSubItem("Lead-Lag Analysis", tabName = "llag")
              ),
-    menuItem("Modelling & Model Selection", tabName = "models", icon = icon("sliders")),
-    menuItem("Simulate", tabName = "simulate", icon = icon("area-chart")),
-    hr(),
-    menuItem("Miscellaneous", tabName = "misc",
-             menuSubItem("...", tabName = "smth")
-            ),
-    menuItem("Finance", tabName = "finance",
-             menuSubItem("Option Pricing", tabName = "opt")
-            )
+    menuItem("Modelling", tabName = "models_section", icon = icon("sliders"),
+             menuSubItem("Univariate", tabName = "models")
+             ),
+    menuItem("Simulate", tabName = "simulate_section", icon = icon("area-chart"),
+             menuSubItem("Simulate", tabName = "simulate")
+             ),
+    hr()
+    #menuItem("Finance", tabName = "finance",
+    #         menuSubItem("Option Pricing", tabName = "opt")
+    #        )
   )
 )
 
@@ -286,8 +288,10 @@ body<-dashboardBody(
               box(width = 12,div(align="center",
                 h3("General Settings"),
                 uiOutput("advancedSettingsMethod", align="center"),
-                uiOutput("advancedSettingsTries", align="center"),
-                uiOutput("advancedSettingsSeed", align="center"),
+                fluidRow(
+                  column(6,uiOutput("advancedSettingsTries", align="center")),
+                  column(6,uiOutput("advancedSettingsSeed", align="center"))
+                ),
                 uiOutput("advancedSettingsJoint", align="center"),
                 uiOutput("advancedSettingsAggregation", align="center"),
                 uiOutput("advancedSettingsThreshold", align="center"),
@@ -478,6 +482,16 @@ body<-dashboardBody(
     ),
     ####################################################
     tabItem(tabName = "cluster",
+      fluidRow(
+        column(12,
+          h3("In this section you can perform clustering.",style="color:#edeeed"),
+          h4("Select data you want to cluster from table 'Available Data'.", br(),
+             "Then choose the distance you are interested in and the kind of linkage for the hierarchical cluster analysis.", br(),
+             "Results will be shown below by plotting dendrogram and multidimensional scaling output.",
+                        style="color:#CDCECD"),
+          hr(class = "hrHeader")
+        )
+      ),
       fluidRow(column(12,bsAlert("cluster_alert"))),
       fluidRow(column(12,
         column(4,
@@ -488,8 +502,11 @@ body<-dashboardBody(
           h4("Selected data", style="color:#CDCECD"),
           DT::dataTableOutput("cluster_table_selected")
         ),
-        column(4,br(),br(),br(),br(),
-          div(align="center",selectInput("cluster_distance", "Distance", choices = c("Markov Operator"="MOdist", "My distance"="MYdist")))
+        column(4,br(),br(),
+          div(align="center",
+            selectInput("cluster_linkage", "Linkage", choices = c("Complete"="complete", "Single"="single", "Average"="average", "Ward"="ward.D", "Ward squared"="ward.D2", "McQuitty"="mcquitty", "Median"="median", "Centroid"="centroid")),
+            selectInput("cluster_distance", "Distance", choices = c("Markov Operator"="MOdist", "My distance"="MYdist", "Euclidean"="euclidean", "Maximum"="maximum", "Manhattan"="manhattan", "Canberra"="canberra", "Minkowski"="minkowski")),
+            shinyjs::hidden(numericInput("cluster_distance_minkowskiPower", label = "Power", value = 2, width = "30%")))
         )
       )),
       br(),
@@ -521,7 +538,18 @@ body<-dashboardBody(
         ))
       ))
     ),
+    ####################################################
     tabItem(tabName = "changepoint",
+      fluidRow(
+        column(12,
+          h3("In this section you can estimate change points.",style="color:#edeeed"),
+          h4("Select data for which you want to estimate change points from table 'Available Data'.", br(),
+            "Then choose the algorithm you want to use for the estimation.", br(),
+            "Results will be shown below by plotting series and detected change points.",
+            style="color:#CDCECD"),
+          hr(class = "hrHeader")
+        )
+      ),
       fluidRow(column(12,bsAlert("changepoint_alert"))),
       fluidRow(column(12,
         column(4,
@@ -533,8 +561,8 @@ body<-dashboardBody(
           DT::dataTableOutput("changepoint_table_selected")
         ),
         column(4,br(),br(),br(),br(),
-          div(align="center", selectInput("changepoint_method", "Method", choices = c("Least Squares"="lSQ", "Kolmogorov-Smirnov"="KS"))),
-          shinyjs::hidden(div(align="center", sliderInput("changepoint_pvalue", label = "p-value (%)", value=1, min=0, max=10, step = 0.1)))
+          div(align="center", selectInput("changepoint_method", "Method", choices = c("Least Squares"="lSQ", "Kolmogorov - increments"="KSdiff", "Kolmogorov - percentage increments"="KSperc"))),
+          div(align="center", shinyjs::hidden(sliderInput("changepoint_pvalue", label = "p-value (%)", value=1, min=0, max=10, step = 0.1)))
         )
       )),
       br(),
@@ -547,15 +575,48 @@ body<-dashboardBody(
         bsTooltip("changepoint_button_delete", title = "Delete selected data", placement = "top"),
         column(2,actionButton("changepoint_button_deleteAll",label = "Delete All", align = "center")),
         bsTooltip("changepoint_button_deleteAll", title = "Delete all data that are displayed", placement = "top"),
-        column(4,actionButton("changepoint_button_startEstimation", label = "Start Analysis", align = "center"))
+        column(4,actionButton("changepoint_button_startEstimation", label = "Start Estimation", align = "center"))
       )),
       br(),br(),
-      fluidRow(column(12,div(id="changepoint_charts",
+      fluidRow(column(12,shinyjs::hidden(div(id="changepoint_charts",
         hr(class = "hrHeader"),
         uiOutput("changepoint_symb", align="center"),
         selectInput("changepoint_scale", label = "Scale", choices=c("Linear","Logarithmic (Y)","Logarithmic (X)", "Logarithmic (XY)"), width = "150px"),
         column(6,plotOutput("changepoint_plot_series")),
         column(6,plotOutput("changepoint_plot_incr"))
+      ))))
+    ),
+    tabItem(tabName = "llag",
+      fluidRow(column(12,bsAlert("llag_alert"))),
+      fluidRow(column(12,
+        column(4,
+          h4("Available data", style="color:#CDCECD"),
+          DT::dataTableOutput("llag_table_select")
+        ),
+        column(4,
+          h4("Selected data", style="color:#CDCECD"),
+          DT::dataTableOutput("llag_table_selected")
+        ),
+        column(4,br(),br(),br(),br(),
+          div(align="center", numericInput("llag_maxLag", label = "Lag max", value = 20, min = 1, step = 1))
+        )
+      )),
+      br(),
+      fluidRow(column(12,
+        column(2,actionButton("llag_button_select",label = "Select", align = "center")),
+        bsTooltip("llag_button_select", title = "Select data", placement = "top"),
+        column(2,actionButton("llag_button_selectAll",label = "Select All", align = "center")),
+        bsTooltip("llag_button_selectAll", title = "Select all data that are displayed", placement = "top"),
+        column(2,actionButton("llag_button_delete",label = "Delete", align = "center")),
+        bsTooltip("llag_button_delete", title = "Delete selected data", placement = "top"),
+        column(2,actionButton("llag_button_deleteAll",label = "Delete All", align = "center")),
+        bsTooltip("llag_button_deleteAll", title = "Delete all data that are displayed", placement = "top"),
+        column(4,actionButton("llag_button_startEstimation", label = "Start Analysis", align = "center"))
+      )),
+      br(),br(),
+      fluidRow(column(12,div(id="llag_results",
+        hr(class = "hrHeader"),
+        plotOutput("llag_corrplot")
       )))
     )
     ########################new tab items below

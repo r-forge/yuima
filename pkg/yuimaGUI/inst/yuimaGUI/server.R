@@ -51,7 +51,7 @@ server <- function(input, output, session) {
   })
 
   ###Display available data
-  output$database1 <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = TRUE, dom = 'frtiS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
+  output$database1 <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtiS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
     if (length(yuimaGUItable$series)==0){
       NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
       return(NoData[-1,])
@@ -214,7 +214,7 @@ server <- function(input, output, session) {
   })
 
   ###Display data available
-  output$database2 <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = TRUE, dom = 'frtiS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
+  output$database2 <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtiS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
     if (length(yuimaGUItable$series)==0){
       NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
       return(NoData[-1,])
@@ -263,7 +263,7 @@ server <- function(input, output, session) {
 
   output$usr_modelClass_latex <- renderUI({
     if (input$modelClass=="Diffusion processes")
-      return(withMathJax("$$dX=(f_1)\\;dt\\;+\\;(f_2)\\;dW$$"))
+      return(withMathJax("$$dX=a(t,X,\\theta)\\;dt\\;+\\;b(t,X,\\theta)\\;dW$$"))
   })
 
   output$usr_model_coeff <- renderUI({
@@ -307,7 +307,7 @@ server <- function(input, output, session) {
 
 
   ###Display available data
-  output$database3 <- DT::renderDataTable(options=list(scrollY = 150, scrollCollapse = FALSE, deferRender = TRUE, dom = 'frtS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
+  output$database3 <- DT::renderDataTable(options=list(scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
     if (length(yuimaGUItable$series)==0){
       NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
       return(NoData[-1,])
@@ -329,7 +329,7 @@ server <- function(input, output, session) {
   })
 
   ###Display Selected Data
-  output$database4 <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = TRUE, dom = 'frtS'), extensions = 'Scroller', rownames = FALSE, selection = "multiple",{
+  output$database4 <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = FALSE, selection = "multiple",{
     if (length(seriesToEstimate$table)==0){
       NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
       return(NoData[-1,])
@@ -526,53 +526,60 @@ server <- function(input, output, session) {
       if (!is.null(input$advancedSettingsModel))
         selectInput(inputId = "advancedSettingsParameter", label = "Parameter", choices = setModelByName(input$advancedSettingsModel)@parameter@all)
   })
-  output$advancedSettingsFixed <- renderUI({
-    if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
-      numericInput(inputId = "advancedSettingsFixed", label = "fixed", value = ifelse(is.null(estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["fixed"]][[input$advancedSettingsParameter]]),NA,estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["fixed"]][[input$advancedSettingsParameter]]))
-  })
+  #REMOVE# output$advancedSettingsFixed <- renderUI({
+  #REMOVE#  if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
+  #REMOVE#    numericInput(inputId = "advancedSettingsFixed", label = "fixed", value = ifelse(is.null(estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["fixed"]][[input$advancedSettingsParameter]]),NA,estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["fixed"]][[input$advancedSettingsParameter]]))
+  #REMOVE#})
   output$advancedSettingsStart <- renderUI({
-    if (!is.null(input$advancedSettingsFixed) & !is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
-      if (is.na(input$advancedSettingsFixed))
+    if (#REMOVE# !is.null(input$advancedSettingsFixed) & 
+      !is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
+      #REMOVE# if (is.na(input$advancedSettingsFixed))
         numericInput(inputId = "advancedSettingsStart", label = "start", value = ifelse(is.null(estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["start"]][[input$advancedSettingsParameter]]),NA,estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["start"]][[input$advancedSettingsParameter]]))
   })
   output$advancedSettingsStartMin <- renderUI({
-    if (!is.null(input$advancedSettingsFixed) & !is.null(input$advancedSettingsStart) & !is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
-      if (is.na(input$advancedSettingsFixed) & is.na(input$advancedSettingsStart))
+    if (#REMOVE# !is.null(input$advancedSettingsFixed) & 
+      !is.null(input$advancedSettingsStart) & !is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
+      if (#REMOVE# is.na(input$advancedSettingsFixed) & 
+        is.na(input$advancedSettingsStart))
         numericInput(inputId = "advancedSettingsStartMin", label = "start: Min", value = ifelse(is.null(estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["startMin"]][[input$advancedSettingsParameter]]),-10,estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["startMin"]][[input$advancedSettingsParameter]]))
   })
   output$advancedSettingsStartMax <- renderUI({
-    if (!is.null(input$advancedSettingsFixed) & !is.null(input$advancedSettingsStart) & !is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
-      if (is.na(input$advancedSettingsFixed) & is.na(input$advancedSettingsStart))
+    if (#REMOVE# !is.null(input$advancedSettingsFixed) & 
+      !is.null(input$advancedSettingsStart) & !is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
+      if (#REMOVE# is.na(input$advancedSettingsFixed) & 
+        is.na(input$advancedSettingsStart))
         numericInput(inputId = "advancedSettingsStartMax", label = "start: Max", value = ifelse(is.null(estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["startMax"]][[input$advancedSettingsParameter]]),10,estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["startMax"]][[input$advancedSettingsParameter]]))
   })
   output$advancedSettingsLower <- renderUI({
-    if (!is.null(input$advancedSettingsFixed) & !is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
-      if (is.na(input$advancedSettingsFixed))
+    if (#REMOVE# !is.null(input$advancedSettingsFixed) & 
+      !is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
+      #REMOVE# if (is.na(input$advancedSettingsFixed))
         if (input$advancedSettingsMethod=="L-BFGS-B" | input$advancedSettingsMethod=="Brent")
           numericInput("advancedSettingsLower", label = "lower", value = ifelse(is.null(estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["lower"]][[input$advancedSettingsParameter]]),NA,estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["lower"]][[input$advancedSettingsParameter]]))
   })
   output$advancedSettingsUpper <- renderUI({
-    if (!is.null(input$advancedSettingsFixed) & !is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
-      if (is.na(input$advancedSettingsFixed))
+    if (#REMOVE# !is.null(input$advancedSettingsFixed) & 
+      !is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
+      #REMOVE# if (is.na(input$advancedSettingsFixed))
         if (input$advancedSettingsMethod=="L-BFGS-B" | input$advancedSettingsMethod=="Brent")
           numericInput("advancedSettingsUpper", label = "upper", value = ifelse(is.null(estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["upper"]][[input$advancedSettingsParameter]]),NA,estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["upper"]][[input$advancedSettingsParameter]]))
   })
-  output$advancedSettingsJoint <- renderUI({
-    if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries))
-      selectInput("advancedSettingsJoint", label = "joint", choices = c(FALSE, TRUE), selected = estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["joint"]])
-  })
+  #REMOVE# output$advancedSettingsJoint <- renderUI({
+  #REMOVE#   if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries))
+  #REMOVE#     selectInput("advancedSettingsJoint", label = "joint", choices = c(FALSE, TRUE), selected = estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["joint"]])
+  #REMOVE# })
   output$advancedSettingsMethod <- renderUI({
     if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries))
       selectInput("advancedSettingsMethod", label = "method", choices = c("L-BFGS-B", "Nelder-Mead", "BFGS", "CG", "SANN", "Brent"), selected = estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["method"]])
   })
-  output$advancedSettingsAggregation <- renderUI({
-    if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries))
-      selectInput("advancedSettingsAggregation", label = "aggregation", choices = c(TRUE, FALSE), selected = estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["aggregation"]])
-  })
-  output$advancedSettingsThreshold <- renderUI({
-    if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries))
-      numericInput("advancedSettingsThreshold", label = "threshold", value = estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["threshold"]])
-  })
+  #REMOVE# output$advancedSettingsAggregation <- renderUI({
+  #REMOVE#   if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries))
+  #REMOVE#     selectInput("advancedSettingsAggregation", label = "aggregation", choices = c(TRUE, FALSE), selected = estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["aggregation"]])
+  #REMOVE# })
+  #REMOVE# output$advancedSettingsThreshold <- renderUI({
+  #REMOVE#   if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries))
+  #REMOVE#     numericInput("advancedSettingsThreshold", label = "threshold", value = estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["threshold"]])
+  #REMOVE# })
   output$advancedSettingsTries <- renderUI({
     if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsMethod))
       numericInput("advancedSettingsTries", label = "tries", min = 1, value = ifelse(input$advancedSettingsMethod=="SANN" & estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["method"]]!="SANN",1,estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["tries"]]))
@@ -592,7 +599,7 @@ server <- function(input, output, session) {
       deltaSettings[[symb]] <<- input$advancedSettingsDelta
   })
   observeEvent(input$advancedSettingsButtonApplyModel,{
-    estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["fixed"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsFixed
+    #REMOVE# estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["fixed"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsFixed
     estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["start"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsStart
     estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["startMin"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsStartMin
     estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["startMax"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsStartMax
@@ -601,7 +608,7 @@ server <- function(input, output, session) {
   })
   observeEvent(input$advancedSettingsButtonApplyAllModel,{
     for (symb in input$database4_rows_all){
-      estimateSettings[[input$advancedSettingsModel]][[symb]][["fixed"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsFixed
+      #REMOVE# estimateSettings[[input$advancedSettingsModel]][[symb]][["fixed"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsFixed
       estimateSettings[[input$advancedSettingsModel]][[symb]][["start"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsStart
       estimateSettings[[input$advancedSettingsModel]][[symb]][["startMin"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsStartMin
       estimateSettings[[input$advancedSettingsModel]][[symb]][["startMax"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsStartMax
@@ -613,18 +620,18 @@ server <- function(input, output, session) {
     estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["method"]] <<- input$advancedSettingsMethod
     estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["tries"]] <<- input$advancedSettingsTries
     estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["seed"]] <<- input$advancedSettingsSeed
-    estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["joint"]] <<- input$advancedSettingsJoint
-    estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["aggregation"]] <<- input$advancedSettingsAggregation
-    estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["threshold"]] <<- input$advancedSettingsThreshold
+    #REMOVE# estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["joint"]] <<- input$advancedSettingsJoint
+    #REMOVE# estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["aggregation"]] <<- input$advancedSettingsAggregation
+    #REMOVE# estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["threshold"]] <<- input$advancedSettingsThreshold
   })
   observeEvent(input$advancedSettingsButtonApplyAllModelGeneral,{
     for (symb in input$database4_rows_all){
       estimateSettings[[input$advancedSettingsModel]][[symb]][["method"]] <<- input$advancedSettingsMethod
       estimateSettings[[input$advancedSettingsModel]][[symb]][["tries"]] <<- input$advancedSettingsTries
       estimateSettings[[input$advancedSettingsModel]][[symb]][["seed"]] <<- input$advancedSettingsSeed
-      estimateSettings[[input$advancedSettingsModel]][[symb]][["joint"]] <<- input$advancedSettingsJoint
-      estimateSettings[[input$advancedSettingsModel]][[symb]][["aggregation"]] <<- input$advancedSettingsAggregation
-      estimateSettings[[input$advancedSettingsModel]][[symb]][["threshold"]] <<- input$advancedSettingsThreshold
+      #REMOVE# estimateSettings[[input$advancedSettingsModel]][[symb]][["joint"]] <<- input$advancedSettingsJoint
+      #REMOVE# estimateSettings[[input$advancedSettingsModel]][[symb]][["aggregation"]] <<- input$advancedSettingsAggregation
+      #REMOVE# estimateSettings[[input$advancedSettingsModel]][[symb]][["threshold"]] <<- input$advancedSettingsThreshold
     }
   })
   observeEvent(input$advancedSettingsButtonApplyAllGeneral,{
@@ -633,9 +640,9 @@ server <- function(input, output, session) {
         estimateSettings[[mod]][[symb]][["method"]] <<- input$advancedSettingsMethod
         estimateSettings[[mod]][[symb]][["tries"]] <<- input$advancedSettingsTries
         estimateSettings[[mod]][[symb]][["seed"]] <<- input$advancedSettingsSeed
-        estimateSettings[[mod]][[symb]][["joint"]] <<- input$advancedSettingsJoint
-        estimateSettings[[mod]][[symb]][["aggregation"]] <<- input$advancedSettingsAggregation
-        estimateSettings[[mod]][[symb]][["threshold"]] <<- input$advancedSettingsThreshold
+        #REMOVE# estimateSettings[[mod]][[symb]][["joint"]] <<- input$advancedSettingsJoint
+        #REMOVE# estimateSettings[[mod]][[symb]][["aggregation"]] <<- input$advancedSettingsAggregation
+        #REMOVE# estimateSettings[[mod]][[symb]][["threshold"]] <<- input$advancedSettingsThreshold
       }
     }
   })
@@ -706,7 +713,7 @@ server <- function(input, output, session) {
   })
 
   ###Display estimated models
-  output$databaseModels <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = TRUE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
+  output$databaseModels <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
     if (length(yuimaGUItable$model)==0){
       NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
       return(NoData[-1,])
@@ -748,10 +755,10 @@ server <- function(input, output, session) {
         em("delta:"), info$delta, br(),
         em("method:"), info$method, br(),
         em("tries:"), info$tries, br(),
-        em("seed:"), info$seed, br(),
-        em("joint:"), info$joint, br(),
-        em("aggregation:"), info$aggregation, br(),
-        em("threshold:"), info$threshold
+        em("seed:"), info$seed, br()
+        #REMOVE# em("joint:"), info$joint, br(),
+        #REMOVE# em("aggregation:"), info$aggregation, br(),
+        #REMOVE# em("threshold:"), info$threshold
       ),
       align="center"
     )
@@ -854,7 +861,7 @@ server <- function(input, output, session) {
   ########################
   ########################
 
-  output$simulate_databaseModels <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = TRUE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "multiple",{
+  output$simulate_databaseModels <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "multiple",{
     if (length(yuimaGUItable$model)==0){
       NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
       return(NoData[-1,])
@@ -931,7 +938,7 @@ server <- function(input, output, session) {
           usr_models$simulation[i] <<- NULL
   })
 
-  output$simulate_model_usr_table <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = TRUE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "multiple",{
+  output$simulate_model_usr_table <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "multiple",{
     table <- data.frame()
     for (i in names(usr_models$simulation)){
       newRow <- as.data.frame(usr_models$simulation[[i]])
@@ -1019,7 +1026,7 @@ server <- function(input, output, session) {
     }
   })
 
-  output$simulate_selectedModels <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = TRUE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "multiple",{
+  output$simulate_selectedModels <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "multiple",{
     if (length(modelsToSimulate$table)==0){
       NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
       return(NoData[-1,])
@@ -1297,7 +1304,7 @@ server <- function(input, output, session) {
   })
 
   ###Create simulations table
-  output$simulate_monitor_table <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = TRUE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
+  output$simulate_monitor_table <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
     if (length(yuimaGUItable$simulation)==0){
       NoData <- data.frame("Symb"=NA,"Model"=NA, "N sim" = NA, "Simulated from"=NA, "Simulated to"=NA, "Estimated from"=NA, "Estimated to"=NA)
       return(NoData[-1,])
@@ -1486,7 +1493,7 @@ server <- function(input, output, session) {
   ########################
   
   ###Display available data
-  output$cluster_table_select <- DT::renderDataTable(options=list(scrollY = 150, scrollCollapse = FALSE, deferRender = TRUE, dom = 'frtS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
+  output$cluster_table_select <- DT::renderDataTable(options=list(scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
     if (length(yuimaGUItable$series)==0){
       NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
       return(NoData[-1,])
@@ -1499,16 +1506,40 @@ server <- function(input, output, session) {
   
   ###Select Button
   observeEvent(input$cluster_button_select, priority = 1, {
-    seriesToCluster$table <<- rbind(seriesToCluster$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% input$cluster_table_select_rows_selected) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToCluster$table)),])
+    if (length(input$cluster_table_select_rows_selected)!=0){
+      closeAlert(session, "cluster_alert_indexes")
+      if (length(rownames(seriesToCluster$table))==0)
+        seriesToCluster$table <<- rbind(seriesToCluster$table, yuimaGUItable$series[input$cluster_table_select_rows_selected[1],])
+      for (symb in input$cluster_table_select_rows_selected){
+        if (class(index(yuimaGUIdata$series[[symb]]))==class(index(yuimaGUIdata$series[[rownames(seriesToCluster$table)[1]]]))){
+          if (!(symb %in% rownames(seriesToCluster$table)))
+            seriesToCluster$table <<- rbind(seriesToCluster$table, yuimaGUItable$series[symb,])
+        } else {
+          createAlert(session, anchorId = "cluster_alert", alertId = "cluster_alert_indexes", append = FALSE, content = "Cannot cluster series with different type of index (numeric/date)", style = "warning")
+        }
+      }
+    }
   })
   
   ###SelectAll Button
   observeEvent(input$cluster_button_selectAll, priority = 1, {
-    seriesToCluster$table <<- rbind(seriesToCluster$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% input$cluster_table_select_rows_all) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToCluster$table)),])
+    if (length(input$cluster_table_select_rows_all)!=0){
+      closeAlert(session, "cluster_alert_indexes")
+      if (length(rownames(seriesToCluster$table))==0)
+        seriesToCluster$table <<- rbind(seriesToCluster$table, yuimaGUItable$series[input$cluster_table_select_rows_all[1],])
+      for (symb in input$cluster_table_select_rows_all){
+        if (class(index(yuimaGUIdata$series[[symb]]))==class(index(yuimaGUIdata$series[[rownames(seriesToCluster$table)[1]]]))){
+          if (!(symb %in% rownames(seriesToCluster$table)))
+            seriesToCluster$table <<- rbind(seriesToCluster$table, yuimaGUItable$series[symb,])
+        } else {
+          createAlert(session, anchorId = "cluster_alert", alertId = "cluster_alert_indexes", append = FALSE, content = "Cannot cluster series with different type of index (numeric/date)", style = "warning")
+        }
+      }
+    }
   })
   
   ###Display Selected Data
-  output$cluster_table_selected <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = TRUE, dom = 'frtS'), extensions = 'Scroller', rownames = FALSE, selection = "multiple",{
+  output$cluster_table_selected <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = FALSE, selection = "multiple",{
     if (length(seriesToCluster$table)==0){
       NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
       return(NoData[-1,])
@@ -1537,6 +1568,10 @@ server <- function(input, output, session) {
     seriesToCluster$table <<- seriesToCluster$table[-which(rownames(seriesToCluster$table) %in% input$cluster_table_selected_rows_all),]
   })
   
+  observe({
+    shinyjs::toggle("cluster_distance_minkowskiPower", condition = (input$cluster_distance=="minkowski"))
+  })
+  
   observeEvent(input$cluster_button_startCluster, {
     closeAlert(session, "cluster_alert_dist")
     if (length(rownames(seriesToCluster$table))<=2)
@@ -1550,13 +1585,18 @@ server <- function(input, output, session) {
       d <- switch(
         input$cluster_distance,
         "MOdist" = try(MOdist(na.omit(x))),
-        "MYdist" = try(MYdist(x))
+        "MYdist" = try(MYdist(x)),
+        "euclidean" = try(dist(t(as.data.frame(x)), method = "euclidean")),
+        "maximum" = try(dist(t(as.data.frame(x)), method = "maximum")),
+        "manhattan" = try(dist(t(as.data.frame(x)), method = "manhattan")),
+        "canberra" = try(dist(t(as.data.frame(x)), method = "canberra")),
+        "minkowski" = try(dist(t(as.data.frame(x)), method = "minkowski", p = input$cluster_distance_minkowskiPower))
       )
       shinyjs::toggle("cluster_charts", condition = (class(d)!="try-error"))
       if (class(d)=="try-error")
         createAlert(session, anchorId = "cluster_alert", alertId = "cluster_alert_dist", content = "Error in clustering", style = "error")
       else{
-        hc <- hclust(d)
+        hc <- hclust(d, method = input$cluster_linkage)
         labelColors <- c("#CDB380", "#FF0000", "#036564", "#FF00FF", "#EB6841", "#7FFFD4", "#EDC951","#FF8000", "#FFE4E1", "#A2CD5A", "#71C671", "#AAAAAA", "#555555", "#FFA07A", "#8B6508", "#FFC125", "#FFFACD", "#808000",   "#458B00", "#54FF9F", "#43CD80", "#008B8B", "#53868B", "#B0E2FF", "#0000FF", "#F8F8FF", "#551A8B", "#AB82FF", "#BF3EFF", "#FF83FA", "#8B1C62", "#CD6839", "#8E8E38", "#1E1E1E")
         dendrClick <- reactiveValues(y = NULL)
         output$cluster_dendogram <- renderPlot({
@@ -1618,12 +1658,12 @@ server <- function(input, output, session) {
   
   
   
-  ########################Clustering
+  ########################Change Point
   ########################
   ########################
   
   ###Display available data
-  output$changepoint_table_select <- DT::renderDataTable(options=list(scrollY = 150, scrollCollapse = FALSE, deferRender = TRUE, dom = 'frtS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
+  output$changepoint_table_select <- DT::renderDataTable(options=list(scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
     if (length(yuimaGUItable$series)==0){
       NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
       return(NoData[-1,])
@@ -1645,7 +1685,7 @@ server <- function(input, output, session) {
   })
   
   ###Display Selected Data
-  output$changepoint_table_selected <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = TRUE, dom = 'frtS'), extensions = 'Scroller', rownames = FALSE, selection = "multiple",{
+  output$changepoint_table_selected <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = FALSE, selection = "multiple",{
     if (length(seriesToChangePoint$table)==0){
       NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
       return(NoData[-1,])
@@ -1675,7 +1715,7 @@ server <- function(input, output, session) {
   })
   
   observe({
-    shinyjs::toggle("changepoint_pvalue", condition = (input$changepoint_method=="KS"))
+    shinyjs::toggle("changepoint_pvalue", condition = (input$changepoint_method %in% c("KSdiff", "KSperc")))
     shinyjs::toggle("changepoint_charts", condition = (length(names(yuimaGUIdata$cp))!=0))
   })
   
@@ -1708,12 +1748,109 @@ server <- function(input, output, session) {
     if(!is.null(input$changepoint_symb))
       if ((input$changepoint_symb %in% rownames(yuimaGUItable$series))){
         x <- Delt(getData(input$changepoint_symb))
-        x <- x[x!="Inf"]
+        x <- x[x[,1]!="Inf"]
         par(bg="black")
         plot(x, main=paste(input$changepoint_symb, " - Percentage Increments"), xlab="Index", ylab=NA, log=switch(input$changepoint_scale,"Linear"="","Logarithmic (Y)"="", "Logarithmic (X)"="x", "Logarithmic (XY)"="x"), col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
         abline(v=yuimaGUIdata$cp[[input$changepoint_symb]]$tau, col = "yellow")
         grid(col="grey")
       }
+  })
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ########################Lead Lag
+  ########################
+  ########################
+  
+  ###Display available data
+  output$llag_table_select <- DT::renderDataTable(options=list(scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
+    if (length(yuimaGUItable$series)==0){
+      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
+      return(NoData[-1,])
+    }
+    return (yuimaGUItable$series)
+  })
+  
+  ###Table of selected data to change point
+  seriesToLeadLag <- reactiveValues(table=data.frame())
+  
+  ###Select Button
+  observeEvent(input$llag_button_select, priority = 1, {
+    seriesToLeadLag$table <<- rbind(seriesToLeadLag$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% input$llag_table_select_rows_selected) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToLeadLag$table)),])
+  })
+  
+  ###SelectAll Button
+  observeEvent(input$llag_button_selectAll, priority = 1, {
+    seriesToLeadLag$table <<- rbind(seriesToLeadLag$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% input$llag_table_select_rows_all) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToLeadLag$table)),])
+  })
+  
+  ###Display Selected Data
+  output$llag_table_selected <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = FALSE, selection = "multiple",{
+    if (length(seriesToLeadLag$table)==0){
+      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
+      return(NoData[-1,])
+    }
+    return (seriesToLeadLag$table)
+  })
+  
+  ###Control selected data to be in yuimaGUIdata$series
+  observe({
+    if(length(seriesToLeadLag$table)!=0){
+      if (length(yuimaGUItable$series)==0)
+        seriesToLeadLag$table <<- data.frame()
+      else
+        seriesToLeadLag$table <<- seriesToLeadLag$table[which(as.character(seriesToLeadLag$table[,"Symb"]) %in% as.character(yuimaGUItable$series[,"Symb"])),]
+    }
+  })
+  
+  ###Delete Button
+  observeEvent(input$llag_button_delete, priority = 1,{
+    if (!is.null(input$llag_table_selected_rows_selected))
+      seriesToLeadLag$table <<- seriesToLeadLag$table[-which(rownames(seriesToLeadLag$table) %in% input$llag_table_selected_rows_selected),]
+  })
+  
+  ###DeleteAll Button
+  observeEvent(input$llag_button_deleteAll, priority = 1,{
+    seriesToLeadLag$table <<- seriesToLeadLag$table[-which(rownames(seriesToLeadLag$table) %in% input$llag_table_selected_rows_all),]
+  })
+  
+  
+  observeEvent(input$llag_button_startEstimation, {
+    closeAlert(session, alertId = "llag_alert_select")
+    if (is.na(input$llag_maxLag) | input$llag_maxLag <= 0)
+      createAlert(session, anchorId = "llag_alert", alertId = "llag_alert_select", content = "Lag max must be greater than zero", style = "warning")
+    else {
+      series <- rownames(seriesToLeadLag$table)
+      if (length(series)<=1)
+        createAlert(session, anchorId = "llag_alert", alertId = "llag_alert_select", content = "Select at least two series", style = "warning")
+      else {
+        data <- yuimaGUIdata$series[[series[1]]]
+        for (i in 2:length(series))
+          data <- merge(data, yuimaGUIdata$series[[series[i]]])
+        colnames(data) <- series
+        delta <- 0.01
+        res <- try(llag(setData(data, delta = delta), ci=TRUE, plot=FALSE, grid = seq(from = -input$llag_maxLag*delta, to = input$llag_maxLag*delta, by = delta/2)))
+        shinyjs::toggle("llag_results", condition = (class(res)!="try-error"))
+        if (class(res)=="try-error")
+          createAlert(session, anchorId = "llag_alert", alertId = "llag_alert_select", content = "Error in computing lead-lag", style = "error")
+        else {
+          output$llag_corrplot <- renderPlot({
+            cols <- colorRampPalette(c("#7F0000", "red", "#FF7F00", "yellow", "white", "cyan", "#007FFF", "blue", "#00007F"))
+            corrplot(res$lagcce, p.mat = res$p.values, is.corr = FALSE, method = "ellipse", cl.pos = "b", tl.pos = "d", tl.srt = 60, col=cols(100), outline=TRUE, bg = "white", order = "alphabet", tl.col = "black") 
+          })
+        }
+      }
+    }
   })
   
   

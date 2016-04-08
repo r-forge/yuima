@@ -23,6 +23,10 @@ th{
   color: black;
 }
 
+#symb {
+  text-align: left;
+}
+
 #finDataGo{
   width: 21.3em;
   color: #ffffff;
@@ -198,5 +202,10 @@ a:hover {
 
 #panel_simulations, #panel_estimates{
   font-size: 120%;
-  
 }
+
+.form-control {
+  text-align: center;
+}
+
+
