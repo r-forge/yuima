@@ -6,6 +6,7 @@ require(shinydashboard)
 require(shinyBS)
 require(yuima)
 require(shinyjs)
+require(corrplot)
 
 
 if(!exists("yuimaGUItable"))
@@ -88,6 +89,14 @@ observeEvent(yuimaGUIdata$simulation, priority = 10, {
     }
   }
 })
+
+observe({
+  differ <- names(yuimaGUIdata$cp)[!(names(yuimaGUIdata$cp) %in% names(yuimaGUIdata$series))]
+  if (length(differ)!=0)
+    for (i in differ)
+      yuimaGUIdata$cp[[i]] <<- NULL
+})
+
 
 addData <- function(x, typeIndex, session, anchorId, printSuccess = TRUE){
   x <- data.frame(x, check.names = FALSE)
@@ -352,7 +361,7 @@ addModel <- function(modName, symbName, data, delta, start, startMin, startMax, 
   model <- setYuima(data = setData(data, delta = delta), model=setModelByName(name = modName))
   parameters <- setModelByName(modName)@parameter
   if (all(parameters@all %in% c(names(start),names(fixed)))){
-    QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #joint = joint, aggregation = aggregation,
+    QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #REMOVE# joint = joint, aggregation = aggregation,
                  threshold = threshold))
     if (class(QMLE)=="try-error"){
       createAlert(session = session, anchorId = anchorId, content = paste("Unable to estimate", modName,"on", symbName), style = "danger")
@@ -367,7 +376,7 @@ addModel <- function(modName, symbName, data, delta, start, startMin, startMax, 
       mu <- alpha +0.5*sigma^2
       if (is.null(start$sigma)) start$sigma <- sigma
       if (is.null(start$mu)) start$mu <- mu
-      QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #joint = joint, aggregation = aggregation,
+      QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #REMOVE# joint = joint, aggregation = aggregation,
                    threshold = threshold))
       if (class(QMLE)=="try-error"){
         createAlert(session = session, anchorId = anchorId, content = paste("Unable to estimate", modName,"on", symbName), style = "danger")
@@ -559,14 +568,14 @@ MYdist <- function(object){
     k <- 1
     for(i in 1:l){
       delta_i <- as.numeric(abs(mean(diff(index(object)[!is.na(object[,i])]))))
-      data_i <- Delt(na.omit(object[,i]))
+      data_i <- as.vector(Delt(na.omit(object[,i])))
       data_i <- data_i[data_i!="Inf"]
       dens1 <-  density(data_i/sqrt(delta_i)+mean(data_i, na.rm = TRUE)*(1/delta_i-1/sqrt(delta_i)), na.rm = TRUE)
       for(j in i:l)
         if (i!=j){
           incProgress(2/(l*(l-1)), detail = paste(k,"(/", l*(l-1)/2 ,")"))
           delta_j <- as.numeric(abs(mean(diff(index(object)[!is.na(object[,j])]))))
-          data_j <- Delt(na.omit(object[,j]))
+          data_j <- as.vector(Delt(na.omit(object[,j])))
           data_j <- data_j[data_j!="Inf"]
           dens2 <-  density(data_j/sqrt(delta_j)+mean(data_j, na.rm = TRUE)*(1/delta_j-1/sqrt(delta_j)), na.rm = TRUE)
           f_dist <- function(x) {abs(f(x,dens1)-f(x,dens2))}
@@ -584,7 +593,7 @@ MYdist <- function(object){
 
 
 
-CPanalysis <- function(x, method = c("lSQ", "KS"), pvalue = 0.01){
+CPanalysis <- function(x, method = c("lSQ", "KSdiff", "KSperc"), pvalue = 0.01){
   if (pvalue > 0.1){
     pvalue <- 0.1
     warning("pvalue re-defined: 0.1")
@@ -593,8 +602,10 @@ CPanalysis <- function(x, method = c("lSQ", "KS"), pvalue = 0.01){
     tau <- cpoint(x)$tau0
     return(list(tau=tau, pvalue=NA))
   }
-  if(method=="KS"){
-    x_incr <- na.omit(Delt(x))
+  if(method=="KSdiff" | method=="KSperc"){
+    x_incr <- switch (method,
+                      "KSdiff" = na.omit(diff(x)),
+                      "KSperc" =  na.omit(Delt(x)))
     x_incr_num <- as.numeric(x_incr)
     tau <- c()
     p.value<-c()	
@@ -602,7 +613,7 @@ CPanalysis <- function(x, method = c("lSQ", "KS"), pvalue = 0.01){
     n0 <- 1
     repeat{
       ks<-c()
-      for (i in seq(from = n0, to=(nTot-1), by = as.integer(1+(nTot-n0)/1000))){
+      for (i in seq(from = n0, to=(nTot-1), by = as.integer(1+(nTot-n0)/100))){
         ks[i]<- suppressWarnings(ks.test(x_incr_num[n0:i],x_incr_num[(i+1):nTot])$p.value)
       }
       ifelse(
