@@ -20,10 +20,10 @@ sidebar<-dashboardSidebar(
     menuItem("Simulate", tabName = "simulate_section", icon = icon("area-chart"),
              menuSubItem("Simulate", tabName = "simulate")
              ),
-    hr()
-    #menuItem("Finance", tabName = "finance",
-    #         menuSubItem("Option Pricing", tabName = "opt")
-    #        )
+    hr(),
+    menuItem("Finance", tabName = "finance",
+             menuSubItem("Hedging", tabName = "hedging")
+            )
   )
 )
 
@@ -73,15 +73,17 @@ body<-dashboardBody(
       fluidRow(
         column(12, DT::dataTableOutput("database1"))
       ),
-      fluidRow(
-        column(6),
-        column(2,downloadButton(outputId = "finDataSave", label = "Save")),
-        bsTooltip("finDataSave", title = "Save data to file", placement = "top"),
-        column(2,actionButton(inputId = "finDataDelete", label = "Delete")),
-        bsTooltip("finDataDelete", title = "Delete selected data", placement = "top"),
-        column(2,actionButton(inputId = "finDataDeleteAll", label = "Delete All")),
-        bsTooltip("finDataDeleteAll", title = "Delete all data that are displayed", placement = "top")
-      )
+      shinyjs::hidden(div(id="buttons_DataIO_fin",
+        fluidRow(
+          column(6),
+          column(2,downloadButton(outputId = "finDataSave", label = "Save")),
+          bsTooltip("finDataSave", title = "Save data to file", placement = "top"),
+          column(2,actionButton(inputId = "finDataDelete", label = "Delete")),
+          bsTooltip("finDataDelete", title = "Delete selected data", placement = "top"),
+          column(2,actionButton(inputId = "finDataDeleteAll", label = "Delete All")),
+          bsTooltip("finDataDeleteAll", title = "Delete all data that are displayed", placement = "top")
+        )
+      ))
     ),
     #########################
     tabItem("yourData",
@@ -123,15 +125,17 @@ body<-dashboardBody(
           DT::dataTableOutput("database2")
         )
       ),
-      fluidRow(
-        column(6),
-        column(2, downloadButton(outputId = "yourFileSave", label = "Save")),
-        bsTooltip("yourFileSave", title = "Save data to file", placement = "top"),
-        column(2,actionButton(inputId = "yourFileDelete", label = "Delete")),
-        bsTooltip("yourFileDelete", title = "Delete selected data", placement = "top"),
-        column(2,actionButton(inputId = "yourFileDeleteAll", label = "Delete All")),
-        bsTooltip("yourFileDeleteAll", title = "Delete all data that are displayed", placement = "top")
-      )
+      shinyjs::hidden(div(id="buttons_DataIO_file",
+        fluidRow(
+          column(6),
+          column(2, downloadButton(outputId = "yourFileSave", label = "Save")),
+          bsTooltip("yourFileSave", title = "Save data to file", placement = "top"),
+          column(2,actionButton(inputId = "yourFileDelete", label = "Delete")),
+          bsTooltip("yourFileDelete", title = "Delete selected data", placement = "top"),
+          column(2,actionButton(inputId = "yourFileDeleteAll", label = "Delete All")),
+          bsTooltip("yourFileDeleteAll", title = "Delete all data that are displayed", placement = "top")
+        )
+      ))
     ),
     ########################
     tabItem(tabName="models", fluidRow(column(12,
@@ -153,8 +157,9 @@ body<-dashboardBody(
           br(),
           fluidRow(
             column(4,div(align="center",
-              selectInput("modelClass",label = "Model Class", choices = c("Diffusion processes"), selected = "Diffusion processes"),
-              uiOutput("model")
+              selectInput("modelClass",label = "Model Class", choices = c("Diffusion process", "Compound Poisson"), selected = "Diffusion process"),
+              uiOutput("model"),
+              uiOutput("jumps")
             )),
             column(5,
               shinyjs::hidden(h4(id="titlePrintModelLatex","Models to estimate:", style="color:#CDCECD;font-size: 2em; font-family: Goudy Old Style, Serif")),
@@ -165,41 +170,37 @@ body<-dashboardBody(
           fluidRow(
             column(4,
                    h4("Available data", style="color:#CDCECD"),
-                   DT::dataTableOutput("database3"),
-                   br(),
-                   fluidRow(
-                     column(6,actionButton("buttonSelect_models_Univariate",label = "Select", align = "center")),
-                     bsTooltip("buttonSelect_models_Univariate", title = "Select data to model", placement = "top"),
-                     column(6,actionButton("buttonSelectAll_models_Univariate",label = "Select All", align = "center")),
-                     bsTooltip("buttonSelectAll_models_Univariate", title = "Select all data that are displayed", placement = "top")
-                   )
+                   DT::dataTableOutput("database3")
             ),
             column(4,
                    h4("Selected data", style="color:#CDCECD"),
-                   DT::dataTableOutput("database4"),
-                   br(),
-                   fluidRow(
-                     column(6,actionButton("buttonDelete_models_Univariate",label = "Delete", align = "center")),
-                     bsTooltip("buttonDelete_models_Univariate", title = "Delete selected data", placement = "top"),
-                     column(6,actionButton("buttonDeleteAll_models_Univariate",label = "Delete All", align = "center")),
-                     bsTooltip("buttonDeleteAll_models_Univariate", title = "Delete all data that are displayed", placement = "top")
-                   )
+                   DT::dataTableOutput("database4")
             ),
             column(4,
                    br(),br(),br(),br(),
                    div(actionButton("DisplayPlotsRange", label = "Set Range"), align = "center"),
                    br(),
-                   div(actionButton("advancedSettingsButton", label = "Advanced Settings", align = "center"), align = "center"),
-                   br(),br(),br(),br(),br(),
-                   actionButton("EstimateModels", label = "Start Models Estimation", align = "center")
+                   div(actionButton("advancedSettingsButton", label = "Advanced Settings", align = "center"), align = "center")
             )
+          ),
+          br(),
+          fluidRow(
+            column(2,actionButton("buttonSelect_models_Univariate",label = "Select", align = "center")),
+            bsTooltip("buttonSelect_models_Univariate", title = "Select data to model", placement = "top"),
+            column(2,actionButton("buttonSelectAll_models_Univariate",label = "Select All", align = "center")),
+            bsTooltip("buttonSelectAll_models_Univariate", title = "Select all data that are displayed", placement = "top") ,
+            column(2,actionButton("buttonDelete_models_Univariate",label = "Delete", align = "center")),
+            bsTooltip("buttonDelete_models_Univariate", title = "Delete selected data", placement = "top"),
+            column(2,actionButton("buttonDeleteAll_models_Univariate",label = "Delete All", align = "center")),
+            bsTooltip("buttonDeleteAll_models_Univariate", title = "Delete all data that are displayed", placement = "top"),
+            column(4,actionButton("EstimateModels", label = "Start Models Estimation", align = "center"))
           )
         ),
         tabPanel(title = "Set model",
           br(),
           fluidRow(div(align="center",
             column(6,
-              selectInput("usr_modelClass",label = "Model Class", width = "50%", choices = c("Diffusion processes"), selected = "Diffusion processes"),
+              selectInput("usr_modelClass",label = "Model Class", width = "50%", choices = c("Diffusion process", "Compound Poisson"), selected = "Diffusion process"),
               textInput("usr_model_name", label = "Model Name", width = "50%"),
               uiOutput("usr_modelClass_latex"),
               uiOutput("usr_model_coeff"),
@@ -357,14 +358,19 @@ body<-dashboardBody(
         )),
         tabPanel(title = "Simulate equation",
           fluidRow(
-            column(4, br(), div(align="center",
-              uiOutput("simulate_model_usr_selectModel"),
+            uiOutput("simulate_PrintModelLatex")       
+          ),
+          fluidRow(
+            column(6, br(), div(align="center",
+              column(6,selectInput("simulate_model_usr_selectClass", label = "Class", choices = c("Diffusion process", "Compound Poisson"))),
+              column(6,uiOutput("simulate_model_usr_selectModel")),
+              uiOutput("simulate_model_usr_selectJumps"),
               uiOutput("simulate_model_usr_ID"),
               column(6,uiOutput("simulate_model_usr_selectParam")),
               column(6,uiOutput("simulate_model_usr_param")),
               column(12,actionButton("simulate_model_usr_button_save", label = "Save", align = "center"))
             )),
-            column(8,
+            column(6,
               br(),
               DT::dataTableOutput("simulate_model_usr_table"),
               br(),
@@ -392,28 +398,29 @@ body<-dashboardBody(
           )
         )
       ))),
-      div(id="div_simulations", fluidRow(
-        column(12,br(),br(),br()),
-        column(8,
-          h4("Selected Models", style="color:#CDCECD"),
-          DT::dataTableOutput("simulate_selectedModels"),
-          br(),
-          fluidRow(
-            column(6,actionButton("simulation_button_deleteModels",label = "Delete", align = "center")),
-            bsTooltip("simulation_button_deleteModels", title = "Delete selected models", placement = "top"),
-            column(6,actionButton("simulation_button_deleteAllModels",label = "Delete All", align = "center")),
-            bsTooltip("simulation_button_deleteAllModels", title = "Delete all models that are displayed", placement = "top")
+      div(id="div_simulations", 
+        fluidRow(
+          column(12,br(),br(),br()),
+          column(8,
+            h4("Selected Models", style="color:#CDCECD"),
+            DT::dataTableOutput("simulate_selectedModels")
+          ),
+          column(4,
+            br(),br(),br(),br(),
+            div(actionButton("simulate_button_setSimulation", label = "Set Simulation"), align = "center"),
+            br(),
+            div(actionButton("simulate_button_advancedSettings", label = "Advanced Settings", align = "center"), align = "center")
           )
         ),
-        column(4,
-          br(),br(),br(),br(),
-          div(actionButton("simulate_button_setSimulation", label = "Set Simulation"), align = "center"),
-          br(),
-          div(actionButton("simulate_button_advancedSettings", label = "Advanced Settings", align = "center"), align = "center"),
-          br(),br(),br(),br(),br(),
-          actionButton("simulate_simulateModels", label = "Start Models Simulation", align = "center")
+        br(),
+        fluidRow(
+          column(4,actionButton("simulation_button_deleteModels",label = "Delete", align = "center")),
+          bsTooltip("simulation_button_deleteModels", title = "Delete selected models", placement = "top"),
+          column(4,actionButton("simulation_button_deleteAllModels",label = "Delete All", align = "center")),
+          bsTooltip("simulation_button_deleteAllModels", title = "Delete all models that are displayed", placement = "top"),
+          column(4,actionButton("simulate_simulateModels", label = "Start Models Simulation", align = "center"))
         )
-      )),
+      ),
       bsModal(id="simulate_showSimulation", trigger = "simulate_monitor_button_showSimulation", title = div(h4(em("Simulation")), align="center"), size = "large",
         fluidRow(column(12,
           fluidRow(column(8,div(align="center",uiOutput("simulate_showSimulation_simID")))),
@@ -452,20 +459,20 @@ body<-dashboardBody(
           uiOutput("simulate_modelID"),
           br(),
           box(width = 12,
-            uiOutput("simulate_nsim"),
-            uiOutput("simulate_nstep"),
-            column(6,tags$button(type="button", id="simulate_button_apply_nsim", class = "action-button", em("Apply"))),
-            column(6,tags$button(type="button", id="simulate_button_applyAll_nsim", class = "action-button", em("Apply All")))
+              uiOutput("simulate_range"),
+              column(6,tags$button(type="button", id="simulate_button_apply_range", class = "action-button", em("Apply"))),
+              column(6,tags$button(type="button", id="simulate_button_applyAll_range", class = "action-button", em("Apply All")))
           ),
           box(width =12,
-            uiOutput("simulate_xinit"),
-            column(6,tags$button(type="button", id="simulate_button_apply_xinit", class = "action-button", em("Apply"))),
-            column(6,tags$button(type="button", id="simulate_button_applyAll_xinit", class = "action-button", em("Apply All")))
+              uiOutput("simulate_xinit"),
+              column(6,tags$button(type="button", id="simulate_button_apply_xinit", class = "action-button", em("Apply"))),
+              column(6,tags$button(type="button", id="simulate_button_applyAll_xinit", class = "action-button", em("Apply All")))
           ),
           box(width = 12,
-            uiOutput("simulate_range"),
-            column(6,tags$button(type="button", id="simulate_button_apply_range", class = "action-button", em("Apply"))),
-            column(6,tags$button(type="button", id="simulate_button_applyAll_range", class = "action-button", em("Apply All")))
+              uiOutput("simulate_nsim"),
+              uiOutput("simulate_nstep"),
+              column(6,tags$button(type="button", id="simulate_button_apply_nsim", class = "action-button", em("Apply"))),
+              column(6,tags$button(type="button", id="simulate_button_applyAll_nsim", class = "action-button", em("Apply All")))
           )
         )
       ),
@@ -618,6 +625,104 @@ body<-dashboardBody(
         hr(class = "hrHeader"),
         plotOutput("llag_corrplot")
       )))
+    ),
+    ########################hedging
+    tabItem(tabName = "hedging",
+      fluidRow(
+        column(12,
+          h3("In this section you can manage risk originated by buying options and the underlying asset.",style="color:#edeeed"),
+          h4("The evolution of the underlying asset is simulated by models you estimated in section Modelling.", br(),
+             "After performing the simulation click on rows of the table in tab Hedging, in order to choose the number of options and assets to buy/sell.",br(),
+             "The Profit&Loss distribution of your position will be displayed (it includes transaction costs that you can customize).",
+            style="color:#CDCECD"),
+          hr(class = "hrHeader")
+        )
+      ),
+      fluidRow(column(12,bsAlert("hedging_alert"))),
+      tabsetPanel(id = "panel_hedging", type = "tabs",
+        tabPanel(title = "Start simulations",
+          fluidRow(column(12, br(),
+              h4("Click on the model by which to simulate the evolution of the underlying asset", style="color:#CDCECD"),
+              DT::dataTableOutput("hedging_databaseModels")
+            )
+          ),
+          br(),
+          fluidRow(column(12,div(align="center",
+            br(),
+            fluidRow(
+              column(3,selectInput("hedging_type", label="Option Type:", c(Call="call", Put="put"))),
+              column(3,numericInput("hedging_strike", label="Strike Price:", value=0, min = 0, max = NA, step = NA, width = NULL)),
+              column(3,dateInput("hedging_maturity", label="Maturity:", value = Sys.Date()+30)),
+              column(3,numericInput("hedging_lotMult", label="Number of Options per Lot:", value=1000, min = 1))
+            ),
+            fluidRow(
+              column(3),
+              column(3,numericInput("hedging_optMarketPrice", label="Option Market Price:", value=NA, min = 0)),
+              column(3,uiOutput("hedging_assMarketPrice")),
+              column(3)
+            ),
+            fluidRow(
+              column(4),
+              column(4,numericInput("hedging_nSim", label="Number of Simulations", value=1000, min = 1)),
+              column(4)
+            ),
+            fluidRow(
+              column(4),
+              column(4, actionButton("hedging_button_startComputation", label = "Start Computation", width = "50%"))
+            )
+          )))
+        ),
+        tabPanel(title = "Hedging",
+          shinyjs::hidden(div(id="hedging_body",align="center",br(),
+            fluidRow(
+              column(3,numericInput("hedging_maxCapital", label = "Available Capital", value = 10000)),
+              column(3,uiOutput("hedging_nOptLot_hedge")),
+              column(3,uiOutput("hedging_nAss_hedge"))
+            ),
+            fluidRow(
+              column(9, plotOutput("hedging_plot_distribution")),
+              column(3,
+                sliderInput("hedging_slider_nBin", label = "Adjust bin width", min=1, max=100, value = 30, step = 1, ticks = FALSE),
+                br(),
+                uiOutput("hedging_slider_rangeHist"),
+                textOutput("hedging_probability_text"),
+                textOutput("hedging_mean_text"),
+                br(),
+                textOutput("hedging_capital_text"),
+                textOutput("hedging_meanPerc_text"),
+                br(),br(),br(),
+                actionButton("hedging_button_commissionPlan", label = "Transaction Costs")
+              )
+            ),
+            br(),
+            fluidRow(
+              column(3,selectInput("hedging_type2", label="Modify Option Type", c(" "="default", Call="call", Put="put"))),
+              column(3,numericInput("hedging_strike2", label = "Modify Strike", min = 0, value = NA)),
+              column(3,numericInput("hedging_optMarketPrice2", label = "Modify Option Price", min = 0, value = NA)),
+              column(3,br(),actionButton("hedging_button_saveHedging", "Save Changes"))
+            ),
+            bsModal(id="hedging_commissionPlan", trigger = "hedging_button_commissionPlan", title = div(h4(em("Commission Plan")), align="center"), size = "small",
+              div(align = "center",
+                box(width = 12,
+                  numericInput("hedging_percCostAss", label="Asset - Trading cost (%):", value=0.19, min = 0),
+                  numericInput("hedging_minCostAss", label="Asset - Min trading cost:", value=2.95, min = 0),
+                  numericInput("hedging_rateShort", label="Asset - Annual interest rate for short position (%):", value=4.95, min = 0),
+                  numericInput("hedging_lotCostOpt", label="Option - Trading cost per lot:", value=5.95, min = 0)
+                )
+              )
+            )
+          )),
+          fluidRow(column(12,br(),
+            DT::dataTableOutput("hedging_table_results")
+          )),
+          br(),
+          fluidRow(
+            column(8),
+            column(2,actionButton(inputId = "hedging_button_delete", label = "Delete")),
+            column(2,actionButton(inputId = "hedging_button_deleteAll", label = "Delete All"))
+          )         
+        )
+      )
     )
     ########################new tab items below
   )

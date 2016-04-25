@@ -20,7 +20,10 @@ server <- function(input, output, session) {
       }
     )
   }
-
+  
+  
+  
+  
   ########################Load Economic and Financial Data
   ########################
   ########################
@@ -52,11 +55,8 @@ server <- function(input, output, session) {
 
   ###Display available data
   output$database1 <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtiS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
-    if (length(yuimaGUItable$series)==0){
-      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
-      return(NoData[-1,])
-    }
-    return(yuimaGUItable$series)
+    if (length(yuimaGUItable$series)!=0)
+      return(yuimaGUItable$series)
   })
 
   ###Interactive range of finDataPlot chart
@@ -215,11 +215,8 @@ server <- function(input, output, session) {
 
   ###Display data available
   output$database2 <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtiS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
-    if (length(yuimaGUItable$series)==0){
-      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
-      return(NoData[-1,])
-    }
-    return (yuimaGUItable$series)
+    if (length(yuimaGUItable$series)!=0)
+      return (yuimaGUItable$series)
   })
 
   ###Delete Button
@@ -237,19 +234,27 @@ server <- function(input, output, session) {
     saveData()
   }
 
+  observe({
+    shinyjs::toggle("buttons_DataIO_file", condition = length(yuimaGUIdata$series)!=0)
+    shinyjs::toggle("buttons_DataIO_fin", condition = length(yuimaGUIdata$series)!=0)
+  })
+  
   ########################Univariate Models
   ########################
   ########################
 
   ###Model Input depending on Class Input
   output$model <- renderUI({
-    if (input$modelClass=="Diffusion processes"){
-      choices <- as.vector(defaultModels[names(defaultModels)=="Diffusion process"])
-      for(i in names(usr_models$model))
-        if (usr_models$model[[i]]$class=="Diffusion process")
-          choices <- c(choices, i)
-    }
+    choices <- as.vector(defaultModels[names(defaultModels)==input$modelClass])
+    for(i in names(usr_models$model))
+      if (usr_models$model[[i]]$class==input$modelClass)
+        choices <- c(choices, i)
     return (selectInput("model",label = "Model Name", choices = choices, multiple = TRUE))
+  })
+  
+  output$jumps <- renderUI({
+    if (input$modelClass!="Diffusion process")
+      return(selectInput("jumps",label = "Jumps", choices = defaultJumps))
   })
 
   ###Print last selected model in Latex
@@ -257,47 +262,67 @@ server <- function(input, output, session) {
     shinyjs::hide("titlePrintModelLatex")
     if (!is.null(input$model)){
       shinyjs::show("titlePrintModelLatex")
-      return(withMathJax(printModelLatex(input$model)))
+      return(withMathJax(printModelLatex(names = input$model, process = isolate({input$modelClass}), jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps))))
     }
   })
 
   output$usr_modelClass_latex <- renderUI({
-    if (input$modelClass=="Diffusion processes")
+    if (input$usr_modelClass=="Diffusion process")
       return(withMathJax("$$dX=a(t,X,\\theta)\\;dt\\;+\\;b(t,X,\\theta)\\;dW$$"))
+    if (input$usr_modelClass=="Compound Poisson")
+      return(withMathJax("$$X_t = X_0+\\sum_{i=0}^{N_t} Y_i \\; : \\;\\;\\;  N_t \\sim Poi\\Bigl(\\int_0^t \\lambda(t)dt\\Bigl)$$"))
   })
 
   output$usr_model_coeff <- renderUI({
-    if (input$modelClass=="Diffusion processes")
+    if (input$usr_modelClass=="Diffusion process")
+      return(
+        div(align="center", 
+          column(6, textInput("usr_model_coeff_drift", width = "70%", label = withMathJax("$$a(t,X,\\theta)$$"))),
+          column(6, textInput("usr_model_coeff_diff", width = "70%", label = withMathJax("$$b(t,X,\\theta)$$")))
+        )
+      )
+    if (input$usr_modelClass=="Compound Poisson")
       return(
         div(align="center",
-          column(6, textInput("usr_model_coeff_drift", width = "70%", label = withMathJax("$$f_1$$"))),
-          column(6, textInput("usr_model_coeff_diff", width = "70%", label = withMathJax("$$f_2$$")))
+           textInput("usr_model_coeff_intensity", width = "45%", label = withMathJax("$$\\lambda(t)$$"))
         )
       )
   })
 
   observeEvent(input$usr_model_button_save, {
-    if (input$modelClass=="Diffusion processes" & input$usr_model_name!="" & (input$usr_model_coeff_drift!="" | input$usr_model_coeff_diff!="")){
-      mod <- try(setModel(drift = tolower(input$usr_model_coeff_drift), diffusion = tolower(input$usr_model_coeff_diff), solve.variable = "x"))
+    entered <- FALSE
+    switch(input$usr_modelClass,
+           "Diffusion process" = {
+             if (input$usr_model_name!="" & (input$usr_model_coeff_drift!="" | input$usr_model_coeff_diff!="")){
+               mod <- try(setModel(drift = tolower(input$usr_model_coeff_drift), diffusion = tolower(input$usr_model_coeff_diff), solve.variable = "x"))
+               if(class(mod)!="try-error") usr_models$model[[input$usr_model_name]] <<- list(object=mod, class=input$usr_modelClass)
+               entered <- TRUE
+             }
+           },
+           "Compound Poisson" = {
+             if (input$usr_model_name!="" & (input$usr_model_coeff_intensity!="")){
+               mod <- try(setPoisson(intensity = tolower(input$usr_model_coeff_intensity), df = "", solve.variable = "x"))
+               if(class(mod)!="try-error") usr_models$model[[input$usr_model_name]] <<- list(intensity=tolower(input$usr_model_coeff_intensity), class=input$usr_modelClass)
+               entered <- TRUE
+             }
+           } 
+          )
+    if (entered){
       closeAlert(session, "alert_savingModels")
-      if(class(mod)!="try-error"){
-        usr_models$model[[input$usr_model_name]] <<- list(object=mod, class="Diffusion process")
-        createAlert(session = session, anchorId = "modelsAlert", alertId = "alert_savingModels", style = "success", content = "Model saved successfully")
-      }
-      else
-        createAlert(session = session, anchorId = "modelsAlert", alertId = "alert_savingModels", style = "error", content = "Model is not correctly specified")
+      if(class(mod)!="try-error") createAlert(session = session, anchorId = "modelsAlert", alertId = "alert_savingModels", style = "success", content = "Model saved successfully")
+      else createAlert(session = session, anchorId = "modelsAlert", alertId = "alert_savingModels", style = "error", content = "Model is not correctly specified")
     }
   })
 
   output$usr_model_saved <- renderUI({
     if (length(names(usr_models$model))!=0)
-      selectInput("usr_model_saved", label = "Saved Models", choices = names(usr_models$model), multiple = TRUE, selected = tail(names(usr_models$model),1))
+      selectInput("usr_model_saved", label = "Saved Models", choices = names(usr_models$model), selected = tail(names(usr_models$model),1))
   })
 
   output$usr_model_saved_latex <- renderUI({
     input$usr_model_button_save
     if (!is.null(input$usr_model_saved))
-      withMathJax(printModelLatex(input$usr_model_saved))
+      withMathJax(printModelLatex(input$usr_model_saved, process = usr_models$model[[input$usr_model_saved]]$class))
   })
 
   observeEvent(input$usr_model_button_delete, {
@@ -309,7 +334,7 @@ server <- function(input, output, session) {
   ###Display available data
   output$database3 <- DT::renderDataTable(options=list(scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
     if (length(yuimaGUItable$series)==0){
-      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
+      NoData <- data.frame("Symb"=NA,"Please load some data first (section Data I/O)"=NA, check.names = FALSE)
       return(NoData[-1,])
     }
     return (yuimaGUItable$series)
@@ -330,8 +355,8 @@ server <- function(input, output, session) {
 
   ###Display Selected Data
   output$database4 <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = FALSE, selection = "multiple",{
-    if (length(seriesToEstimate$table)==0){
-      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
+    if (length(rownames(seriesToEstimate$table))==0){
+      NoData <- data.frame("Symb"=NA,"Select some data from the table beside"=NA, check.names = FALSE)
       return(NoData[-1,])
     }
     return (seriesToEstimate$table)
@@ -466,7 +491,7 @@ server <- function(input, output, session) {
     updateRange_seriesToEstimate(input$database4_rows_all, range = input$chooseRange, type = class(index(getData(input$plotsRangeSeries))))
   })
 
-
+  
 
   observe({
     for (symb in input$database4_rows_all){
@@ -477,18 +502,18 @@ server <- function(input, output, session) {
           estimateSettings[[modName]] <<- list()
         if (is.null(estimateSettings[[modName]][[symb]]))
           estimateSettings[[modName]][[symb]] <<- list()
-        if (is.null(estimateSettings[[modName]][[symb]][["fixed"]]))
+        if (is.null(estimateSettings[[modName]][[symb]][["fixed"]]) | isolate({input$modelClass!="Diffusion process"}))
           estimateSettings[[modName]][[symb]][["fixed"]] <<- list()
-        if (is.null(estimateSettings[[modName]][[symb]][["start"]]))
+        if (is.null(estimateSettings[[modName]][[symb]][["start"]]) | isolate({input$modelClass!="Diffusion process"}))
           estimateSettings[[modName]][[symb]][["start"]] <<- list()
-        if (is.null(estimateSettings[[modName]][[symb]][["startMin"]]))
-          estimateSettings[[modName]][[symb]][["startMin"]] <<- defaultStart(modName, 100)$min
-        if (is.null(estimateSettings[[modName]][[symb]][["startMax"]]))
-          estimateSettings[[modName]][[symb]][["startMax"]] <<- defaultStart(modName, 100)$max
-        if (is.null(estimateSettings[[modName]][[symb]][["upper"]]))
-          estimateSettings[[modName]][[symb]][["upper"]] <<- defaultBounds(modName)$upper
-        if (is.null(estimateSettings[[modName]][[symb]][["lower"]]))
-          estimateSettings[[modName]][[symb]][["lower"]] <<- defaultBounds(modName)$lower
+        if (is.null(estimateSettings[[modName]][[symb]][["startMin"]]) | isolate({input$modelClass!="Diffusion process"}))
+          estimateSettings[[modName]][[symb]][["startMin"]] <<- defaultBounds(name = modName, jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps), lower = -100, upper = 100)$lower
+        if (is.null(estimateSettings[[modName]][[symb]][["startMax"]]) | input$modelClass!="Diffusion process")
+          estimateSettings[[modName]][[symb]][["startMax"]] <<- defaultBounds(name = modName, jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps), lower = -100, upper = 100)$upper
+        if (is.null(estimateSettings[[modName]][[symb]][["upper"]]) | input$modelClass!="Diffusion process")
+          estimateSettings[[modName]][[symb]][["upper"]] <<- defaultBounds(name = modName, jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps))$upper
+        if (is.null(estimateSettings[[modName]][[symb]][["lower"]]) | input$modelClass!="Diffusion process")
+          estimateSettings[[modName]][[symb]][["lower"]] <<- defaultBounds(name = modName, jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps))$lower
         if (is.null(estimateSettings[[modName]][[symb]][["method"]]))
           estimateSettings[[modName]][[symb]][["method"]] <<- "L-BFGS-B"
         if (is.null(estimateSettings[[modName]][[symb]][["tries"]]))
@@ -504,10 +529,13 @@ server <- function(input, output, session) {
       }
     }
   })
-
+  
   observe({
-    shinyjs::toggle(id="advancedSettingsErrorMessage", condition = (is.null(input$database4_rows_all) | is.null(input$model)))
-    shinyjs::toggle(id="advancedSettingsAll", condition = (!is.null(input$database4_rows_all) & !is.null(input$model)))
+    valid <- TRUE
+    if (is.null(input$database4_rows_all) | is.null(input$model)) valid <- FALSE
+    else if (input$modelClass!="Diffusion process") if (is.null(input$jumps)) valid <- FALSE
+    shinyjs::toggle(id="advancedSettingsAll", condition = valid)
+    shinyjs::toggle(id="advancedSettingsErrorMessage", condition = !valid)
   })
   output$advancedSettingsSeries <- renderUI({
     if (!is.null(input$database4_rows_all))
@@ -524,7 +552,7 @@ server <- function(input, output, session) {
   output$advancedSettingsParameter <- renderUI({
     if (!is.null(input$model))
       if (!is.null(input$advancedSettingsModel))
-        selectInput(inputId = "advancedSettingsParameter", label = "Parameter", choices = setModelByName(input$advancedSettingsModel)@parameter@all)
+        selectInput(inputId = "advancedSettingsParameter", label = "Parameter", choices = setModelByName(input$advancedSettingsModel, jumps = switch(input$modelClass, "Diffusion process" = NULL, "Compound Poisson" = input$jumps))@parameter@all)
   })
   #REMOVE# output$advancedSettingsFixed <- renderUI({
   #REMOVE#  if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
@@ -534,35 +562,35 @@ server <- function(input, output, session) {
     if (#REMOVE# !is.null(input$advancedSettingsFixed) & 
       !is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
       #REMOVE# if (is.na(input$advancedSettingsFixed))
-        numericInput(inputId = "advancedSettingsStart", label = "start", value = ifelse(is.null(estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["start"]][[input$advancedSettingsParameter]]),NA,estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["start"]][[input$advancedSettingsParameter]]))
+        numericInput(inputId = "advancedSettingsStart", label = "start", value = estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["start"]][[input$advancedSettingsParameter]])
   })
   output$advancedSettingsStartMin <- renderUI({
     if (#REMOVE# !is.null(input$advancedSettingsFixed) & 
       !is.null(input$advancedSettingsStart) & !is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
       if (#REMOVE# is.na(input$advancedSettingsFixed) & 
         is.na(input$advancedSettingsStart))
-        numericInput(inputId = "advancedSettingsStartMin", label = "start: Min", value = ifelse(is.null(estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["startMin"]][[input$advancedSettingsParameter]]),-10,estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["startMin"]][[input$advancedSettingsParameter]]))
+        numericInput(inputId = "advancedSettingsStartMin", label = "start: Min", value = estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["startMin"]][[input$advancedSettingsParameter]])
   })
   output$advancedSettingsStartMax <- renderUI({
     if (#REMOVE# !is.null(input$advancedSettingsFixed) & 
       !is.null(input$advancedSettingsStart) & !is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
       if (#REMOVE# is.na(input$advancedSettingsFixed) & 
         is.na(input$advancedSettingsStart))
-        numericInput(inputId = "advancedSettingsStartMax", label = "start: Max", value = ifelse(is.null(estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["startMax"]][[input$advancedSettingsParameter]]),10,estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["startMax"]][[input$advancedSettingsParameter]]))
+        numericInput(inputId = "advancedSettingsStartMax", label = "start: Max", value = estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["startMax"]][[input$advancedSettingsParameter]])
   })
   output$advancedSettingsLower <- renderUI({
     if (#REMOVE# !is.null(input$advancedSettingsFixed) & 
       !is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
       #REMOVE# if (is.na(input$advancedSettingsFixed))
         if (input$advancedSettingsMethod=="L-BFGS-B" | input$advancedSettingsMethod=="Brent")
-          numericInput("advancedSettingsLower", label = "lower", value = ifelse(is.null(estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["lower"]][[input$advancedSettingsParameter]]),NA,estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["lower"]][[input$advancedSettingsParameter]]))
+          numericInput("advancedSettingsLower", label = "lower", value = estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["lower"]][[input$advancedSettingsParameter]])
   })
   output$advancedSettingsUpper <- renderUI({
     if (#REMOVE# !is.null(input$advancedSettingsFixed) & 
       !is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
       #REMOVE# if (is.na(input$advancedSettingsFixed))
         if (input$advancedSettingsMethod=="L-BFGS-B" | input$advancedSettingsMethod=="Brent")
-          numericInput("advancedSettingsUpper", label = "upper", value = ifelse(is.null(estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["upper"]][[input$advancedSettingsParameter]]),NA,estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["upper"]][[input$advancedSettingsParameter]]))
+          numericInput("advancedSettingsUpper", label = "upper", value = estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["upper"]][[input$advancedSettingsParameter]])
   })
   #REMOVE# output$advancedSettingsJoint <- renderUI({
   #REMOVE#   if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries))
@@ -651,10 +679,13 @@ server <- function(input, output, session) {
 
   ###Estimate models
   observeEvent(input$EstimateModels,{
-    if(is.null(input$model) | length(rownames(seriesToEstimate$table))==0 | is.null(rownames(seriesToEstimate$table))){
+    valid <- TRUE
+    if(is.null(input$model) | length(rownames(seriesToEstimate$table))==0 | is.null(rownames(seriesToEstimate$table))) valid <- FALSE
+    else if (input$modelClass!="Diffusion process" & is.null(input$jumps)) valid <- FALSE
+    if(!valid){
       createAlert(session = session, anchorId = "modelsAlert", alertId = "modelsAlert_err", content = "Select some series and models to estimate", style = "warning")
     }
-    else{
+    if(valid){
       withProgress(message = 'Estimating: ',{
         for (modName in input$model){
           for (i in rownames(seriesToEstimate$table)){
@@ -669,6 +700,8 @@ server <- function(input, output, session) {
               data <- window(data, start = start, end = end)
             addModel(
               modName = modName,
+              modClass = input$modelClass,
+              jumps = switch(input$modelClass, "Diffusion process" = NULL, "Compound Poisson" = input$jumps),
               symbName = symb,
               data = data,
               delta = deltaSettings[[symb]],
@@ -695,8 +728,10 @@ server <- function(input, output, session) {
   })
 
   observe({
-    if(!is.null(input$model) & length(rownames(seriesToEstimate$table))!=0 & !is.null(rownames(seriesToEstimate$table)))
-      closeAlert(session, alertId = "modelsAlert_err")
+    valid <- TRUE
+    if(is.null(input$model) | length(rownames(seriesToEstimate$table))==0 | is.null(rownames(seriesToEstimate$table))) valid <- FALSE
+    else if (input$modelClass!="Diffusion process" & is.null(input$jumps)) valid <- FALSE
+    if(valid) closeAlert(session, alertId = "modelsAlert_err")
   })
 
   observe({
@@ -715,7 +750,7 @@ server <- function(input, output, session) {
   ###Display estimated models
   output$databaseModels <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
     if (length(yuimaGUItable$model)==0){
-      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
+      NoData <- data.frame("Symb"=NA,"Here will be stored models you estimate in the previous tabs"=NA, check.names = FALSE)
       return(NoData[-1,])
     }
     return (yuimaGUItable$model)
@@ -735,7 +770,7 @@ server <- function(input, output, session) {
   ###Print estimated model in Latex
   output$estimatedModelsLatex <- renderUI({
     if (!is.null(rowToPrint$id))
-      withMathJax(printModelLatex(as.character(yuimaGUItable$model[rowToPrint$id, "Model"])))
+      withMathJax(printModelLatex(as.character(yuimaGUItable$model[rowToPrint$id, "Model"]), process = as.character(yuimaGUItable$model[rowToPrint$id, "Class"]), jumps = as.character(yuimaGUItable$model[rowToPrint$id, "Jumps"])))
   })
 
   ###Print Symbol
@@ -863,7 +898,7 @@ server <- function(input, output, session) {
 
   output$simulate_databaseModels <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "multiple",{
     if (length(yuimaGUItable$model)==0){
-      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
+      NoData <- data.frame("Symb"=NA,"Please estimate some models first (section Modelling)"=NA, check.names = FALSE)
       return(NoData[-1,])
     }
     return (yuimaGUItable$model)
@@ -880,14 +915,32 @@ server <- function(input, output, session) {
   observeEvent(input$simulate_button_selectAllModels, priority = 1, {
     modelsToSimulate$table <<- rbind.fill(modelsToSimulate$table, yuimaGUItable$model[(rownames(yuimaGUItable$model) %in% input$simulate_databaseModels_rows_all) & !(rownames(yuimaGUItable$model) %in% rownames(modelsToSimulate$table)),])
   })
-
-  output$simulate_model_usr_selectModel <- renderUI({
-    selectInput("simulate_model_usr_selectModel", label = "Model Name", choices = c(as.vector(defaultModels),names(usr_models$model)))
+  
+  output$simulate_PrintModelLatex <- renderUI({
+    if (!is.null(input$simulate_model_usr_selectModel)){
+      return(withMathJax(printModelLatex(names = input$simulate_model_usr_selectModel, process = isolate({input$simulate_model_usr_selectClass}), jumps = switch(isolate({input$simulate_model_usr_selectClass}), "Diffusion process" = NULL, "Compound Poisson" = input$simulate_model_usr_selectJumps))))
+    }
   })
 
+  output$simulate_model_usr_selectModel <- renderUI({
+    choices <- as.vector(defaultModels[names(defaultModels)==input$simulate_model_usr_selectClass])
+    for(i in names(usr_models$model))
+      if (usr_models$model[[i]]$class==input$simulate_model_usr_selectClass)
+        choices <- c(choices, i)
+    selectInput("simulate_model_usr_selectModel", label = "Model Name", choices = choices)
+  })
+
+  output$simulate_model_usr_selectJumps <- renderUI({
+    if(input$simulate_model_usr_selectClass!="Diffusion process")
+      return(selectInput("simulate_model_usr_selectJumps",label = "Jumps", choices = defaultJumps))
+  })
+  
   output$simulate_model_usr_selectParam <- renderUI({
-    if (!is.null(input$simulate_model_usr_selectModel))
-      selectInput("simulate_model_usr_selectParam", label = "Parameter", choices = setModelByName(input$simulate_model_usr_selectModel)@parameter@all)
+    valid <- TRUE
+    if (is.null(input$simulate_model_usr_selectModel)) valid <- FALSE
+    else if (isolate({input$simulate_model_usr_selectClass!="Diffusion process"}) & is.null(input$simulate_model_usr_selectJumps)) valid <- FALSE
+    if (valid)
+      return(selectInput("simulate_model_usr_selectParam", label = "Parameter", choices = setModelByName(input$simulate_model_usr_selectModel, jumps = switch(isolate({input$simulate_model_usr_selectClass}), "Diffusion process" = NULL, "Compound Poisson" = input$simulate_model_usr_selectJumps))@parameter@all))
   })
 
   output$simulate_model_usr_param <- renderUI({
@@ -905,11 +958,13 @@ server <- function(input, output, session) {
       if (is.null(usr_models$simulation[[id]])){
         usr_models$simulation[[id]] <<- list()
       }
+      usr_models$simulation[[id]][["Class"]] <<- input$simulate_model_usr_selectClass
       usr_models$simulation[[id]][["Model"]] <<- input$simulate_model_usr_selectModel
+      usr_models$simulation[[id]][["Jumps"]] <<- input$simulate_model_usr_selectJumps
       if (is.null(usr_models$simulation[[id]][["true.param"]])){
         usr_models$simulation[[id]][["true.param"]] <<- list()
       }
-      allparam <- setModelByName(input$simulate_model_usr_selectModel)@parameter@all
+      allparam <- setModelByName(input$simulate_model_usr_selectModel, jumps = input$simulate_model_usr_selectJumps)@parameter@all
       if (length(allparam)==0)
         usr_models$simulation[[id]]["true.param"] <<- NULL
       if (length(allparam)!=0){
@@ -926,9 +981,15 @@ server <- function(input, output, session) {
   observe({
     if (!is.null(input$simulate_model_usr_ID) & !is.null(input$simulate_model_usr_selectParam) & !is.null(input$simulate_model_usr_param)){
       id <- gsub(pattern = " ", x = input$simulate_model_usr_ID, replacement = "")
-      if (!is.null(usr_models$simulation[[id]]))
-        if(usr_models$simulation[[id]][["Model"]]==input$simulate_model_usr_selectModel & input$simulate_model_usr_selectParam!="")
+      if (!is.null(usr_models$simulation[[id]])){
+        valid <- TRUE
+        if(usr_models$simulation[[id]][["Model"]]!=input$simulate_model_usr_selectModel | input$simulate_model_usr_selectParam=="") 
+          valid <- FALSE
+        else if (usr_models$simulation[[id]][["Class"]]!="Diffusion process") if (usr_models$simulation[[id]][["Jumps"]]!=input$simulate_model_usr_selectJumps)  
+          valid <- FALSE
+        if (valid)
           usr_models$simulation[[id]][["true.param"]][[input$simulate_model_usr_selectParam]] <- ifelse(is.na(input$simulate_model_usr_param),"MISSING",input$simulate_model_usr_param)
+      }
     }
   })
 
@@ -938,7 +999,7 @@ server <- function(input, output, session) {
           usr_models$simulation[i] <<- NULL
   })
 
-  output$simulate_model_usr_table <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "multiple",{
+  output$simulate_model_usr_table <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollX=TRUE, scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "multiple",{
     table <- data.frame()
     for (i in names(usr_models$simulation)){
       newRow <- as.data.frame(usr_models$simulation[[i]])
@@ -946,7 +1007,7 @@ server <- function(input, output, session) {
       table <- rbind.fill(table, newRow)
     }
     if (length(table)==0){
-      NoData <- data.frame("Model"=NA, "parameters"=NA)
+      NoData <- data.frame("Model"=NA, "Parameters"=NA)
       return(NoData[-1,])
     }
     return (data.frame(table, row.names = names(usr_models$simulation)))
@@ -1026,9 +1087,9 @@ server <- function(input, output, session) {
     }
   })
 
-  output$simulate_selectedModels <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "multiple",{
-    if (length(modelsToSimulate$table)==0){
-      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
+  output$simulate_selectedModels <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollX=TRUE, scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "multiple",{
+    if (length(rownames(modelsToSimulate$table))==0){
+      NoData <- data.frame("Symb"=NA,"Please select models from the table above"=NA, check.names = FALSE)
       return(NoData[-1,])
     }
     return (modelsToSimulate$table)
@@ -1230,7 +1291,9 @@ server <- function(input, output, session) {
           if(modID %in% names(usr_models$simulation)){
             incProgress(1/length(input$simulate_selectedModels_rows_all), detail = paste(modID,"-",usr_models$simulation[[modID]][["Model"]]))
             info <- list(
+              "class" = usr_models$simulation[[modID]][["Class"]],
               "model" = usr_models$simulation[[modID]][["Model"]],
+              "jumps" = ifelse(is.null(usr_models$simulation[[modID]][["Jumps"]]),NA, usr_models$simulation[[modID]][["Jumps"]]),
               "estimate.from" = NA,
               "estimate.to" = NA,
               "simulate.from" = as.numeric(simulateSettings[[modID]][["t0"]]),
@@ -1239,7 +1302,7 @@ server <- function(input, output, session) {
             Terminal <- simulateSettings[[modID]][["t1"]]
             n <- ifelse(is.na(simulateSettings[[modID]][["nstep"]]),(Terminal-Initial)/0.01,simulateSettings[[modID]][["nstep"]])
             addSimulation(
-              model = setModelByName(info$model),
+              model = setModelByName(name = info$model, jumps = info$jumps),
               true.parameter = usr_models$simulation[[modID]][["true.param"]],
               symbName = modID,
               info = info,
@@ -1258,7 +1321,9 @@ server <- function(input, output, session) {
             data <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@data@original.data
             if(class(index(data))=="Date"){
               info <- list(
+                "class" = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class,
                 "model" = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$modName,
+                "jumps" = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$jumps,
                 "estimate.from" = as.Date(start(data)),
                 "estimate.to" = as.Date(end(data)),
                 "simulate.from" = simulateSettings[[modID]][["t0"]],
@@ -1279,7 +1344,6 @@ server <- function(input, output, session) {
               n <- ifelse(is.na(simulateSettings[[modID]][["nstep"]]),as.numeric(simulateSettings[[modID]][["t1"]]-simulateSettings[[modID]][["t0"]])/(as.numeric(end(data))-as.numeric(start(data)))*length(data),simulateSettings[[modID]][["nstep"]])
             }
             addSimulation(
-              session = session,
               model = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@model,
               true.parameter = as.list(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle@coef),
               symbName = id[1],
@@ -1288,7 +1352,9 @@ server <- function(input, output, session) {
               nsim = simulateSettings[[modID]][["nsim"]],
               sampling = setSampling(Initial = Initial, Terminal = Terminal, n=n, delta = NA),
               saveTraj = simulateSettings[[modID]][["traj"]],
-              seed = simulateSettings[[modID]][["seed"]]
+              seed = simulateSettings[[modID]][["seed"]],
+              session = session,
+              anchorId = "simulate_alert"
             )
           }
         }
@@ -1304,9 +1370,9 @@ server <- function(input, output, session) {
   })
 
   ###Create simulations table
-  output$simulate_monitor_table <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
+  output$simulate_monitor_table <- DT::renderDataTable(options=list(scrollY = 200, scrollX=TRUE, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
     if (length(yuimaGUItable$simulation)==0){
-      NoData <- data.frame("Symb"=NA,"Model"=NA, "N sim" = NA, "Simulated from"=NA, "Simulated to"=NA, "Estimated from"=NA, "Estimated to"=NA)
+      NoData <- data.frame("Symb"=NA,"Here will be stored simulations you run in the previous tabs"=NA, check.names = FALSE)
       return(NoData[-1,])
     }
     return (yuimaGUItable$simulation)
@@ -1427,7 +1493,7 @@ server <- function(input, output, session) {
     if(length(simulation_hist$values)!=0){
       Min <- min(simulation_hist$values)
       Max <- max(simulation_hist$values)
-      sliderInput("simulate_showSimulation_hist_probability_slider", width = "75%",min = Min-0.0000001, max = Max+0.0000001, value = c(Min+0.25*(Max-Min),Min+0.75*(Max-Min)), label = "Mean & Probability", step = 0.01, ticks=FALSE)
+      sliderInput("simulate_showSimulation_hist_probability_slider", width = "75%",min = Min-0.01, max = Max+0.01, value = c(Min+0.25*(Max-Min),Min+0.75*(Max-Min)), label = "Mean & Probability", step = 0.01, ticks=FALSE, round = -2)
     }
   })
 
@@ -1495,7 +1561,7 @@ server <- function(input, output, session) {
   ###Display available data
   output$cluster_table_select <- DT::renderDataTable(options=list(scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
     if (length(yuimaGUItable$series)==0){
-      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
+      NoData <- data.frame("Symb"=NA,"Please load some data first (section Data I/O)"=NA, check.names = FALSE)
       return(NoData[-1,])
     }
     return (yuimaGUItable$series)
@@ -1540,8 +1606,8 @@ server <- function(input, output, session) {
   
   ###Display Selected Data
   output$cluster_table_selected <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = FALSE, selection = "multiple",{
-    if (length(seriesToCluster$table)==0){
-      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
+    if (length(rownames(seriesToCluster$table))==0){
+      NoData <- data.frame("Symb"=NA,"Select some data from the table beside"=NA, check.names = FALSE)
       return(NoData[-1,])
     }
     return (seriesToCluster$table)
@@ -1665,7 +1731,7 @@ server <- function(input, output, session) {
   ###Display available data
   output$changepoint_table_select <- DT::renderDataTable(options=list(scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
     if (length(yuimaGUItable$series)==0){
-      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
+      NoData <- data.frame("Symb"=NA,"Please load some data first (section Data I/O)"=NA, check.names = FALSE)
       return(NoData[-1,])
     }
     return (yuimaGUItable$series)
@@ -1686,8 +1752,8 @@ server <- function(input, output, session) {
   
   ###Display Selected Data
   output$changepoint_table_selected <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = FALSE, selection = "multiple",{
-    if (length(seriesToChangePoint$table)==0){
-      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
+    if (length(rownames(seriesToChangePoint$table))==0){
+      NoData <- data.frame("Symb"=NA,"Select some data from the table beside"=NA, check.names = FALSE)
       return(NoData[-1,])
     }
     return (seriesToChangePoint$table)
@@ -1775,7 +1841,7 @@ server <- function(input, output, session) {
   ###Display available data
   output$llag_table_select <- DT::renderDataTable(options=list(scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
     if (length(yuimaGUItable$series)==0){
-      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
+      NoData <- data.frame("Symb"=NA,"Please load some data first (section Data I/O)"=NA, check.names = FALSE)
       return(NoData[-1,])
     }
     return (yuimaGUItable$series)
@@ -1796,8 +1862,8 @@ server <- function(input, output, session) {
   
   ###Display Selected Data
   output$llag_table_selected <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = FALSE, selection = "multiple",{
-    if (length(seriesToLeadLag$table)==0){
-      NoData <- data.frame("Symb"=NA,"From"=NA, "To"=NA)
+    if (length(rownames(seriesToLeadLag$table))==0){
+      NoData <- data.frame("Symb"=NA,"Select some data from the table beside"=NA, check.names = FALSE)
       return(NoData[-1,])
     }
     return (seriesToLeadLag$table)
@@ -1854,7 +1920,267 @@ server <- function(input, output, session) {
   })
   
   
+  
+  
+  
+  
+  
+  ########################Hedging
+  ########################
+  ########################
+  
+  output$hedging_databaseModels <- DT::renderDataTable(options=list(scrollY = 200, scrollX = TRUE, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
+    if (length(yuimaGUItable$model)==0){
+      NoData <- data.frame("Symb"=NA,"Please estimate some models first (section Modelling)"=NA, check.names = FALSE)
+      return(NoData[-1,])
+    }
+    date_indexed <- c()
+    for (row in rownames(yuimaGUItable$model)){
+      id <- unlist(strsplit(row, split = " "))
+      if (class(index(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@data@original.data))=="Date")
+        date_indexed <- c(date_indexed,row)
+    }
+    return (yuimaGUItable$model[rownames(yuimaGUItable$model) %in% date_indexed,])
+  })
+  
+  output$hedging_assMarketPrice <- renderUI({
+    if (is.null(input$hedging_databaseModels_rows_selected))
+      numericInput("hedging_assMarketPrice", label="Asset Market Price:", value=NA, min = 0)
+    else {
+      if(input$hedging_databaseModels_row_last_clicked %in% input$hedging_databaseModels_rows_selected){
+        id <- unlist(strsplit(input$hedging_databaseModels_row_last_clicked, split = " "))
+        numericInput("hedging_assMarketPrice", label="Asset Market Price:", value=as.numeric(tail(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@data@original.data,1)), min = 0)
+      }
+      else
+        numericInput("hedging_assMarketPrice", label="Asset Market Price:", value=NA, min = 0)
+    }
+  })
 
+  
+  observeEvent(input$hedging_button_startComputation, {
+    closeAlert(session, "hedging_alert_selectRow")
+    if (is.na(input$hedging_optMarketPrice)){
+      createAlert(session, anchorId = "hedging_alert", alertId = "hedging_alert_selectRow", content = "Option market price is missing", style = "error")
+      return()
+    }
+    if (input$hedging_optMarketPrice<=0){
+      createAlert(session, anchorId = "hedging_alert", alertId = "hedging_alert_selectRow", content = "Option market price must be positive", style = "error")
+      return()
+    }
+    if (!is.null(input$hedging_databaseModels_rows_selected) & !is.null(input$hedging_databaseModels_row_last_clicked)){
+      if(input$hedging_databaseModels_row_last_clicked %in% input$hedging_databaseModels_rows_selected){
+        modID <- input$hedging_databaseModels_row_last_clicked
+        id <- unlist(strsplit(input$hedging_databaseModels_row_last_clicked, split = " "))
+        data <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@data@original.data
+        info = list(
+          "model" = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$modName,
+          "estimate.from" = start(data),
+          "estimate.to" = end(data),
+          "maturity"= input$hedging_maturity,
+          "strike"=input$hedging_strike, 
+          "type"=input$hedging_type, 
+          "optPrice"=input$hedging_optMarketPrice, 
+          "optLotMult"=input$hedging_lotMult,
+          "optLotCost"=input$hedging_lotCostOpt,
+          "assPrice"=input$hedging_assMarketPrice,
+          "assPercCost"=input$hedging_percCostAss/100,
+          "assMinCost"=input$hedging_minCostAss,
+          "assRateShortSelling"=input$hedging_rateShort/100)
+        Initial <- 0
+        Terminal <- as.numeric(input$hedging_maturity-info$estimate.to)/as.numeric(info$estimate.to-info$estimate.from)*length(data)*yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
+        n <- as.numeric(input$hedging_maturity-info$estimate.to)/as.numeric(info$estimate.to-info$estimate.from)*length(data)
+        addHedging(
+          model = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]],
+          true.parameter = as.list(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle@coef),
+          symbName = id[1],
+          info = info,
+          xinit = input$hedging_assMarketPrice,
+          nsim = input$hedging_nSim,
+          sampling = setSampling(Initial = Initial, Terminal = Terminal, n=n, delta = NA),
+          session = session,
+          anchorId = "hedging_alert"
+        )
+        updateTabsetPanel(session = session,  inputId = "panel_hedging", selected = "Hedging")
+      }
+      else createAlert(session, anchorId = "hedging_alert", alertId = "hedging_alert_selectRow" , content = "Please select a model to simulate the evolution of the underlying asset", style = "error")
+    }
+    else createAlert(session, anchorId = "hedging_alert", alertId = "hedging_alert_selectRow", content = "Please select a model to simulate the evolution of the underlying asset", style = "error")
+  })
+  
+  output$hedging_table_results <- DT::renderDataTable(options=list(scrollX=TRUE, scrollY = 200, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
+    if (length(yuimaGUItable$hedging)==0){
+      NoData <- data.frame("Symb"=NA, "Here will be stored simulations you run in the previous tab"=NA, check.names = FALSE)
+      return(NoData[-1,])
+    }
+    return (yuimaGUItable$hedging)
+  })
+  
+  
+  hedging_values <- reactiveValues(profits=NULL, symb=NULL, model=NULL, id.changed=FALSE)
+  
+  output$hedging_nOptLot_hedge <- renderUI({
+    if (!is.null(input$hedging_table_results_row_last_clicked)){
+      info <- isolate({yuimaGUIdata$hedging[[as.numeric(input$hedging_table_results_row_last_clicked)]]$info})
+      nMax <- as.integer(input$hedging_maxCapital/(info$optLotMult*info$optPrice+input$hedging_lotCostOpt))
+      isolate({hedging_values$id.changed <- TRUE})
+      sliderInput("hedging_nOptLot_hedge", label = "Option - number of Lots", min = 0, max = nMax, value = info$LotsToBuy, step = 1, ticks = FALSE)
+    }
+  })
+  
+  output$hedging_nAss_hedge <- renderUI({
+    if (!is.null(input$hedging_table_results_row_last_clicked)){
+      if (!is.null(input$hedging_nOptLot_hedge)){
+        info <- isolate({yuimaGUIdata$hedging[[as.numeric(input$hedging_table_results_row_last_clicked)]]$info})
+        assCapital <- input$hedging_maxCapital-input$hedging_nOptLot_hedge*(info$optLotMult*info$optPrice+input$hedging_lotCostOpt)
+        nMax <- as.integer(assCapital/(info$assPrice*(1+input$hedging_percCostAss/100)))
+        val <- min(nMax, isolate({input$hedging_nAss_hedge}))
+        isolate({
+          if (hedging_values$id.changed == TRUE){
+            val <- switch (info$type,
+              "call" = info$sell,
+              "put" = info$buy
+            )
+            hedging_values$id.changed <- FALSE
+          }
+        })
+        type <- info$type
+        if (input$hedging_type2!="default")
+          type <- input$hedging_type2
+        lab <- paste("Number of Assets to", ifelse(type=="call", "Sell", "Buy"))
+        sliderInput("hedging_nAss_hedge", label = lab, min = 0, max = nMax, value = val, step = 1, ticks = FALSE)
+      }
+    }
+  })
+  
+  
+  observe({
+    if (!is.null(input$hedging_table_results_row_last_clicked)){
+      if(isolate({length(yuimaGUIdata$hedging)})>=as.numeric(input$hedging_table_results_row_last_clicked) & !is.null(input$hedging_nOptLot_hedge) & !is.null(input$hedging_nAss_hedge)){
+        id <- as.numeric(input$hedging_table_results_row_last_clicked)
+        info <- isolate({yuimaGUIdata$hedging[[id]]$info})
+        profits <- profit_distribution(nOpt=input$hedging_nOptLot_hedge*info$optLotMult, 
+                                       nAss=input$hedging_nAss_hedge, 
+                                       type=ifelse(is.na(input$hedging_type2) | input$hedging_type2=="default", info$type, input$hedging_type2), 
+                                       strike=ifelse(is.na(input$hedging_strike2), info$strike, input$hedging_strike2),
+                                       priceAtMaturity=isolate({yuimaGUIdata$hedging[[id]]$hist}), 
+                                       optMarketPrice=ifelse(is.na(input$hedging_optMarketPrice2), info$optPrice, input$hedging_optMarketPrice2),
+                                       assMarketPrice=info$assPrice, 
+                                       percCostAss=input$hedging_percCostAss/100, 
+                                       minCostAss=input$hedging_minCostAss, 
+                                       lotCostOpt=input$hedging_lotCostOpt, 
+                                       lotMultiplier=info$optLotMult, 
+                                       shortCostPerYear=input$hedging_rateShort/100, 
+                                       t0=info$estimate.to, 
+                                       maturity=info$maturity)
+        hedging_values$profits <- profits
+        hedging_values$symb <- isolate({yuimaGUIdata$hedging[[id]]$symb})
+        hedging_values$model <- isolate({yuimaGUIdata$hedging[[id]]$info$model})
+      }
+    }
+  })
+  
+  output$hedging_plot_distribution <- renderPlot({
+    par(bg="black")
+    if (!is.null(hedging_values$profits) & !is.null(hedging_values$model) & !is.null(hedging_values$symb))
+      hist(hedging_values$profits, main = paste(hedging_values$symb,"-",hedging_values$model), xlab = "", breaks = input$hedging_slider_nBin, col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
+    grid()
+  })
+  output$hedging_slider_rangeHist <- renderUI({
+    if (!is.null(hedging_values$profits)){
+      Min <- min(hedging_values$profits)
+      Max <- max(hedging_values$profits)
+      val <- c(round(Min-1), round(Max+1))
+      sliderInput("hedging_slider_rangeHist", width = "75%", min = round(Min-1), max = round(Max+1), value = val, label = "Mean & Probability", step = 1, ticks=FALSE, round = -2)
+    }
+  })
+  output$hedging_probability_text <- renderText({
+    if(!is.null(input$hedging_slider_rangeHist) & !is.null(hedging_values$profits)){
+      binary <- ifelse(hedging_values$profits>=input$hedging_slider_rangeHist[1] & hedging_values$profits<=input$hedging_slider_rangeHist[2],1,0)
+      prob <- mean(binary)
+      sdErr <- sd(binary)/sqrt(length(binary))
+      paste("Probability: ",round(100*prob,2),"%", " ± ", round(100*sdErr,2), "%")
+    }
+  })
+  output$hedging_mean_text <- renderText({
+    if(!is.null(input$hedging_slider_rangeHist) & !is.null(hedging_values$profits)){
+      val <- hedging_values$profits
+      val <- val[val>=input$hedging_slider_rangeHist[1] & val<=input$hedging_slider_rangeHist[2]]
+      paste("Mean: ",round(mean(val),0), " ± ", round(sd(val)/sqrt(length(val)),0))
+    }
+  })
+  output$hedging_capital_text <- renderText({
+    if (!is.null(input$hedging_table_results_row_last_clicked)){
+      id <- as.numeric(input$hedging_table_results_row_last_clicked)
+      info <- isolate({yuimaGUIdata$hedging[[id]]$info})
+      optPrice <- ifelse(is.na(input$hedging_optMarketPrice2), info$optPrice, input$hedging_optMarketPrice2)
+      cap <- input$hedging_nOptLot_hedge*(info$optLotMult*optPrice+input$hedging_lotCostOpt)+input$hedging_nAss_hedge*info$assPrice + ifelse(input$hedging_nAss_hedge>0,max(input$hedging_nAss_hedge*info$assPrice*input$hedging_percCostAss/100,input$hedging_minCostAss),0)
+      paste("Invested Capitalt: ", round(cap,0))
+    }
+  })
+  output$hedging_meanPerc_text <- renderText({
+    if (!is.null(input$hedging_table_results_row_last_clicked) & !is.null(hedging_values$profits)){
+      id <- as.numeric(input$hedging_table_results_row_last_clicked)
+      info <- isolate({yuimaGUIdata$hedging[[id]]$info})
+      optPrice <- ifelse(is.na(input$hedging_optMarketPrice2), info$optPrice, input$hedging_optMarketPrice2)
+      cap <- input$hedging_nOptLot_hedge*(info$optLotMult*optPrice+input$hedging_lotCostOpt)+input$hedging_nAss_hedge*info$assPrice + ifelse(input$hedging_nAss_hedge>0,max(input$hedging_nAss_hedge*info$assPrice*input$hedging_percCostAss/100,input$hedging_minCostAss),0)
+      val <- hedging_values$profits
+      val <- val[val>=input$hedging_slider_rangeHist[1] & val<=input$hedging_slider_rangeHist[2]]
+      paste("Return on Capital: ", round(mean(val)/cap*100,2), "%", " ± ", round(sd(val)/cap*100/sqrt(length(val)),2)," %")
+    }
+  })
+  
+  observeEvent(input$hedging_button_saveHedging, {
+    id <- as.numeric(input$hedging_table_results_row_last_clicked)
+    yuimaGUIdata$hedging[[id]]$info$assPercCost <<- input$hedging_percCostAss/100
+    yuimaGUIdata$hedging[[id]]$info$assMinCost <<- input$hedging_minCostAss
+    yuimaGUIdata$hedging[[id]]$info$assRateShortSelling <<- input$hedging_rateShort/100
+    yuimaGUIdata$hedging[[id]]$info$optLotCost <<- input$hedging_lotCostOpt
+    if (!is.na(input$hedging_type2) & input$hedging_type2!="default")
+      yuimaGUIdata$hedging[[id]]$info$type <<- input$hedging_type2
+    if (yuimaGUIdata$hedging[[id]]$info$type=="put"){
+      yuimaGUIdata$hedging[[id]]$info$buy <<- input$hedging_nAss_hedge
+      yuimaGUIdata$hedging[[id]]$info$sell <<- NA
+    }
+    if (yuimaGUIdata$hedging[[id]]$info$type=="call"){
+      yuimaGUIdata$hedging[[id]]$info$sell <<- input$hedging_nAss_hedge
+      yuimaGUIdata$hedging[[id]]$info$buy <<- NA
+    }
+    yuimaGUIdata$hedging[[id]]$info$LotsToBuy <<- input$hedging_nOptLot_hedge
+    if (!is.na(input$hedging_strike2))
+      yuimaGUIdata$hedging[[id]]$info$strike <<- input$hedging_strike2
+    if (!is.na(input$hedging_optMarketPrice2))
+      yuimaGUIdata$hedging[[id]]$info$optPrice <<- input$hedging_optMarketPrice2
+    yuimaGUIdata$hedging[[id]]$info$profit <<- mean(hedging_values$profits)/(input$hedging_nOptLot_hedge*(yuimaGUIdata$hedging[[id]]$info$optLotMult*yuimaGUIdata$hedging[[id]]$info$optPrice+input$hedging_lotCostOpt)+input$hedging_nAss_hedge*yuimaGUIdata$hedging[[id]]$info$assPrice + ifelse(input$hedging_nAss_hedge>0,max(input$hedging_nAss_hedge*yuimaGUIdata$hedging[[id]]$info$assPrice*input$hedging_percCostAss/100,input$hedging_minCostAss),0))
+    yuimaGUIdata$hedging[[id]]$info$stdErr <<- sd(hedging_values$profits)/sqrt(length(hedging_values$profits))/(input$hedging_nOptLot_hedge*(yuimaGUIdata$hedging[[id]]$info$optLotMult*yuimaGUIdata$hedging[[id]]$info$optPrice+input$hedging_lotCostOpt)+input$hedging_nAss_hedge*yuimaGUIdata$hedging[[id]]$info$assPrice + ifelse(input$hedging_nAss_hedge>0,max(input$hedging_nAss_hedge*yuimaGUIdata$hedging[[id]]$info$assPrice*input$hedging_percCostAss/100,input$hedging_minCostAss),0))
+  })
+
+  observe({
+    shinyjs::toggle("hedging_alert_selectRow", condition = (input$panel_hedging=="Start simulations"))
+    valid <- FALSE
+    if (!is.null(input$hedging_table_results_row_last_clicked) & !is.null(input$hedging_table_results_rows_selected))
+      if (input$hedging_table_results_row_last_clicked %in% input$hedging_table_results_rows_selected)
+        valid <- TRUE
+    shinyjs::toggle("hedging_body", condition = valid)
+  })
+  
+  ###Delete Hedging
+  observeEvent(input$hedging_button_delete, priority = 1, {
+    if(!is.null(input$hedging_table_results_rows_selected) & !is.null(input$hedging_table_results_row_last_clicked)){
+      if(input$hedging_table_results_row_last_clicked %in% input$hedging_table_results_rows_selected){
+        delHedging(n=as.numeric(input$hedging_table_results_row_last_clicked))
+      }
+    }
+    shinyjs::hide("hedging_body")
+  })
+  
+  ###DeleteAll Hedging
+  observeEvent(input$hedging_button_deleteAll, priority = 1, {
+    if(!is.null(input$hedging_table_results_rows_all))
+      delHedging(n=as.numeric(input$hedging_table_results_rows_all))
+    shinyjs::hide("hedging_body")
+  })
+  
+  
 }
 
 
