@@ -9,7 +9,7 @@
                               font-family: "Times New Roman", Times, serif;
                               }
 .content-wrapper, .right-side {
-                              background-color:  #363e32;
+                              background-color:  #282828;
                               }
 tr{
   background-color: #dddcdc;
@@ -37,7 +37,7 @@ th{
 	background: linear-gradient(#606D60, #202220, #606D60);
 }
 
-#advancedSettingsButtonApplyDelta, #advancedSettingsButtonApplyAllDelta, #advancedSettingsButtonApplyModel, #advancedSettingsButtonApplyAllModel, #advancedSettingsButtonApplyGeneral, #advancedSettingsButtonApplyAllModelGeneral, #advancedSettingsButtonApplyAllGeneral, #buttonApplyRange, #buttonApplyAllRange, #simulate_button_apply_nsim, #simulate_button_applyAll_nsim, #simulate_button_apply_xinit, #simulate_button_applyAll_xinit, #simulate_button_apply_range, #simulate_button_applyAll_range, #simulate_button_apply_advancedSettings, #simulate_button_applyAll_advancedSettings, #simulate_showSimulation_button_saveTrajectory, #simulate_showSimulation_button_saveHist, #cluster_button_saveDendogram, #cluster_button_saveScaling2D{
+#advancedSettingsButtonApplyDelta, #advancedSettingsButtonApplyAllDelta, #advancedSettingsButtonApplyModel, #advancedSettingsButtonApplyAllModel, #advancedSettingsButtonApplyGeneral, #advancedSettingsButtonApplyAllModelGeneral, #advancedSettingsButtonApplyAllGeneral, #buttonApplyRange, #buttonApplyAllRange, #simulate_button_apply_nsim, #simulate_button_applyAll_nsim, #simulate_button_apply_xinit, #simulate_button_applyAll_xinit, #simulate_button_apply_range, #simulate_button_applyAll_range, #simulate_button_apply_advancedSettings, #simulate_button_applyAll_advancedSettings, #simulate_showSimulation_button_saveTrajectory, #simulate_showSimulation_button_saveHist, #cluster_button_saveDendogram, #cluster_button_saveScaling2D {
   width: 100%;
   color: #ffffff;
 	text-shadow: 1px 1px 1px #000;
@@ -57,7 +57,7 @@ th{
 	background: linear-gradient(#606D60, #202220, #606D60);
 }
 
-#finDataDelete, #finDataDeleteAll, #finDataSave, #yourFileDelete, #yourFileDeleteAll, #yourFileSave, #buttonSelect_models_Univariate, #buttonSelectAll_models_Univariate, #buttonDelete_models_Univariate, #buttonDeleteAll_models_Univariate, #databaseModelsDelete, #databaseModelsDeleteAll, #simulation_button_deleteModels, #simulation_button_deleteAllModels, #simulate_button_selectModels, #simulate_button_selectAllModels, #simulate_monitor_button_delete, #simulate_monitor_button_deleteAll, #simulate_monitor_button_showSimulation, #simulate_model_usr_button_select, #simulate_model_usr_button_selectAll, #simulate_model_usr_button_delete, #simulate_model_usr_button_deleteAll, #cluster_button_select, #cluster_button_selectAll, #cluster_button_delete, #cluster_button_deleteAll, #changepoint_button_select, #changepoint_button_selectAll, #changepoint_button_delete, #changepoint_button_deleteAll{
+#finDataDelete, #finDataDeleteAll, #finDataSave, #yourFileDelete, #yourFileDeleteAll, #yourFileSave, #buttonSelect_models_Univariate, #buttonSelectAll_models_Univariate, #buttonDelete_models_Univariate, #buttonDeleteAll_models_Univariate, #databaseModelsDelete, #databaseModelsDeleteAll, #simulation_button_deleteModels, #simulation_button_deleteAllModels, #simulate_button_selectModels, #simulate_button_selectAllModels, #simulate_monitor_button_delete, #simulate_monitor_button_deleteAll, #simulate_monitor_button_showSimulation, #simulate_model_usr_button_select, #simulate_model_usr_button_selectAll, #simulate_model_usr_button_delete, #simulate_model_usr_button_deleteAll, #cluster_button_select, #cluster_button_selectAll, #cluster_button_delete, #cluster_button_deleteAll, #changepoint_button_select, #changepoint_button_selectAll, #changepoint_button_delete, #changepoint_button_deleteAll, #hedging_button_delete, #hedging_button_deleteAll {
   font-size: 110%;
   width: 100%;  
   color: black;
@@ -75,7 +75,7 @@ th{
 	background: linear-gradient(#202220, #159609, #202220);
 }
 
-#advancedSettingsButton, #simulate_button_advancedSettings {
+#advancedSettingsButton, #simulate_button_advancedSettings, #hedging_button_commissionPlan {
   width: 40%;
   height: 39px;
   color: #ffffff;
@@ -83,7 +83,7 @@ th{
 	background: linear-gradient(#202220, #963131, #202220);
 }
 
-#simulate_model_usr_button_save, #usr_model_button_save {
+#simulate_model_usr_button_save, #usr_model_button_save, #hedging_button_saveHedging {
   width: 40%;
   height: 39px;
   color: #ffffff;
@@ -97,7 +97,7 @@ th{
 	background: radial-gradient(#202220, #963131, #202220);
 }
 
-#EstimateModels, #simulate_simulateModels, #cluster_button_startCluster, #changepoint_button_startEstimation {
+#EstimateModels, #simulate_simulateModels, #cluster_button_startCluster, #changepoint_button_startEstimation, #hedging_button_startComputation {
   width: 100%;  
 	color: #ffffff;
 	text-shadow: 1px 1px 1px #000;
@@ -152,9 +152,15 @@ a:hover {
   font-family: Goudy Old Style, Serif;
 }
 
-#simulate_showSimulation_hist_probability_text{
+#simulate_showSimulation_hist_probability_text {
   font-size: 125%;
   font-family: Goudy Old Style, Serif;
+}
+
+#hedging_probability_text, #hedging_mean_text, #hedging_capital_text, #hedging_meanPerc_text {
+  font-size: 125%;
+  font-family: Goudy Old Style, Serif;
+  color: #edeeed;
 }
 
 .hrHeader{
@@ -173,7 +179,7 @@ a:hover {
     top: -0.7em;
     font-size: 1.5em;
     padding: 0 0.25em;
-    background: #363e32;
+    background: #282828;
 }
 
 #SymbolName{
@@ -183,7 +189,7 @@ a:hover {
   
 }
 
-#PrintModelLatex, #estimatedModelsLatex, #usr_modelClass_latex, #usr_model_saved_latex{
+#PrintModelLatex, #estimatedModelsLatex, #usr_modelClass_latex, #usr_model_saved_latex, #simulate_PrintModelLatex{
   font-size: 125%;
   color: #CDCECD;
 }
@@ -200,7 +206,7 @@ a:hover {
     color: black;
 }
 
-#panel_simulations, #panel_estimates{
+#panel_simulations, #panel_estimates, #panel_hedging{
   font-size: 120%;
 }
 

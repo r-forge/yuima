@@ -10,10 +10,10 @@ require(corrplot)
 
 
 if(!exists("yuimaGUItable"))
-  yuimaGUItable <<- reactiveValues(series=data.frame(),  model=data.frame(), simulation=data.frame())
+  yuimaGUItable <<- reactiveValues(series=data.frame(),  model=data.frame(), simulation=data.frame(), hedging=data.frame())
 
 if(!exists("yuimaGUIdata"))
-  yuimaGUIdata <<- reactiveValues(series=list(), cp=list(), model=list(), simulation=list())
+  yuimaGUIdata <<- reactiveValues(series=list(), cp=list(), model=list(), simulation=list(), hedging = list())
 
 if(!exists("estimateSettings"))
   estimateSettings <<- list()
@@ -61,7 +61,9 @@ observeEvent(yuimaGUIdata$model, priority = 10, {
     for (i in 1:length(yuimaGUIdata$model[[symb]])){
       newRow <- data.frame(
         Symb = as.character(symb),
+        Class = as.character(yuimaGUIdata$model[[symb]][[i]]$info$class),
         Model = as.character(yuimaGUIdata$model[[symb]][[i]]$info$modName),
+        Jumps = as.character(yuimaGUIdata$model[[symb]][[i]]$info$jumps),
         From = as.character(start(yuimaGUIdata$model[[symb]][[i]]$model@data@original.data)),
         To = as.character(end(yuimaGUIdata$model[[symb]][[i]]$model@data@original.data)),
         AIC = as.character(yuimaGUIdata$model[[symb]][[i]]$aic),
@@ -77,15 +79,45 @@ observeEvent(yuimaGUIdata$simulation, priority = 10, {
   for (symb in names(yuimaGUIdata$simulation)){
     for (i in 1:length(yuimaGUIdata$simulation[[symb]])){
       newRow <- data.frame(
-        Symb = as.character(symb),
-        Model = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$model),
+        "Symb" = as.character(symb),
+        "Class" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$class),
+        "Model" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$model),
+        "Jumps" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$jumps),
         "N sim" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$nsim),
         "Simulated from" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$simulate.from),
         "Simulated to" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$simulate.to),
         "Estimated from" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$estimate.from),
-        "Estimated to" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$estimate.to))
+        "Estimated to" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$estimate.to),
+        check.names = FALSE)
       rownames(newRow) <- as.character(paste(symb," ", i, sep=""))
       yuimaGUItable$simulation <<- rbind(yuimaGUItable$simulation, newRow)
+    }
+  }
+})
+
+observeEvent(yuimaGUIdata$hedging, priority = 10, {
+  yuimaGUItable$hedging <<- data.frame()
+  if (length(yuimaGUIdata$hedging)!=0){
+    for (i in 1:length(yuimaGUIdata$hedging)){
+      newRow <- data.frame(
+        "Symb" = as.character(yuimaGUIdata$hedging[[i]]$symb),
+        "Profit (%)" = round(as.numeric(yuimaGUIdata$hedging[[i]]$info$profit*100),2),
+        "Std.Err (%)" = round(as.numeric(yuimaGUIdata$hedging[[i]]$info$stdErr*100),2),
+        "Option Lots" = as.integer(yuimaGUIdata$hedging[[i]]$info$LotsToBuy),
+        "Assets to Buy" = as.integer(yuimaGUIdata$hedging[[i]]$info$buy),
+        "Assets to Sell" = as.integer(yuimaGUIdata$hedging[[i]]$info$sell),
+        "Asset Price" = as.numeric(yuimaGUIdata$hedging[[i]]$info$assPrice),
+        "Option Price" = as.numeric(yuimaGUIdata$hedging[[i]]$info$optPrice),
+        "Option Type" = yuimaGUIdata$hedging[[i]]$info$type,
+        "Strike" = as.numeric(yuimaGUIdata$hedging[[i]]$info$strike),
+        "Maturity" = as.Date(yuimaGUIdata$hedging[[i]]$info$maturity),
+        "Model" = as.character(yuimaGUIdata$hedging[[i]]$info$model),
+        "Estimated from" = as.Date(yuimaGUIdata$hedging[[i]]$info$estimate.from),
+        "Estimated to" = as.Date(yuimaGUIdata$hedging[[i]]$info$estimate.to),
+        "AIC" = as.numeric(yuimaGUIdata$hedging[[i]]$aic),
+        "BIC" = as.numeric(yuimaGUIdata$hedging[[i]]$bic),
+        check.names = FALSE)
+      yuimaGUItable$hedging <<- rbind.fill(yuimaGUItable$hedging, newRow)
     }
   }
 })
@@ -155,65 +187,115 @@ defaultModels <-  c("Diffusion process"="Brownian Motion",
                     "Diffusion process"= "Cox-Ingersoll-Ross (CIR)",
                     "Diffusion process"="Chan-Karolyi-Longstaff-Sanders (CKLS)",
                     "Diffusion process"="Hyperbolic (Barndorff-Nielsen)",
-                    "Diffusion process"="Hyperbolic (Bibby and Sorensen)")
+                    "Diffusion process"="Hyperbolic (Bibby and Sorensen)",
+                    "Compound Poisson" = "Constant Intensity",
+                    "Compound Poisson" = "Linear Intensity",
+                    "Compound Poisson" = "Power Low Intensity",
+                    "Compound Poisson" = "Exponentially Decaying Intensity",
+                    "Compound Poisson" = "Periodic Intensity"
+                    )
 
-defaultStart <- function(name, default = 1000){
+defaultJumps <- c("Gaussian", "Uniform")
+
+defaultBounds <- function(name, jumps = NULL, lower = NA, upper = NA){
   if (name %in% names(isolate({usr_models$model}))){
-    par <- setModelByName(name)@parameter@all
-    startmin <- rep(-default, length(par))
-    startmax <- rep(default, length(par))
+    par <- setModelByName(name = name, jumps = jumps)@parameter@all
+    startmin <- rep(lower, length(par))
+    startmax <- rep(upper, length(par))
     names(startmin) <- par
     names(startmax) <- par
-    return(list(min=as.list(startmin), max=as.list(startmax)))
+    if (!is.null(jumps)){
+      boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
+      for (i in par[par %in% names(boundsJump$lower)]){
+        startmin[[i]] <- boundsJump$lower[[i]]
+        startmax[[i]] <- boundsJump$upper[[i]]
+      }
+    }
+    return(list(lower=as.list(startmin), upper=as.list(startmax)))
   }
   if (name == "Brownian Motion" | name == "Bm")
-    return (list(min=list("sigma"=0, "mu"=-default), max=list("sigma"=default, "mu"=default)))
+    return (list(lower=list("sigma"=0, "mu"=lower), upper=list("sigma"=upper, "mu"=upper)))
   if (name == "Geometric Brownian Motion" | name == "gBm")
-    return (list(min=list("sigma"=0, "mu"=-default), max=list("sigma"=default, "mu"=default)))
+    return (list(lower=list("sigma"=0, "mu"=lower), upper=list("sigma"=upper, "mu"=upper)))
   if (name == "Ornstein-Uhlenbeck (OU)" | name == "OU")
-    return(list(min=list("theta"=-default),max=list("theta"=default)))
+    return(list(lower=list("theta"=lower),upper=list("theta"=upper)))
   if (name == "Vasicek model (VAS)" | name == "VAS")
-    return(list(min=list("theta3"=0, "theta1"=-default, "theta2"=-default),max=list("theta3"=default, "theta1"=default, "theta2"=default)))
+    return(list(lower=list("theta3"=0, "theta1"=lower, "theta2"=lower),upper=list("theta3"=upper, "theta1"=upper, "theta2"=upper)))
   if (name == "Constant elasticity of variance (CEV)" | name == "CEV")
-    return(list(min=list("mu"=-default, "sigma"=-default, "gamma"=-3),max=list("mu"=default, "sigma"=default, "gamma"=3)))
+    return(list(lower=list("mu"=lower, "sigma"=lower, "gamma"=ifelse(is.na(lower),NA,-3)),upper=list("mu"=upper, "sigma"=upper, "gamma"=ifelse(is.na(upper),NA,3))))
   if (name == "Cox-Ingersoll-Ross (CIR)" | name == "CIR")
-    return(list(min=list("theta1"=0,"theta2"=0,"theta3"=0),max=list("theta1"=default,"theta2"=default,"theta3"=default)))
+    return(list(lower=list("theta1"=0,"theta2"=0,"theta3"=0),upper=list("theta1"=upper,"theta2"=upper,"theta3"=upper)))
   if (name == "Chan-Karolyi-Longstaff-Sanders (CKLS)" | name == "CKLS")
-    return(list(min=list("theta1"=-default, "theta2"=-default, "theta3"=0, "theta4"=-3),max=list("theta1"=default, "theta2"=default, "theta3"=default, "theta4"=3)))
+    return(list(lower=list("theta1"=lower, "theta2"=lower, "theta3"=0, "theta4"=ifelse(is.na(lower),NA,-3)),upper=list("theta1"=upper, "theta2"=upper, "theta3"=upper, "theta4"=ifelse(is.na(upper),NA,3))))
   if (name == "Hyperbolic (Barndorff-Nielsen)" | name == "hyp1")
-    return(list(min=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=-default, "mu"=-default),max=list("delta"=default, "alpha"=default, "beta"=default, "sigma"=default, "mu"=default)))
+    return(list(lower=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=lower, "mu"=lower),upper=list("delta"=upper, "alpha"=upper, "beta"=upper, "sigma"=upper, "mu"=upper)))
   if (name == "Hyperbolic (Bibby and Sorensen)" | name == "hyp2")
-    return(list(min=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=-default, "mu"=-default),max=list("delta"=default, "alpha"=default, "beta"=default, "sigma"=default, "mu"=default)))
+    return(list(lower=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=lower, "mu"=lower),upper=list("delta"=upper, "alpha"=upper, "beta"=upper, "sigma"=upper, "mu"=upper)))
+  if (name == "Power Low Intensity"){
+    boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
+    return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=upper, "beta"=upper), boundsJump$upper)))
+  }
+  if (name == "Constant Intensity"){
+    boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
+    return(list(lower=c(list("lambda"=0), boundsJump$lower),upper=c(list("lambda"=upper), boundsJump$upper)))
+  }
+  if (name == "Linear Intensity"){
+    boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
+    return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=upper, "beta"=upper), boundsJump$upper)))
+  }
+  if (name == "Exponentially Decaying Intensity"){
+    boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
+    return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=upper, "beta"=upper), boundsJump$upper)))
+  }
+  if (name == "Periodic Intensity"){
+    boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
+    return(list(lower=c(list("a"=0, "b"=0, "omega"=lower, "phi"=lower), boundsJump$lower),upper=c(list("a"=upper, "b"=upper, "omega"=upper, "phi"=upper), boundsJump$upper)))
+  }
 }
 
 
-defaultBounds <- function(name){
-  if (name %in% names(isolate({usr_models$model})))
-    return(list(lower=list(),upper=list()))
-  if (name == "Brownian Motion" | name == "Bm")
-    return (list(lower=list("sigma"=0), upper=list()))
-  if (name == "Geometric Brownian Motion" | name == "gBm")
-    return(list(lower=list("sigma"=0),upper=list()))
-  if (name == "Ornstein-Uhlenbeck (OU)" | name == "OU")
-    return(list(lower=list(),upper=list()))
-  if (name == "Vasicek model (VAS)" | name == "VAS")
-    return(list(lower=list("theta3"=0),upper=list()))
-  if (name == "Constant elasticity of variance (CEV)" | name == "CEV")
-    return(list(lower=list(),upper=list()))
-  if (name == "Cox-Ingersoll-Ross (CIR)" | name == "CIR")
-    return(list(lower=list("theta1"=0,"theta2"=0,"theta3"=0),upper=list()))
-  if (name == "Chan-Karolyi-Longstaff-Sanders (CKLS)" | name == "CKLS")
-    return(list(lower=list("theta3"=0),upper=list()))
-  if (name == "Hyperbolic (Barndorff-Nielsen)" | name == "hyp1")
-    return(list(lower=list("delta"=0, "alpha"=0, "beta"=0),upper=list()))
-  if (name == "Hyperbolic (Bibby and Sorensen)" | name == "hyp2")
-    return(list(lower=list("delta"=0, "alpha"=0, "beta"=0),upper=list()))
+setJumps <- function(jumps){
+  switch (jumps,
+          "Gaussian" = list("dnorm(z, mean = mu_jump, sd = sigma_jump)"),
+          "Uniform" = list("dunif(z, min = a_jump, max = b_jump)")
+  )
+}
+
+jumpBounds <- function(jumps, lower = NA, upper = NA){
+  switch(jumps,
+         "Gaussian" = list(lower=list("mu_jump"=lower, "sigma_jump"=0), upper=list("mu_jump"=upper, "sigma_jump"=upper)),
+         "Uniform" = list(lower=list("a_jump"=lower, "b_jump"=lower), upper=list("a_jump"=upper, "b_jump"=upper))
+  )
+}
+
+latexJumps <- function(jumps){
+  if (!is.null(jumps)){
+    switch (jumps,
+            "Gaussian" = "Y_i \\sim N(\\mu_{jump}, \\; \\sigma_{jump})",
+            "Uniform" = "Y_i \\sim Unif(a_{jump}, \\; b_{jump})"
+    )
+  }
+}
+
+estimateJumps <- function(data, jumps, threshold = 0){
+  if (is.na(threshold)) threshold <- 0
+  x <- na.omit(diff(data))
+  x <- x[abs(x) > threshold]
+  param <- switch (jumps,
+    "Gaussian" = list("mu_jump"=mean(x), "sigma_jump"=sd(x)),
+    "Uniform" = list("a_jump"=min(x), "b_jump"=max(x))
+  )
+  return(param)
 }
 
 
-setModelByName <- function(name){
-  if (name %in% names(isolate({usr_models$model})))
-    return(isolate({usr_models$model[[name]]$object}))
+setModelByName <- function(name, jumps = NULL){
+  if (name %in% names(isolate({usr_models$model}))){
+    if (isolate({usr_models$model[[name]]$class=="Diffusion process"}))
+      return(isolate({usr_models$model[[name]]$object}))
+    if (isolate({usr_models$model[[name]]$class=="Compound Poisson"}))
+      return(setPoisson(intensity = isolate({usr_models$model[[name]]$intensity}), df = setJumps(jumps), solve.variable = "x"))
+  }
   if (name == "Brownian Motion" | name == "Bm")
     return(yuima::setModel(drift="mu", diffusion="sigma", solve.variable = "x"))
   if (name == "Geometric Brownian Motion" | name == "gBm")
@@ -232,13 +314,18 @@ setModelByName <- function(name){
     return(yuima::setModel(drift="(sigma/2)^2*(beta-alpha*((x-mu)/(sqrt(delta^2+(x-mu)^2))))", diffusion="sigma", solve.variable = "x"))
   if (name == "Hyperbolic (Bibby and Sorensen)" | name == "hyp2")
     return(yuima::setModel(drift="0", diffusion="sigma*exp(0.5*(alpha*sqrt(delta^2+(x-mu)^2)-beta*(x-mu)))", solve.variable = "x"))
+  if (name == "Power Low Intensity") return(yuima::setPoisson(intensity="alpha*t^(beta)", df=setJumps(jumps), solve.variable = "x"))
+  if (name == "Constant Intensity") return(yuima::setPoisson(intensity="lambda", df=setJumps(jumps), solve.variable = "x"))
+  if (name == "Linear Intensity") return(yuima::setPoisson(intensity="alpha+beta*t", df=setJumps(jumps), solve.variable = "x"))
+  if (name == "Exponentially Decaying Intensity") return(yuima::setPoisson(intensity="alpha*exp(-beta*t)", df=setJumps(jumps), solve.variable = "x"))
+  if (name == "Periodic Intensity") return(yuima::setPoisson(intensity="a/2*(1+cos(omega*t+phi))+b", df=setJumps(jumps), solve.variable = "x"))
 }
 
-printModelLatex <- function(names){
-  mod <- ""
-  for (name in names){
-    if (name %in% names(isolate({usr_models$model}))){
-      if (isolate({usr_models$model[[name]]$class=="Diffusion process"})){
+printModelLatex <- function(names, process, jumps = NULL){
+  if (process=="Diffusion process"){
+    mod <- ""
+    for (name in names){
+      if (name %in% names(isolate({usr_models$model}))){
         text <- toLatex(setModelByName(name))
         x <- paste(text[2:9], collapse = "")
         x <- substr(x,3,nchar(x))
@@ -247,27 +334,42 @@ printModelLatex <- function(names){
         x <- gsub(x, pattern = "W1", replacement = "W_t")
         mod <- paste(mod, ifelse(mod=="","","\\\\"), x)
       }
+      if (name == "Brownian Motion" | name == "Bm")
+        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu \\; dt + \\sigma \\; dW_t")
+      if (name == "Geometric Brownian Motion" | name == "gBm")
+        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu X_t \\; dt + \\sigma X_t \\; dW_t")
+      if (name == "Ornstein-Uhlenbeck (OU)" | name == "OU")
+        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = -\\theta X_t \\; dt + \\; dW_t")
+      if (name == "Vasicek model (VAS)" | name == "VAS")
+        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = (\\theta_1 - \\theta_2 X_t) \\;dt + \\theta_3 \\; dW_t")
+      if (name == "Constant elasticity of variance (CEV)" | name == "CEV")
+        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu X_t \\;dt + \\sigma X_t^\\gamma \\; dW_t")
+      if (name == "Cox-Ingersoll-Ross (CIR)" | name == "CIR")
+        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = (\\theta_1-\\theta_2 X_t) \\; dt + \\theta_3 \\sqrt{X_t} \\; dW_t")
+      if (name == "Chan-Karolyi-Longstaff-Sanders (CKLS)" | name == "CKLS")
+        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = (\\theta_1+\\theta_2 X_t) \\; dt + \\theta_3 X_t^{\\theta_4} \\; dW_t")
+      if (name == "Hyperbolic (Barndorff-Nielsen)" | name == "hyp1")
+        mod <- paste(mod, ifelse(mod=="","","\\\\"),"dX_t = \\frac{\\sigma}{2}^2 \\Bigl (\\beta-\\alpha \\frac{X_t-\\mu}{\\sqrt{\\delta^2+(X_t-\\mu)^2}} \\Bigl ) \\; dt + \\sigma \\; dW_t")
+      if (name == "Hyperbolic (Bibby and Sorensen)" | name == "hyp2")
+        mod <- paste(mod, ifelse(mod=="","","\\\\"),"dX_t = \\sigma \\; exp\\Bigl[\\frac{1}{2} \\Bigl( \\alpha \\sqrt{\\delta^2+(X_t-\\mu)^2}-\\beta (X_t-\\mu)\\Bigl)\\Bigl] \\; dW_t")
     }
-    if (name == "Brownian Motion" | name == "Bm")
-      mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu \\; dt + \\sigma \\; dW_t")
-    if (name == "Geometric Brownian Motion" | name == "gBm")
-      mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu X_t \\; dt + \\sigma X_t \\; dW_t")
-    if (name == "Ornstein-Uhlenbeck (OU)" | name == "OU")
-      mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = -\\theta X_t \\; dt + \\; dW_t")
-    if (name == "Vasicek model (VAS)" | name == "VAS")
-      mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = (\\theta_1 - \\theta_2 X_t) \\;dt + \\theta_3 \\; dW_t")
-    if (name == "Constant elasticity of variance (CEV)" | name == "CEV")
-      mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu X_t \\;dt + \\sigma X_t^\\gamma \\; dW_t")
-    if (name == "Cox-Ingersoll-Ross (CIR)" | name == "CIR")
-      mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = (\\theta_1-\\theta_2 X_t) \\; dt + \\theta_3 \\sqrt{X_t} \\; dW_t")
-    if (name == "Chan-Karolyi-Longstaff-Sanders (CKLS)" | name == "CKLS")
-      mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = (\\theta_1+\\theta_2 X_t) \\; dt + \\theta_3 X_t^{\\theta_4} \\; dW_t")
-    if (name == "Hyperbolic (Barndorff-Nielsen)" | name == "hyp1")
-      mod <- paste(mod, ifelse(mod=="","","\\\\"),"dX_t = \\frac{\\sigma}{2}^2 \\Bigl (\\beta-\\alpha \\frac{X_t-\\mu}{\\sqrt{\\delta^2+(X_t-\\mu)^2}} \\Bigl ) \\; dt + \\sigma \\; dW_t")
-    if (name == "Hyperbolic (Bibby and Sorensen)" | name == "hyp2")
-      mod <- paste(mod, ifelse(mod=="","","\\\\"),"dX_t = \\sigma \\; exp\\Bigl[\\frac{1}{2} \\Bigl( \\alpha \\sqrt{\\delta^2+(X_t-\\mu)^2}-\\beta (X_t-\\mu)\\Bigl)\\Bigl] \\; dW_t")
+    return(paste("$$",mod,"$$"))
   }
-  return(paste("$$",mod,"$$"))
+  if (process=="Compound Poisson"){
+    mod <- paste("X_t = X_0+\\sum_{i=0}^{N_t} Y_i \\; : \\;\\;\\;  N_t \\sim Poi\\Bigl(\\int_0^t \\lambda(t)dt\\Bigl)", ifelse(!is.null(jumps), paste(", \\;\\;\\;\\; ", latexJumps(jumps)),""))
+    for (name in names){
+      if (name %in% names(isolate({usr_models$model}))){
+        text <- paste("\\lambda(t)=",usr_models$model[[name]]$intensity)
+        mod <- paste(mod, ifelse(mod=="","","\\\\"), text)
+      }
+      if (name == "Power Low Intensity") mod <- paste(mod, ifelse(mod=="","","\\\\"), "\\lambda(t)=\\alpha \\; t^{\\beta}")
+      if (name == "Constant Intensity")  mod <- paste(mod, ifelse(mod=="","","\\\\"), "\\lambda(t)=\\lambda")
+      if (name == "Linear Intensity")  mod <- paste(mod, ifelse(mod=="","","\\\\"), "\\lambda(t)=\\alpha+\\beta \\; t")
+      if (name == "Exponentially Decaying Intensity")  mod <- paste(mod, ifelse(mod=="","","\\\\"), "\\lambda(t)=\\alpha \\; e^{-\\beta t}")
+      if (name == "Periodic Intensity")  mod <- paste(mod, ifelse(mod=="","","\\\\"), "\\lambda(t)=\\frac{a}{2}\\bigl(1+cos(\\omega t + \\phi)\\bigl)+b")
+    }
+    return(paste("$$",mod,"$$"))
+  }
 }
 
 
@@ -329,9 +431,11 @@ changeBase <- function(param, StdErr, delta, original.data, paramName, modelName
 }
 
 
-addModel <- function(modName, symbName, data, delta, start, startMin, startMax, tries, seed, method="BFGS", fixed = list(), lower, upper, joint=FALSE, aggregation=TRUE, threshold=NULL, session, anchorId){
+addModel <- function(modName, modClass, jumps, symbName, data, delta, start, startMin, startMax, tries, seed, method="BFGS", fixed = list(), lower, upper, joint=FALSE, aggregation=TRUE, threshold=NULL, session, anchorId){
   info <- list(
+    class = modClass,
     modName = modName,
+    jumps = ifelse(is.null(jumps),NA,jumps),
     method=method,
     delta = delta,
     start = start,
@@ -358,8 +462,12 @@ addModel <- function(modName, symbName, data, delta, start, startMin, startMax, 
   fixed <- clearNA(fixed)
   lower <- clearNA(lower)
   upper <- clearNA(upper)
-  model <- setYuima(data = setData(data, delta = delta), model=setModelByName(name = modName))
-  parameters <- setModelByName(modName)@parameter
+  model <- setYuima(data = setData(data, delta = delta), model=setModelByName(name = modName, jumps = jumps))
+  parameters <- setModelByName(name = modName, jumps = jumps)@parameter
+  if (!is.null(jumps)){
+    jumpParam <- estimateJumps(data = data, jumps = jumps, threshold = threshold)
+    for (i in names(jumpParam)) if (is.null(start[[i]])) start[[i]] <- jumpParam[[i]]
+  }
   if (all(parameters@all %in% c(names(start),names(fixed)))){
     QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #REMOVE# joint = joint, aggregation = aggregation,
                  threshold = threshold))
@@ -534,6 +642,8 @@ addSimulation <- function(model, symbName, info = list("simulate.from"=NA, "simu
   )
 }
 
+
+
 delSimulation <- function(symb, n=1){
   for(i in length(symb):1){
     yuimaGUIdata$simulation[[symb[i]]][as.numeric(n[i])] <<- NULL
@@ -541,6 +651,89 @@ delSimulation <- function(symb, n=1){
       yuimaGUIdata$simulation[[symb[i]]] <<- NULL
   }
 }
+
+
+profit_distribution <- function(nOpt, nAss, type, strike, priceAtMaturity, optMarketPrice, assMarketPrice, percCostAss, minCostAss, lotCostOpt, lotMultiplier, shortCostPerYear, t0=Sys.Date(), maturity){
+  if (nOpt==0 & nAss==0)
+    return(0)
+  if (type=="call"){
+    payoff <- pmax(priceAtMaturity-strike,0)
+    return(nOpt*(payoff-optMarketPrice)-
+             nAss*(priceAtMaturity-assMarketPrice)-
+             pmax(nAss*assMarketPrice*percCostAss, minCostAss)*ifelse(nAss!=0,1,0)-
+             pmax(nAss*priceAtMaturity*percCostAss, minCostAss)*ifelse(nAss!=0,1,0)-
+             nOpt/lotMultiplier*lotCostOpt-
+             shortCostPerYear*(nAss*assMarketPrice)*as.numeric(as.Date(maturity)-as.Date(t0))/365
+    )
+  }
+  if (type=="put"){
+    payoff <- pmax(strike-priceAtMaturity,0)
+    return(nOpt*(payoff-optMarketPrice)+
+             nAss*(priceAtMaturity-assMarketPrice)-
+             pmax(nAss*assMarketPrice*percCostAss, minCostAss)*ifelse(nAss!=0,1,0)-
+             pmax(nAss*priceAtMaturity*percCostAss, minCostAss)*ifelse(nAss!=0,1,0)-
+             nOpt/lotMultiplier*lotCostOpt
+    )
+  }
+}
+
+addHedging <- function(model, symbName, info = list(), xinit, true.parameter, nsim, sampling, session, anchorId){
+  closeAlert(session, "addHedging_alert")
+  hist <- vector()
+  is.valid <- TRUE
+  modObj <- model$model@model
+  withProgress(message = 'Simulating: ', value = 0, {
+    for (i in 1:nsim){
+      incProgress(1/nsim, detail = paste("Simulating:",i,"(/",nsim,")"))
+      simulation <- try(yuima::simulate(object = modObj, xinit = xinit, true.parameter = true.parameter, nsim = nsim, sampling = sampling))
+      if (class(simulation)=="try-error"){
+        is.valid <- FALSE
+        break()
+      }
+      if(is.valid)
+        hist <- c(hist, as.numeric(tail(simulation@data@zoo.data[[1]],1)))
+    }
+  })
+  if (!is.valid){
+    createAlert(session = session, anchorId = anchorId, alertId = "addHedging_alert" , content = paste("Unable to simulate", symbName,"by", info$model), style = "danger")
+    return()
+  }
+  profits <- profit_distribution(nOpt=1*info$optLotMult, 
+                                                nAss=0, 
+                                                type=info$type, 
+                                                strike=info$strike, 
+                                                priceAtMaturity=hist, 
+                                                optMarketPrice=info$optPrice, 
+                                                assMarketPrice=info$assPrice, 
+                                                percCostAss=info$assPercCost, 
+                                                minCostAss=info$assMinCost, 
+                                                lotCostOpt=info$optLotCost, 
+                                                lotMultiplier=info$optLotMult, 
+                                                shortCostPerYear=info$assRateShortSelling, 
+                                                t0=info$estimate.to, 
+                                                maturity=info$maturity)
+  info$profit <- mean(profits)/(info$optLotMult*info$optPrice+info$optLotCost)
+  info$stdErr <- sd(profits)/sqrt(length(profits))/(info$optLotMult*info$optPrice+info$optLotCost)
+  info$nsim <- nsim
+  info$buy <- ifelse(info$type=="call",NA,0)
+  info$sell <- ifelse(info$type=="put",NA,0)
+  info$LotsToBuy <- 1
+  yuimaGUIdata$hedging[[length(yuimaGUIdata$hedging)+1]] <<- list(
+    hist = hist,
+    true.parameter = true.parameter,
+    info = info,
+    aic = model$aic,
+    bic = model$bic,
+    symb = symbName
+  )
+}
+
+
+
+delHedging <- function(n){
+  yuimaGUIdata$hedging <<- yuimaGUIdata$hedging[-n]
+}
+
 
 
 
