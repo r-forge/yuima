@@ -6,7 +6,7 @@ require(shinydashboard)
 require(shinyBS)
 require(yuima)
 require(shinyjs)
-require(corrplot)
+#require(corrplot)
 
 
 if(!exists("yuimaGUItable"))
@@ -228,12 +228,12 @@ defaultBounds <- function(name, jumps = NULL, lower = NA, upper = NA){
   if (name == "Chan-Karolyi-Longstaff-Sanders (CKLS)" | name == "CKLS")
     return(list(lower=list("theta1"=lower, "theta2"=lower, "theta3"=0, "theta4"=ifelse(is.na(lower),NA,-3)),upper=list("theta1"=upper, "theta2"=upper, "theta3"=upper, "theta4"=ifelse(is.na(upper),NA,3))))
   if (name == "Hyperbolic (Barndorff-Nielsen)" | name == "hyp1")
-    return(list(lower=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=lower, "mu"=lower),upper=list("delta"=upper, "alpha"=upper, "beta"=upper, "sigma"=upper, "mu"=upper)))
+    return(list(lower=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=0, "mu"=lower),upper=list("delta"=upper, "alpha"=upper, "beta"=upper, "sigma"=upper, "mu"=upper)))
   if (name == "Hyperbolic (Bibby and Sorensen)" | name == "hyp2")
-    return(list(lower=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=lower, "mu"=lower),upper=list("delta"=upper, "alpha"=upper, "beta"=upper, "sigma"=upper, "mu"=upper)))
+    return(list(lower=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=0, "mu"=lower),upper=list("delta"=upper, "alpha"=upper, "beta"=upper, "sigma"=upper, "mu"=upper)))
   if (name == "Power Low Intensity"){
     boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
-    return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=upper, "beta"=upper), boundsJump$upper)))
+    return(list(lower=c(list("alpha"=0, "beta"=ifelse(is.na(lower),NA,-3)), boundsJump$lower),upper=c(list("alpha"=upper, "beta"=ifelse(is.na(upper),NA,3)), boundsJump$upper)))
   }
   if (name == "Constant Intensity"){
     boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
@@ -245,11 +245,11 @@ defaultBounds <- function(name, jumps = NULL, lower = NA, upper = NA){
   }
   if (name == "Exponentially Decaying Intensity"){
     boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
-    return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=upper, "beta"=upper), boundsJump$upper)))
+    return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=upper, "beta"=ifelse(is.na(upper),NA,3)), boundsJump$upper)))
   }
   if (name == "Periodic Intensity"){
     boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
-    return(list(lower=c(list("a"=0, "b"=0, "omega"=lower, "phi"=lower), boundsJump$lower),upper=c(list("a"=upper, "b"=upper, "omega"=upper, "phi"=upper), boundsJump$upper)))
+    return(list(lower=c(list("a"=0, "b"=0, "omega"=0, "phi"=0), boundsJump$lower),upper=c(list("a"=upper, "b"=upper, "omega"=upper, "phi"=2*pi), boundsJump$upper)))
   }
 }
 
@@ -374,7 +374,7 @@ printModelLatex <- function(names, process, jumps = NULL){
 
 
 ###Function to convert unit of measure of the estimates
-changeBase <- function(param, StdErr, delta, original.data, paramName, modelName, newBase, session, choicesUI, anchorId, alertId){
+changeBase <- function(param, StdErr, delta, original.data, paramName, modelName, newBase, session, choicesUI, anchorId, alertId, allParam){
   if (newBase == "delta")
     return(list("Estimate"= param, "Std. Error"=StdErr))
   if(class(index(original.data))=="Date"){
@@ -424,6 +424,35 @@ changeBase <- function(param, StdErr, delta, original.data, paramName, modelName
     if(paramName == "theta3") return(list("Estimate"= param*sqrt(delta/dt1), "Std. Error"=StdErr*sqrt(delta/dt1)))
     if(paramName == "theta4") return(list("Estimate"= param, "Std. Error"=StdErr))
   }
+  if (modelName %in% c("Hyperbolic (Barndorff-Nielsen)", "Hyperbolic (Bibby and Sorensen)")){
+    if(paramName == "sigma") return(list("Estimate"= param*sqrt(delta/dt1), "Std. Error"=StdErr*sqrt(delta/dt1)))
+    if(paramName == "beta") return(list("Estimate"= param, "Std. Error"=StdErr))
+    if(paramName == "alpha") return(list("Estimate"= param, "Std. Error"=StdErr))
+    if(paramName == "mu") return(list("Estimate"= param, "Std. Error"=StdErr))
+    if(paramName == "delta") return(list("Estimate"= param, "Std. Error"=StdErr))
+  }
+  if (modelName %in% c("Constant Intensity")){
+    if(paramName == "lambda") return(list("Estimate"= param*delta/dt1, "Std. Error"=StdErr*delta/dt1))
+    if(paramName %in% c("mu_jump", "sigma_jump", "a_jump", "b_jump")) return(list("Estimate"= param, "Std. Error"=StdErr))
+  }
+  if (modelName %in% c("Linear Intensity")){
+    if(paramName == "alpha") return(list("Estimate"= param*delta/dt1, "Std. Error"=StdErr*delta/dt1))
+    if(paramName == "beta") return(list("Estimate"= param*(delta/dt1)^2, "Std. Error"=StdErr*(delta/dt1)^2))
+    if(paramName %in% c("mu_jump", "sigma_jump", "a_jump", "b_jump")) return(list("Estimate"= param, "Std. Error"=StdErr))
+  }
+  if (modelName %in% c("Power Low Intensity")){
+    beta <- as.numeric(allParam["beta"])
+    if(paramName == "alpha") return(list("Estimate"= param*(delta/dt1)^(beta+1), "Std. Error"=StdErr*(delta/dt1)^(beta+1)))
+    if(paramName %in% c("beta", "mu_jump", "sigma_jump", "a_jump", "b_jump")) return(list("Estimate"= param, "Std. Error"=StdErr))
+  }
+  if (modelName %in% c("Exponentially Decaying Intensity")){
+    if(paramName %in% c("alpha", "beta")) return(list("Estimate"= param*delta/dt1, "Std. Error"=StdErr*delta/dt1))
+    if(paramName %in% c("mu_jump", "sigma_jump", "a_jump", "b_jump")) return(list("Estimate"= param, "Std. Error"=StdErr))
+  }
+  if (modelName %in% c("Periodic Intensity")){
+    if(paramName %in% c("a", "b", "omega")) return(list("Estimate"= param*delta/dt1, "Std. Error"=StdErr*delta/dt1))
+    if(paramName %in% c("phi", "mu_jump", "sigma_jump", "a_jump", "b_jump")) return(list("Estimate"= param, "Std. Error"=StdErr))
+  }
   closeAlert(session, alertId)
   createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste("No parameters conversion available for this model. Parameters have been obtained using delta = ", delta), style = "warning")
   shinyjs::hide(choicesUI)
@@ -472,7 +501,7 @@ addModel <- function(modName, modClass, jumps, symbName, data, delta, start, sta
     QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #REMOVE# joint = joint, aggregation = aggregation,
                  threshold = threshold))
     if (class(QMLE)=="try-error"){
-      createAlert(session = session, anchorId = anchorId, content = paste("Unable to estimate", modName,"on", symbName), style = "danger")
+      createAlert(session = session, anchorId = anchorId, content = paste("Unable to estimate ", modName," on ", symbName, ". Try to use 'Advanced Settings' and customize estimation.", sep = ""), style = "danger")
       return()
     }
   }
@@ -487,7 +516,7 @@ addModel <- function(modName, modClass, jumps, symbName, data, delta, start, sta
       QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #REMOVE# joint = joint, aggregation = aggregation,
                    threshold = threshold))
       if (class(QMLE)=="try-error"){
-        createAlert(session = session, anchorId = anchorId, content = paste("Unable to estimate", modName,"on", symbName), style = "danger")
+        createAlert(session = session, anchorId = anchorId, content =  paste("Unable to estimate ", modName," on ", symbName, ". Try to use 'Advanced Settings' and customize estimation.", sep = ""), style = "danger")
         return()
       }
     #} else if (modName == "Brownian Motion" | modName == "Bm") {
@@ -546,7 +575,7 @@ addModel <- function(modName, modClass, jumps, symbName, data, delta, start, sta
             }
           }
           if (iter==tries & class(QMLEtemp)=="try-error" & !exists("QMLE")){
-            createAlert(session = session, anchorId = anchorId, content = paste("Unable to estimate", modName,"on", symbName), style = "danger")
+            createAlert(session = session, anchorId = anchorId, content =  paste("Unable to estimate ", modName," on ", symbName, ". Try to use 'Advanced Settings' and customize estimation.", sep = ""), style = "danger")
             return()
           }
         }

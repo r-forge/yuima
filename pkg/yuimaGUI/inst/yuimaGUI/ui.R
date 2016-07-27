@@ -1,5 +1,5 @@
 header<-dashboardHeader(
-  title = "yuima"
+  title = "yuimaGUI"
 )
 
 sidebar<-dashboardSidebar(
@@ -14,7 +14,7 @@ sidebar<-dashboardSidebar(
              menuSubItem("Clustering", tabName = "cluster")
              #REMOVE# menuSubItem("Lead-Lag Analysis", tabName = "llag")
              ),
-    menuItem("Modelling", tabName = "models_section", icon = icon("sliders"),
+    menuItem("Modeling", tabName = "models_section", icon = icon("sliders"),
              menuSubItem("Univariate", tabName = "models")
              ),
     menuItem("Simulate", tabName = "simulate_section", icon = icon("area-chart"),
@@ -22,7 +22,7 @@ sidebar<-dashboardSidebar(
              ),
     hr(),
     menuItem("Finance", tabName = "finance",
-             menuSubItem("Hedging", tabName = "hedging")
+             menuSubItem("P&L distribution", tabName = "hedging")
             )
   )
 )
@@ -33,13 +33,41 @@ body<-dashboardBody(
   withMathJax(),
 
   tabItems(
-    tabItem(tabName = "home"
+    tabItem(tabName = "home",
+      fluidRow(
+        column(12,
+          h1("Welcome on yuimaGUI", style="color:#edeeed", align = "center"),
+          h4("an amazingly powerful tool for your analysis", style="color:#edeeed; font-family: Times New Roman, Georgia, Serif;", align = "center"), 
+          hr(class = "hrHeader"),
+          br(),
+          h4("Get acquainted with yuimaGUI and learn how to best exploit it in a few simple steps:", style="color:#edeeed", align = "center"),
+          h4("Step 1", style="color:#edeeed"),
+          h4("Load data you wish to analyze (section 'Data I/O').", br(), 
+             "An easy way to load economic data (i.e. GDP) or financial series (stocks and shares) directly from the Internet is provided. Otherwise you can load data from your own files.",br(),
+             "Once data are loaded, you can go and use sections 'Explorative Data Analysis' and 'Modeling'.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
+          h4("Step 2", style="color:#edeeed"),
+          h4("Model your data in section 'Modeling'.", br(),
+             "Here you can fit models to your data choosing between some default options but also defining and using your own model.", br(),
+             "Now you are ready to use the estimated models for simulation purposes in section 'Simulate'.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
+          h4("Step 3", style="color:#edeeed"),
+          h4("Read the short explanation at the beginning of every (sub)section.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;")
+        )
+      ),
+      fluidRow(
+        column(8),
+        column(4,
+          h3(em("Developed by"), style="color:#edeeed", align = "center"),
+          h4("Emanuele Guidotti", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;", align = "center"),
+          h3(em("in collaboration with"), style="color:#edeeed", align = "center"),
+          h4("Stefano M. Iacus & Lorenzo Mercuri", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;", align = "center")
+        )
+      )
     ),
     #########################
     tabItem(tabName="finData",
       fluidRow(
         column(12,
-          h3("In this section you can load financial and economic data.",style="color:#edeeed"),
+          h3("Here you can load financial and economic data.",style="color:#edeeed"),
           h4("For stock data choose Yahoo source using symbols you can find ",
              a("here", href="http://finance.yahoo.com/lookup", target = "_blank"), ".",
              br(),
@@ -50,7 +78,7 @@ body<-dashboardBody(
              "Find symbols as shown in this ", a("example",href="example.jpg", target = "_blank"), ".",
              br(),
              "Multiple symbols are allowed if divided by empty space and/or commas (i.e. AAPL FB CSCO or AAPL,FB,CSCO).",
-             style="color:#CDCECD"),
+             style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           hr(class = "hrHeader")
         )
       ),
@@ -89,7 +117,7 @@ body<-dashboardBody(
     tabItem("yourData",
       fluidRow(
         column(12,
-          h3("In this section you can load data from your own files.",style="color:#edeeed"),
+          h3("Here you can load data from your own files.",style="color:#edeeed"),
           h4("Please upload your file and specify its structure. A preview will be shown below.",
              br(),
              "First, declare if the file contains raw and/or column headers and specify what kind of field separator has to be used to read data.",
@@ -97,7 +125,7 @@ body<-dashboardBody(
              "Each column will be uploaded as a different series. So you might want to switch columns with rows if your file is organized differently.",
              br(),
              "Finally specify what column to use to index series and its format.",
-              style="color:#CDCECD"),
+              style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           hr(class = "hrHeader")
         )
       ),
@@ -141,13 +169,15 @@ body<-dashboardBody(
     tabItem(tabName="models", fluidRow(column(12,
       fluidRow(
         column(12,
-          h3("In this section you can estimate models and/or define new ones.",style="color:#edeeed"),
-          h4("To estimate models simply click those you are interested in and select data you wish to model. You can customize the estimation process by clicking on buttons 'Set Range' and 'Advanced Settings'.",
+          h3("Here you can estimate models and/or define new ones.",style="color:#edeeed"),
+          h4("To estimate models simply click those you are interested in and select data you wish to model.",
+             br(),
+             " You can customize the estimation process by clicking on buttons 'Set Range' and 'Advanced Settings'.",
              br(),
              "Some default models are available but you can set your own model (tab 'Set model') and use it for estimation and/or simulation purposes.",
              br(),
              "Estimated models are shown in tab 'Estimates'.",
-             style="color:#CDCECD"),
+             style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           hr(class = "hrHeader")
         )
       ),
@@ -328,7 +358,7 @@ body<-dashboardBody(
     tabItem(tabName = "simulate",
       fluidRow(
         column(12,
-          h3("In this section you can perform simulations.",style="color:#edeeed"),
+          h3("Here you can perform simulations.",style="color:#edeeed"),
           h4("To simulate models that have been estimated on data simply select those you are interested in from table 'Available Models'.",
              br(),
              "If you want to simulate a model that has not been estimated you can specify its parameters values in tab 'Simuate equation' and select it.",
@@ -336,7 +366,7 @@ body<-dashboardBody(
              "You can customize the simulation process by clicking on buttons 'Set Simulation' and 'Advanced Settings'.",
              br(),
              "Simulations are shown in tab 'Simulations'",
-             style="color:#CDCECD"),
+             style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           hr(class = "hrHeader")
         )
       ),
@@ -418,7 +448,7 @@ body<-dashboardBody(
           bsTooltip("simulation_button_deleteModels", title = "Delete selected models", placement = "top"),
           column(4,actionButton("simulation_button_deleteAllModels",label = "Delete All", align = "center")),
           bsTooltip("simulation_button_deleteAllModels", title = "Delete all models that are displayed", placement = "top"),
-          column(4,actionButton("simulate_simulateModels", label = "Start Models Simulation", align = "center"))
+          column(4,actionButton("simulate_simulateModels", label = "Start Simulation", align = "center"))
         )
       ),
       bsModal(id="simulate_showSimulation", trigger = "simulate_monitor_button_showSimulation", title = div(h4(em("Simulation")), align="center"), size = "large",
@@ -491,11 +521,11 @@ body<-dashboardBody(
     tabItem(tabName = "cluster",
       fluidRow(
         column(12,
-          h3("In this section you can perform clustering.",style="color:#edeeed"),
+          h3("Here you can perform clustering.",style="color:#edeeed"),
           h4("Select data you want to cluster from table 'Available Data'.", br(),
              "Then choose the distance you are interested in and the kind of linkage for the hierarchical cluster analysis.", br(),
              "Results will be shown below by plotting dendrogram and multidimensional scaling output.",
-                        style="color:#CDCECD"),
+                        style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           hr(class = "hrHeader")
         )
       ),
@@ -512,7 +542,7 @@ body<-dashboardBody(
         column(4,br(),br(),
           div(align="center",
             selectInput("cluster_linkage", "Linkage", choices = c("Complete"="complete", "Single"="single", "Average"="average", "Ward"="ward.D", "Ward squared"="ward.D2", "McQuitty"="mcquitty", "Median"="median", "Centroid"="centroid")),
-            selectInput("cluster_distance", "Distance", choices = c("Markov Operator"="MOdist", "My distance"="MYdist", "Euclidean"="euclidean", "Maximum"="maximum", "Manhattan"="manhattan", "Canberra"="canberra", "Minkowski"="minkowski")),
+            selectInput("cluster_distance", "Distance", choices = c("Markov Operator"="MOdist", "Distribution of Returns"="MYdist", "Euclidean"="euclidean", "Maximum"="maximum", "Manhattan"="manhattan", "Canberra"="canberra", "Minkowski"="minkowski")),
             shinyjs::hidden(numericInput("cluster_distance_minkowskiPower", label = "Power", value = 2, width = "30%")))
         )
       )),
@@ -549,11 +579,11 @@ body<-dashboardBody(
     tabItem(tabName = "changepoint",
       fluidRow(
         column(12,
-          h3("In this section you can estimate change points.",style="color:#edeeed"),
+          h3("Here you can estimate change points.",style="color:#edeeed"),
           h4("Select data for which you want to estimate change points from table 'Available Data'.", br(),
             "Then choose the algorithm you want to use for the estimation.", br(),
             "Results will be shown below by plotting series and detected change points.",
-            style="color:#CDCECD"),
+            style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           hr(class = "hrHeader")
         )
       ),
@@ -589,8 +619,8 @@ body<-dashboardBody(
         hr(class = "hrHeader"),
         uiOutput("changepoint_symb", align="center"),
         selectInput("changepoint_scale", label = "Scale", choices=c("Linear","Logarithmic (Y)","Logarithmic (X)", "Logarithmic (XY)"), width = "150px"),
-        column(6,plotOutput("changepoint_plot_series")),
-        column(6,plotOutput("changepoint_plot_incr"))
+        column(6,plotOutput("changepoint_plot_series", brush = brushOpts(id = "changePoint_brush", delayType = "debounce", delay = 10000, resetOnNew = TRUE), dblclick = "changePoint_dbclick")),
+        column(6,plotOutput("changepoint_plot_incr", brush = brushOpts(id = "changePoint_brush", delayType = "debounce", delay = 10000, resetOnNew = TRUE), dblclick = "changePoint_dbclick"))
       ))))
     ),
     tabItem(tabName = "llag",
@@ -630,11 +660,11 @@ body<-dashboardBody(
     tabItem(tabName = "hedging",
       fluidRow(
         column(12,
-          h3("In this section you can manage risk originated by buying options and the underlying asset.",style="color:#edeeed"),
-          h4("The evolution of the underlying asset is simulated by models you estimated in section Modelling.", br(),
-             "After performing the simulation click on rows of the table in tab Hedging, in order to choose the number of options and assets to buy/sell.",br(),
+          h3("Here you can manage risk deriving from buying options and the underlying asset.",style="color:#edeeed"),
+          h4("The evolution of the underlying asset is simulated by models you estimated in section Modeling.", br(),
+             "After performing the simulation click on rows of the table in tab 'Profit&Loss' in order to choose the number of options and assets to buy/sell.",br(),
              "The Profit&Loss distribution of your position will be displayed (it includes transaction costs that you can customize).",
-            style="color:#CDCECD"),
+            style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           hr(class = "hrHeader")
         )
       ),
@@ -672,7 +702,7 @@ body<-dashboardBody(
             )
           )))
         ),
-        tabPanel(title = "Hedging",
+        tabPanel(title = "Profit&Loss",
           shinyjs::hidden(div(id="hedging_body",align="center",br(),
             fluidRow(
               column(3,numericInput("hedging_maxCapital", label = "Available Capital", value = 10000)),
@@ -691,7 +721,7 @@ body<-dashboardBody(
                 textOutput("hedging_capital_text"),
                 textOutput("hedging_meanPerc_text"),
                 br(),br(),br(),
-                actionButton("hedging_button_commissionPlan", label = "Transaction Costs")
+                actionButton("hedging_button_commissionPlan", label = "Transaction Costs", width = "80%")
               )
             ),
             br(),
@@ -699,7 +729,7 @@ body<-dashboardBody(
               column(3,selectInput("hedging_type2", label="Modify Option Type", c(" "="default", Call="call", Put="put"))),
               column(3,numericInput("hedging_strike2", label = "Modify Strike", min = 0, value = NA)),
               column(3,numericInput("hedging_optMarketPrice2", label = "Modify Option Price", min = 0, value = NA)),
-              column(3,br(),actionButton("hedging_button_saveHedging", "Save Changes"))
+              column(3,br(),actionButton("hedging_button_saveHedging", "Save Changes", width = "80%"))
             ),
             bsModal(id="hedging_commissionPlan", trigger = "hedging_button_commissionPlan", title = div(h4(em("Commission Plan")), align="center"), size = "small",
               div(align = "center",
