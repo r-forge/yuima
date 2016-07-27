@@ -74,11 +74,11 @@ server <- function(input, output, session) {
 
   ###Display chart of last clicked symbol
   observeEvent(input$database1_rows_selected, priority = -1, {
-    range_finDataPlot$x <- NULL
-    range_finDataPlot$y <- NULL
     symb <- tail(input$database1_rows_selected,1)
     shinyjs::show("finDataPlot")
     shinyjs::show("scale_finDataPlot")
+    valid_data <- NULL
+    range_finDataPlot$x <- c(NULL, NULL)
     output$finDataPlot <- renderPlot({
       if (length(yuimaGUItable$series)==0){
         shinyjs::hide("finDataPlot")
@@ -90,8 +90,10 @@ server <- function(input, output, session) {
           shinyjs::hide("scale_finDataPlot")
         }
         else {
+          data <- window(getData(symb), start = range_finDataPlot$x[1], end = range_finDataPlot$x[2])
+          if(is.null(valid_data) | length(index(data))>3) valid_data <<- data
           par(bg="black")
-          plot.zoo(window(getData(symb), start = range_finDataPlot$x[1], end = range_finDataPlot$x[2]), main=symb, log=ifelse(input$scale_finDataPlot=="Linear","","y"), xlab="Index", ylab=NA, col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
+          plot.zoo(valid_data, main=symb, log=ifelse(input$scale_finDataPlot=="Linear","","y"), xlab="Index", ylab=NA, col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
           grid(col="grey")
         }
       }
@@ -387,9 +389,13 @@ server <- function(input, output, session) {
   ###Interactive range of selectRange chart
   range_selectRange <- reactiveValues(x=NULL, y=NULL)
   observe({
-    if (!is.null(input$selectRange_brush)){
-      range_selectRange$x <- c(as.Date(input$selectRange_brush$xmin), as.Date(input$selectRange_brush$xmax))
-      range_selectRange$y <- c(input$selectRange_brush$ymin, input$selectRange_brush$ymax)
+    if (!is.null(input$selectRange_brush) & !is.null(input$plotsRangeSeries)){
+      data <- getData(input$plotsRangeSeries)
+      test <- (length(index(window(data, start = input$selectRange_brush$xmin, end = input$selectRange_brush$xmax))) > 3)
+      if (test==TRUE){
+        range_selectRange$x <- c(as.Date(input$selectRange_brush$xmin), as.Date(input$selectRange_brush$xmax))
+        range_selectRange$y <- c(input$selectRange_brush$ymin, input$selectRange_brush$ymax)
+      }
     }
   })
 
@@ -816,7 +822,7 @@ server <- function(input, output, session) {
     if(length(start)==0) start[1,params[1]] <- NA
     if(length(startMin)==0) startMin[1,params[1]] <- NA
     if(length(startMax)==0) startMax[1,params[1]] <- NA
-    table <- rbind.fill(coef, fixed, start, startMin, startMax, lower, upper)
+    table <- rbind.fill(coef[,unique(colnames(coef))], fixed, start, startMin, startMax, lower, upper)
     rownames(table) <- c("Estimate", "Std. Error", "fixed", "start", "startMin", "startMax", "lower", "upper")
     return(table)
   })
@@ -840,7 +846,7 @@ server <- function(input, output, session) {
       table <- t(summary(yuimaGUIdata$model[[symb]][[modN]]$qmle)@coef)
       outputTable <- data.frame()
       for (param in unique(colnames(table))){
-        temp <- changeBase(param = as.numeric(table["Estimate",param]), StdErr = as.numeric(table["Std. Error",param]), delta = yuimaGUIdata$model[[symb]][[modN]]$model@sampling@delta, original.data = yuimaGUIdata$model[[symb]][[modN]]$model@data@original.data, paramName = param, modelName = yuimaGUIdata$model[[symb]][[modN]]$info$modName, newBase = input$baseModels, session = session, choicesUI="baseModels", anchorId = "modelsAlert", alertId = "modelsAlert_conversion")
+        temp <- changeBase(param = as.numeric(table["Estimate",param]), StdErr = as.numeric(table["Std. Error",param]), delta = yuimaGUIdata$model[[symb]][[modN]]$model@sampling@delta, original.data = yuimaGUIdata$model[[symb]][[modN]]$model@data@original.data, paramName = param, modelName = yuimaGUIdata$model[[symb]][[modN]]$info$modName, newBase = input$baseModels, session = session, choicesUI="baseModels", anchorId = "modelsAlert", alertId = "modelsAlert_conversion", allParam = table["Estimate",])
         outputTable["Estimate",param] <- as.character(signifDigits(temp[["Estimate"]],temp[["Std. Error"]]))
         outputTable["Std. Error",param] <- as.character(signifDigits(temp[["Std. Error"]],temp[["Std. Error"]]))
       }
@@ -1334,7 +1340,9 @@ server <- function(input, output, session) {
             }
             if(class(index(data))=="numeric" | class(index(data))=="integer"){
               info <- list(
+                "class" = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class,
                 "model" = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$modName,
+                "jumps" = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$jumps,
                 "estimate.from" = as.numeric(start(data)),
                 "estimate.to" = as.numeric(end(data)),
                 "simulate.from" = as.numeric(simulateSettings[[modID]][["t0"]]),
@@ -1799,27 +1807,44 @@ server <- function(input, output, session) {
       })
   })
   
-
-  output$changepoint_plot_series <- renderPlot({
-    if(!is.null(input$changepoint_symb))
-      if ((input$changepoint_symb %in% rownames(yuimaGUItable$series))){
-        par(bg="black")
-        plot(getData(input$changepoint_symb), main=input$changepoint_symb, xlab="Index", ylab=NA, log=switch(input$changepoint_scale,"Linear"="","Logarithmic (Y)"="y", "Logarithmic (X)"="x", "Logarithmic (XY)"="xy"), col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
-        abline(v=yuimaGUIdata$cp[[input$changepoint_symb]]$tau, col = "yellow")
-        grid(col="grey")
+  range_changePoint <- reactiveValues(x=NULL, y=NULL)
+  observe({
+    if (!is.null(input$changePoint_brush) & !is.null(input$changepoint_symb)){
+      data <- getData(input$changepoint_symb)
+      test <- (length(index(window(data, start = input$changePoint_brush$xmin, end = input$changePoint_brush$xmax))) > 3)
+      if (test==TRUE){
+        range_changePoint$x <- c(as.Date(input$changePoint_brush$xmin), as.Date(input$changePoint_brush$xmax))
+        range_changePoint$y <- c(input$changePoint_brush$ymin, input$changePoint_brush$ymax)
       }
+    }
   })
   
-  output$changepoint_plot_incr <- renderPlot({
-    if(!is.null(input$changepoint_symb))
-      if ((input$changepoint_symb %in% rownames(yuimaGUItable$series))){
-        x <- Delt(getData(input$changepoint_symb))
-        x <- x[x[,1]!="Inf"]
-        par(bg="black")
-        plot(x, main=paste(input$changepoint_symb, " - Percentage Increments"), xlab="Index", ylab=NA, log=switch(input$changepoint_scale,"Linear"="","Logarithmic (Y)"="", "Logarithmic (X)"="x", "Logarithmic (XY)"="x"), col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
-        abline(v=yuimaGUIdata$cp[[input$changepoint_symb]]$tau, col = "yellow")
-        grid(col="grey")
-      }
+  observeEvent(input$changePoint_dbclick,{
+    range_changePoint$x <- c(NULL, NULL)
+  })
+  
+  observeEvent(input$changepoint_symb, {
+    range_changePoint$x <- c(NULL, NULL)
+    output$changepoint_plot_series <- renderPlot({
+      if(!is.null(input$changepoint_symb))
+        if ((input$changepoint_symb %in% rownames(yuimaGUItable$series))){
+          par(bg="black")
+          plot(window(getData(input$changepoint_symb), start = range_changePoint$x[1], end = range_changePoint$x[2]), main=input$changepoint_symb, xlab="Index", ylab=NA, log=switch(input$changepoint_scale,"Linear"="","Logarithmic (Y)"="y", "Logarithmic (X)"="x", "Logarithmic (XY)"="xy"), col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
+          abline(v=yuimaGUIdata$cp[[input$changepoint_symb]]$tau, col = "yellow")
+          grid(col="grey")
+        }
+    })
+    output$changepoint_plot_incr <- renderPlot({
+      if(!is.null(input$changepoint_symb))
+        if ((input$changepoint_symb %in% rownames(yuimaGUItable$series))){
+          x <- Delt(getData(input$changepoint_symb))
+          x <- x[x[,1]!="Inf"]
+          par(bg="black")
+          plot(window(x, start = range_changePoint$x[1], end = range_changePoint$x[2]), main=paste(input$changepoint_symb, " - Percentage Increments"), xlab="Index", ylab=NA, log=switch(input$changepoint_scale,"Linear"="","Logarithmic (Y)"="", "Logarithmic (X)"="x", "Logarithmic (XY)"="x"), col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
+          abline(v=yuimaGUIdata$cp[[input$changepoint_symb]]$tau, col = "yellow")
+          grid(col="grey")
+        }
+    })
   })
   
   
@@ -2000,7 +2025,7 @@ server <- function(input, output, session) {
           session = session,
           anchorId = "hedging_alert"
         )
-        updateTabsetPanel(session = session,  inputId = "panel_hedging", selected = "Hedging")
+        updateTabsetPanel(session = session,  inputId = "panel_hedging", selected = "Profit&Loss")
       }
       else createAlert(session, anchorId = "hedging_alert", alertId = "hedging_alert_selectRow" , content = "Please select a model to simulate the evolution of the underlying asset", style = "error")
     }
