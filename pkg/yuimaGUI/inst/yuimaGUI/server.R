@@ -74,7 +74,7 @@ server <- function(input, output, session) {
 
   ###Display chart of last clicked symbol
   observeEvent(input$database1_rows_selected, priority = -1, {
-    symb <- tail(input$database1_rows_selected,1)
+    symb <- yuimaGUItable$series$Symb[tail(input$database1_rows_selected,1)]
     shinyjs::show("finDataPlot")
     shinyjs::show("scale_finDataPlot")
     valid_data <- NULL
@@ -102,12 +102,12 @@ server <- function(input, output, session) {
 
   ###Delete Button
   observeEvent(input$finDataDelete, priority = 1,{
-      delData(input$database1_rows_selected)
+      delData(yuimaGUItable$series$Symb[input$database1_rows_selected])
   })
 
   ###DeleteAll Button
   observeEvent(input$finDataDeleteAll, priority = 1,{
-    delData(input$database1_rows_all)
+    delData(yuimaGUItable$series$Symb[input$database1_rows_all])
   })
 
   ###Save Button
@@ -223,12 +223,12 @@ server <- function(input, output, session) {
 
   ###Delete Button
   observeEvent(input$yourFileDelete, priority = 1,{
-    delData(input$database2_rows_selected)
+    delData(yuimaGUItable$series$Symb[input$database2_rows_selected])
   })
 
   ###DeleteAll Button
   observeEvent(input$yourFileDeleteAll, priority = 1,{
-    delData(input$database2_rows_all)
+    delData(yuimaGUItable$series$Symb[input$database2_rows_all])
   })
 
   ###Save Button
@@ -347,12 +347,12 @@ server <- function(input, output, session) {
 
   ###Select Button
   observeEvent(input$buttonSelect_models_Univariate, priority = 1, {
-    seriesToEstimate$table <<- rbind(seriesToEstimate$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% input$database3_rows_selected) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToEstimate$table)),])
+    seriesToEstimate$table <<- rbind(seriesToEstimate$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% rownames(yuimaGUItable$series)[input$database3_rows_selected]) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToEstimate$table)),])
   })
 
   ###SelectAll Button
   observeEvent(input$buttonSelectAll_models_Univariate, priority = 1, {
-    seriesToEstimate$table <<- rbind(seriesToEstimate$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% input$database3_rows_all) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToEstimate$table)),])
+    seriesToEstimate$table <<- rbind(seriesToEstimate$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% rownames(yuimaGUItable$series)[input$database3_rows_all]) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToEstimate$table)),])
   })
 
   ###Display Selected Data
@@ -378,12 +378,12 @@ server <- function(input, output, session) {
   ###Delete Button
   observeEvent(input$buttonDelete_models_Univariate, priority = 1,{
     if (!is.null(input$database4_rows_selected))
-      seriesToEstimate$table <<- seriesToEstimate$table[-which(rownames(seriesToEstimate$table) %in% input$database4_rows_selected),]
+      seriesToEstimate$table <<- seriesToEstimate$table[-input$database4_rows_selected,]
   })
 
   ###DeleteAll Button
   observeEvent(input$buttonDeleteAll_models_Univariate, priority = 1,{
-    seriesToEstimate$table <<- seriesToEstimate$table[-which(rownames(seriesToEstimate$table) %in% input$database4_rows_all),]
+    seriesToEstimate$table <<- seriesToEstimate$table[-input$database4_rows_all,]
   })
 
   ###Interactive range of selectRange chart
@@ -441,7 +441,7 @@ server <- function(input, output, session) {
 
 
   output$plotsRangeSeries <- renderUI({
-    selectInput("plotsRangeSeries", label = "Series", choices = input$database4_rows_all)
+    selectInput("plotsRangeSeries", label = "Series", choices = rownames(seriesToEstimate$table), selected = input$plotsRangeSeries)
   })
 
   ###Choose Range input set to "Select range from charts" if charts have been brushed
@@ -494,13 +494,13 @@ server <- function(input, output, session) {
 
   ###ApplyAll selected range
   observeEvent(input$buttonApplyAllRange, priority = 1, {
-    updateRange_seriesToEstimate(input$database4_rows_all, range = input$chooseRange, type = class(index(getData(input$plotsRangeSeries))))
+    updateRange_seriesToEstimate(rownames(seriesToEstimate$table), range = input$chooseRange, type = class(index(getData(input$plotsRangeSeries))))
   })
 
   
 
   observe({
-    for (symb in input$database4_rows_all){
+    for (symb in rownames(seriesToEstimate$table)){
       if (is.null(deltaSettings[[symb]]))
         deltaSettings[[symb]] <<- 0.01
       for (modName in input$model){
@@ -538,14 +538,14 @@ server <- function(input, output, session) {
   
   observe({
     valid <- TRUE
-    if (is.null(input$database4_rows_all) | is.null(input$model)) valid <- FALSE
+    if (is.null(rownames(seriesToEstimate$table)) | is.null(input$model)) valid <- FALSE
     else if (input$modelClass!="Diffusion process") if (is.null(input$jumps)) valid <- FALSE
     shinyjs::toggle(id="advancedSettingsAll", condition = valid)
     shinyjs::toggle(id="advancedSettingsErrorMessage", condition = !valid)
   })
   output$advancedSettingsSeries <- renderUI({
-    if (!is.null(input$database4_rows_all))
-      selectInput(inputId = "advancedSettingsSeries", label = "Series", choices = input$database4_rows_all)
+    if (!is.null(rownames(seriesToEstimate$table)))
+      selectInput(inputId = "advancedSettingsSeries", label = "Series", choices = rownames(seriesToEstimate$table))
   })
   output$advancedSettingsDelta <- renderUI({
     if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries))
@@ -629,7 +629,7 @@ server <- function(input, output, session) {
       deltaSettings[[input$advancedSettingsSeries]] <<- input$advancedSettingsDelta
   })
   observeEvent(input$advancedSettingsButtonApplyAllDelta, {
-    for (symb in input$database4_rows_all)
+    for (symb in rownames(seriesToEstimate$table))
       deltaSettings[[symb]] <<- input$advancedSettingsDelta
   })
   observeEvent(input$advancedSettingsButtonApplyModel,{
@@ -641,7 +641,7 @@ server <- function(input, output, session) {
     estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["upper"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsUpper
   })
   observeEvent(input$advancedSettingsButtonApplyAllModel,{
-    for (symb in input$database4_rows_all){
+    for (symb in rownames(seriesToEstimate$table)){
       #REMOVE# estimateSettings[[input$advancedSettingsModel]][[symb]][["fixed"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsFixed
       estimateSettings[[input$advancedSettingsModel]][[symb]][["start"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsStart
       estimateSettings[[input$advancedSettingsModel]][[symb]][["startMin"]][[input$advancedSettingsParameter]] <<- input$advancedSettingsStartMin
@@ -659,7 +659,7 @@ server <- function(input, output, session) {
     #REMOVE# estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["threshold"]] <<- input$advancedSettingsThreshold
   })
   observeEvent(input$advancedSettingsButtonApplyAllModelGeneral,{
-    for (symb in input$database4_rows_all){
+    for (symb in rownames(seriesToEstimate$table)){
       estimateSettings[[input$advancedSettingsModel]][[symb]][["method"]] <<- input$advancedSettingsMethod
       estimateSettings[[input$advancedSettingsModel]][[symb]][["tries"]] <<- input$advancedSettingsTries
       estimateSettings[[input$advancedSettingsModel]][[symb]][["seed"]] <<- input$advancedSettingsSeed
@@ -670,7 +670,7 @@ server <- function(input, output, session) {
   })
   observeEvent(input$advancedSettingsButtonApplyAllGeneral,{
     for (mod in input$model){
-      for (symb in input$database4_rows_all){
+      for (symb in rownames(seriesToEstimate$table)){
         estimateSettings[[mod]][[symb]][["method"]] <<- input$advancedSettingsMethod
         estimateSettings[[mod]][[symb]][["tries"]] <<- input$advancedSettingsTries
         estimateSettings[[mod]][[symb]][["seed"]] <<- input$advancedSettingsSeed
@@ -765,12 +765,11 @@ server <- function(input, output, session) {
   rowToPrint <- reactiveValues(id = NULL)
   observe(priority = 1, {
     rowToPrint$id <<- NULL
-    if(!is.null(input$databaseModels_rows_all) & !is.null(input$baseModels))
-      if(tail(input$databaseModels_rows_all,1) %in% rownames(yuimaGUItable$model))
-        rowToPrint$id <<- tail(input$databaseModels_rows_all,1)
-    if (!is.null(input$databaseModels_row_last_clicked) & !is.null(input$baseModels))
-      if (input$databaseModels_row_last_clicked %in% rownames(yuimaGUItable$model))
-        rowToPrint$id <<- input$databaseModels_row_last_clicked
+    n <- nrow(yuimaGUItable$model)
+    if (n > 0) {
+      rowToPrint$id <<- n
+      if (!is.null(input$databaseModels_row_last_clicked)) rowToPrint$id <- min(n, input$databaseModels_row_last_clicked)
+    }
   })
 
   ###Print estimated model in Latex
@@ -782,13 +781,13 @@ server <- function(input, output, session) {
   ###Print Symbol
   output$SymbolName <- renderText({
     if (!is.null(rowToPrint$id))
-      unlist(strsplit(rowToPrint$id, split = " "))[1]
+      unlist(strsplit(rownames(yuimaGUItable$model)[rowToPrint$id], split = " "))[1]
 
   })
 
   ###More Info
   output$text_MoreInfo <- renderUI({
-    id <- unlist(strsplit(rowToPrint$id, split = " "))
+    id <- unlist(strsplit(rownames(yuimaGUItable$model)[rowToPrint$id], split = " "))
     info <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info
     div(
       h3(id[1], " - " , info$modName),
@@ -806,7 +805,7 @@ server <- function(input, output, session) {
   })
 
   output$table_MoreInfo <- renderTable(digits=6,{
-    id <- unlist(strsplit(rowToPrint$id, split = " "))
+    id <- unlist(strsplit(rownames(yuimaGUItable$model)[rowToPrint$id], split = " "))
     coef <- as.data.frame(t(summary(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle)@coef))
     info <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info
     params <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@model@parameter@all
@@ -841,8 +840,8 @@ server <- function(input, output, session) {
   ###Print estimates
   observe({
     if (!is.null(rowToPrint$id)){
-      symb <- unlist(strsplit(rowToPrint$id, split = " "))[1]
-      modN <- as.numeric(unlist(strsplit(rowToPrint$id, split = " "))[2])
+      symb <- unlist(strsplit(rownames(yuimaGUItable$model)[rowToPrint$id], split = " "))[1]
+      modN <- as.numeric(unlist(strsplit(rownames(yuimaGUItable$model)[rowToPrint$id], split = " "))[2])
       table <- t(summary(yuimaGUIdata$model[[symb]][[modN]]$qmle)@coef)
       outputTable <- data.frame()
       for (param in unique(colnames(table))){
@@ -873,7 +872,7 @@ server <- function(input, output, session) {
   observeEvent(input$databaseModelsDelete, priority = 1, {
     if(!is.null(input$databaseModels_rows_selected) & !is.null(input$databaseModels_row_last_clicked)){
       if(input$databaseModels_row_last_clicked %in% input$databaseModels_rows_selected){
-        rowname <- unlist(strsplit(input$databaseModels_row_last_clicked, split = " " , fixed = FALSE))
+        rowname <- unlist(strsplit(rownames(yuimaGUItable$model)[input$databaseModels_row_last_clicked], split = " " , fixed = FALSE))
         delModel(symb=rowname[1], n=rowname[2])
         closeAlert(session, alertId = "modelsAlert_conversion")
       }
@@ -884,7 +883,7 @@ server <- function(input, output, session) {
   observeEvent(input$databaseModelsDeleteAll, priority = 1, {
     if(!is.null(input$databaseModels_rows_all)){
       closeAlert(session, alertId = "modelsAlert_conversion")
-      rowname <- unlist(strsplit(input$databaseModels_rows_all, split = " " , fixed = FALSE))
+      rowname <- unlist(strsplit(rownames(yuimaGUItable$model)[input$databaseModels_rows_all], split = " " , fixed = FALSE))
       delModel(symb=rowname[seq(1,length(rowname),2)], n=rowname[seq(2,length(rowname),2)])
     }
   })
@@ -914,12 +913,12 @@ server <- function(input, output, session) {
 
   ###Select Button
   observeEvent(input$simulate_button_selectModels, priority = 1, {
-    modelsToSimulate$table <<- rbind.fill(modelsToSimulate$table, yuimaGUItable$model[(rownames(yuimaGUItable$model) %in% input$simulate_databaseModels_rows_selected) & !(rownames(yuimaGUItable$model) %in% rownames(modelsToSimulate$table)),])
+    modelsToSimulate$table <<- rbind.fill(modelsToSimulate$table, yuimaGUItable$model[(rownames(yuimaGUItable$model) %in% rownames(yuimaGUItable$model)[input$simulate_databaseModels_rows_selected]) & !(rownames(yuimaGUItable$model) %in% rownames(modelsToSimulate$table)),])
   })
 
   ###SelectAll Button
   observeEvent(input$simulate_button_selectAllModels, priority = 1, {
-    modelsToSimulate$table <<- rbind.fill(modelsToSimulate$table, yuimaGUItable$model[(rownames(yuimaGUItable$model) %in% input$simulate_databaseModels_rows_all) & !(rownames(yuimaGUItable$model) %in% rownames(modelsToSimulate$table)),])
+    modelsToSimulate$table <<- rbind.fill(modelsToSimulate$table, yuimaGUItable$model[(rownames(yuimaGUItable$model) %in% rownames(yuimaGUItable$model)[input$simulate_databaseModels_rows_all]) & !(rownames(yuimaGUItable$model) %in% rownames(modelsToSimulate$table)),])
   })
   
   output$simulate_PrintModelLatex <- renderUI({
@@ -1022,7 +1021,7 @@ server <- function(input, output, session) {
   observeEvent(input$simulate_model_usr_button_select, {
     if (!is.null(input$simulate_model_usr_table_rows_selected)){
       table <- data.frame()
-      for (i in input$simulate_model_usr_table_rows_selected){
+      for (i in names(usr_models$simulation)[input$simulate_model_usr_table_rows_selected]){
         if ("MISSING" %in% usr_models$simulation[[i]][["true.param"]]){
           createAlert(session = session, anchorId = "simulate_alert", alertId = "simulate_alert_usr_button_select", content = "There are still missing values in selected models", style = "error")
         }
@@ -1042,7 +1041,7 @@ server <- function(input, output, session) {
   observeEvent(input$simulate_model_usr_button_selectAll, {
     if (!is.null(input$simulate_model_usr_table_rows_all)){
       table <- data.frame()
-      for (i in input$simulate_model_usr_table_rows_all){
+      for (i in names(usr_models$simulation)[input$simulate_model_usr_table_rows_all]){
         if ("MISSING" %in% usr_models$simulation[[i]][["true.param"]]){
           createAlert(session = session, anchorId = "simulate_alert", alertId = "simulate_alert_usr_button_select", content = "There are still missing values in selected models", style = "error")
         }
@@ -1104,13 +1103,13 @@ server <- function(input, output, session) {
   ###Delete Button
   observeEvent(input$simulation_button_deleteModels, priority = 1,{
     if (!is.null(input$simulate_selectedModels_rows_selected))
-      modelsToSimulate$table <<- modelsToSimulate$table[-which(rownames(modelsToSimulate$table) %in% input$simulate_selectedModels_rows_selected),]
+      modelsToSimulate$table <<- modelsToSimulate$table[-input$simulate_selectedModels_rows_selected,]
   })
 
   ###DeleteAll Button
   observeEvent(input$simulation_button_deleteAllModels, priority = 1,{
     if (!is.null(input$simulate_selectedModels_rows_all))
-      modelsToSimulate$table <<- modelsToSimulate$table[-which(rownames(modelsToSimulate$table) %in% input$simulate_selectedModels_rows_all),]
+      modelsToSimulate$table <<- modelsToSimulate$table[-input$simulate_selectedModels_rows_all,]
   })
 
   observe({
@@ -1124,7 +1123,7 @@ server <- function(input, output, session) {
 
   simulateSettings <- list()
   observe({
-    for (modID in input$simulate_selectedModels_rows_all){
+    for (modID in rownames(modelsToSimulate$table)[input$simulate_selectedModels_rows_all]){
       if (modID %in% names(usr_models$simulation)){
         if (is.null(simulateSettings[[modID]]))
           simulateSettings[[modID]] <<- list()
@@ -1166,13 +1165,11 @@ server <- function(input, output, session) {
   })
 
   output$simulate_modelID <- renderUI({
-    if(!is.null(input$simulate_selectedModels_rows_all))
-      selectInput("simulate_modelID", label = "Simulation ID", choices = input$simulate_selectedModels_rows_all)
+    selectInput("simulate_modelID", label = "Simulation ID", choices = rownames(modelsToSimulate$table))
   })
 
   output$simulate_advancedSettings_modelID <- renderUI({
-    if(!is.null(input$simulate_selectedModels_rows_all))
-      selectInput("simulate_advancedSettings_modelID", label = "Simulation ID", choices = input$simulate_selectedModels_rows_all)
+    selectInput("simulate_advancedSettings_modelID", label = "Simulation ID", choices = rownames(modelsToSimulate$table))
   })
 
   output$simulate_seed <- renderUI({
@@ -1227,7 +1224,7 @@ server <- function(input, output, session) {
     simulateSettings[[input$simulate_advancedSettings_modelID]][["traj"]] <<- input$simulate_traj
   })
   observeEvent(input$simulate_button_applyAll_advancedSettings, {
-    for (modID in input$simulate_selectedModels_rows_all){
+    for (modID in rownames(modelsToSimulate$table)){
       simulateSettings[[modID]][["seed"]] <<- input$simulate_seed
       simulateSettings[[modID]][["traj"]] <<- input$simulate_traj
     }
@@ -1237,7 +1234,7 @@ server <- function(input, output, session) {
     simulateSettings[[input$simulate_modelID]][["nstep"]] <<- input$simulate_nstep
   })
   observeEvent(input$simulate_button_applyAll_nsim, {
-    for (modID in input$simulate_selectedModels_rows_all){
+    for (modID in rownames(modelsToSimulate$table)){
       simulateSettings[[modID]][["nsim"]] <<- input$simulate_nsim
       simulateSettings[[modID]][["nstep"]] <<- input$simulate_nstep
     }
@@ -1246,7 +1243,7 @@ server <- function(input, output, session) {
     simulateSettings[[input$simulate_modelID]][["xinit"]] <<- input$simulate_xinit
   })
   observeEvent(input$simulate_button_applyAll_xinit, {
-    for (modID in input$simulate_selectedModels_rows_all)
+    for (modID in rownames(modelsToSimulate$table))
       simulateSettings[[modID]][["xinit"]] <<- input$simulate_xinit
   })
   observeEvent(input$simulate_button_apply_range, {
@@ -1267,7 +1264,7 @@ server <- function(input, output, session) {
     }
   })
   observeEvent(input$simulate_button_applyAll_range, {
-    for (modID in input$simulate_selectedModels_rows_all){
+    for (modID in rownames(modelsToSimulate$table)){
       if (modID %in% names(usr_models$simulation)){
         simulateSettings[[modID]][["t0"]] <<- input$simulate_rangeNumeric_t0
         simulateSettings[[modID]][["t1"]] <<- input$simulate_rangeNumeric_t1
@@ -1287,15 +1284,15 @@ server <- function(input, output, session) {
   })
 
   observeEvent(input$simulate_simulateModels, {
-    if (length(input$simulate_selectedModels_rows_all)==0){
+    if (nrow(modelsToSimulate$table)==0){
       createAlert(session = session, anchorId = "simulate_alert", alertId = "simulate_alert_buttonEstimate", content = "Table 'Selected Models' is empty", style = "warning")
     }
     else{
       closeAlert(session, alertId = "simulate_alert_buttonEstimate")
       withProgress(message = 'Simulating: ', value = 0, {
-        for (modID in input$simulate_selectedModels_rows_all){
+        for (modID in rownames(modelsToSimulate$table)){
           if(modID %in% names(usr_models$simulation)){
-            incProgress(1/length(input$simulate_selectedModels_rows_all), detail = paste(modID,"-",usr_models$simulation[[modID]][["Model"]]))
+            incProgress(1/nrow(modelsToSimulate$table), detail = paste(modID,"-",usr_models$simulation[[modID]][["Model"]]))
             info <- list(
               "class" = usr_models$simulation[[modID]][["Class"]],
               "model" = usr_models$simulation[[modID]][["Model"]],
@@ -1323,7 +1320,7 @@ server <- function(input, output, session) {
           }
           if(modID %in% rownames(yuimaGUItable$model)){
             id <- unlist(strsplit(modID, split = " "))
-            incProgress(1/length(input$simulate_selectedModels_rows_all), detail = paste(id[1],"-",yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$modName))
+            incProgress(1/nrow(modelsToSimulate$table), detail = paste(id[1],"-",yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$modName))
             data <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@data@original.data
             if(class(index(data))=="Date"){
               info <- list(
@@ -1394,7 +1391,7 @@ server <- function(input, output, session) {
   observeEvent(input$simulate_monitor_button_delete, priority = 1, {
     if(!is.null(input$simulate_monitor_table_rows_selected) & !is.null(input$simulate_monitor_table_row_last_clicked)){
       if(input$simulate_monitor_table_row_last_clicked %in% input$simulate_monitor_table_rows_selected){
-        rowname <- unlist(strsplit(input$simulate_monitor_table_row_last_clicked, split = " " , fixed = FALSE))
+        rowname <- unlist(strsplit(rownames(yuimaGUItable$simulation)[input$simulate_monitor_table_row_last_clicked], split = " " , fixed = FALSE))
         delSimulation(symb=rowname[1], n=rowname[2])
       }
     }
@@ -1403,13 +1400,13 @@ server <- function(input, output, session) {
   ###DeleteAll Simulation
   observeEvent(input$simulate_monitor_button_deleteAll, priority = 1, {
     if(!is.null(input$simulate_monitor_table_rows_all)){
-      rowname <- unlist(strsplit(input$simulate_monitor_table_rows_all, split = " " , fixed = FALSE))
+      rowname <- unlist(strsplit(rownames(yuimaGUItable$simulation)[input$simulate_monitor_table_rows_all], split = " " , fixed = FALSE))
       delSimulation(symb=rowname[seq(1,length(rowname),2)], n=rowname[seq(2,length(rowname),2)])
     }
   })
 
   output$simulate_showSimulation_simID <- renderUI({
-    selectInput(inputId = "simulate_showSimulation_simID", label = "Simulation ID", choices = input$simulate_monitor_table_rows_all)
+    selectInput(inputId = "simulate_showSimulation_simID", label = "Simulation ID", choices = rownames(yuimaGUItable$simulation))
   })
 
   observationTime <- reactiveValues(x = numeric())
@@ -1582,9 +1579,9 @@ server <- function(input, output, session) {
   observeEvent(input$cluster_button_select, priority = 1, {
     if (length(input$cluster_table_select_rows_selected)!=0){
       closeAlert(session, "cluster_alert_indexes")
-      if (length(rownames(seriesToCluster$table))==0)
-        seriesToCluster$table <<- rbind(seriesToCluster$table, yuimaGUItable$series[input$cluster_table_select_rows_selected[1],])
-      for (symb in input$cluster_table_select_rows_selected){
+      if (nrow(seriesToCluster$table)==0)
+        seriesToCluster$table <<- rbind(seriesToCluster$table, yuimaGUItable$series[rownames(yuimaGUItable$series)[input$cluster_table_select_rows_selected[1]],])
+      for (symb in rownames(yuimaGUItable$series)[input$cluster_table_select_rows_selected]){
         if (class(index(yuimaGUIdata$series[[symb]]))==class(index(yuimaGUIdata$series[[rownames(seriesToCluster$table)[1]]]))){
           if (!(symb %in% rownames(seriesToCluster$table)))
             seriesToCluster$table <<- rbind(seriesToCluster$table, yuimaGUItable$series[symb,])
@@ -1599,9 +1596,9 @@ server <- function(input, output, session) {
   observeEvent(input$cluster_button_selectAll, priority = 1, {
     if (length(input$cluster_table_select_rows_all)!=0){
       closeAlert(session, "cluster_alert_indexes")
-      if (length(rownames(seriesToCluster$table))==0)
-        seriesToCluster$table <<- rbind(seriesToCluster$table, yuimaGUItable$series[input$cluster_table_select_rows_all[1],])
-      for (symb in input$cluster_table_select_rows_all){
+      if (nrow(seriesToCluster$table)==0)
+        seriesToCluster$table <<- rbind(seriesToCluster$table, yuimaGUItable$series[rownames(yuimaGUItable$series)[input$cluster_table_select_rows_all[1]],])
+      for (symb in rownames(yuimaGUItable$series)[input$cluster_table_select_rows_all]){
         if (class(index(yuimaGUIdata$series[[symb]]))==class(index(yuimaGUIdata$series[[rownames(seriesToCluster$table)[1]]]))){
           if (!(symb %in% rownames(seriesToCluster$table)))
             seriesToCluster$table <<- rbind(seriesToCluster$table, yuimaGUItable$series[symb,])
@@ -1634,12 +1631,12 @@ server <- function(input, output, session) {
   ###Delete Button
   observeEvent(input$cluster_button_delete, priority = 1,{
     if (!is.null(input$cluster_table_selected_rows_selected))
-      seriesToCluster$table <<- seriesToCluster$table[-which(rownames(seriesToCluster$table) %in% input$cluster_table_selected_rows_selected),]
+      seriesToCluster$table <<- seriesToCluster$table[-input$cluster_table_selected_rows_selected,]
   })
   
   ###DeleteAll Button
   observeEvent(input$cluster_button_deleteAll, priority = 1,{
-    seriesToCluster$table <<- seriesToCluster$table[-which(rownames(seriesToCluster$table) %in% input$cluster_table_selected_rows_all),]
+    seriesToCluster$table <<- seriesToCluster$table[-input$cluster_table_selected_rows_all,]
   })
   
   observe({
@@ -1750,12 +1747,12 @@ server <- function(input, output, session) {
   
   ###Select Button
   observeEvent(input$changepoint_button_select, priority = 1, {
-    seriesToChangePoint$table <<- rbind(seriesToChangePoint$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% input$changepoint_table_select_rows_selected) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToChangePoint$table)),])
+    seriesToChangePoint$table <<- rbind(seriesToChangePoint$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% rownames(yuimaGUItable$series)[input$changepoint_table_select_rows_selected]) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToChangePoint$table)),])
   })
   
   ###SelectAll Button
   observeEvent(input$changepoint_button_selectAll, priority = 1, {
-    seriesToChangePoint$table <<- rbind(seriesToChangePoint$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% input$changepoint_table_select_rows_all) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToChangePoint$table)),])
+    seriesToChangePoint$table <<- rbind(seriesToChangePoint$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% rownames(yuimaGUItable$series)[input$changepoint_table_select_rows_all]) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToChangePoint$table)),])
   })
   
   ###Display Selected Data
@@ -1780,12 +1777,12 @@ server <- function(input, output, session) {
   ###Delete Button
   observeEvent(input$changepoint_button_delete, priority = 1,{
     if (!is.null(input$changepoint_table_selected_rows_selected))
-      seriesToChangePoint$table <<- seriesToChangePoint$table[-which(rownames(seriesToChangePoint$table) %in% input$changepoint_table_selected_rows_selected),]
+      seriesToChangePoint$table <<- seriesToChangePoint$table[-input$changepoint_table_selected_rows_selected,]
   })
   
   ###DeleteAll Button
   observeEvent(input$changepoint_button_deleteAll, priority = 1,{
-    seriesToChangePoint$table <<- seriesToChangePoint$table[-which(rownames(seriesToChangePoint$table) %in% input$changepoint_table_selected_rows_all),]
+    seriesToChangePoint$table <<- seriesToChangePoint$table[-input$changepoint_table_selected_rows_all,]
   })
   
   observe({
@@ -1877,12 +1874,12 @@ server <- function(input, output, session) {
   
   ###Select Button
   observeEvent(input$llag_button_select, priority = 1, {
-    seriesToLeadLag$table <<- rbind(seriesToLeadLag$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% input$llag_table_select_rows_selected) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToLeadLag$table)),])
+    seriesToLeadLag$table <<- rbind(seriesToLeadLag$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% rownames(yuimaGUItable$series)[input$llag_table_select_rows_selected]) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToLeadLag$table)),])
   })
   
   ###SelectAll Button
   observeEvent(input$llag_button_selectAll, priority = 1, {
-    seriesToLeadLag$table <<- rbind(seriesToLeadLag$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% input$llag_table_select_rows_all) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToLeadLag$table)),])
+    seriesToLeadLag$table <<- rbind(seriesToLeadLag$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% rownames(yuimaGUItable$series)[input$llag_table_select_rows_all]) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToLeadLag$table)),])
   })
   
   ###Display Selected Data
@@ -1907,12 +1904,12 @@ server <- function(input, output, session) {
   ###Delete Button
   observeEvent(input$llag_button_delete, priority = 1,{
     if (!is.null(input$llag_table_selected_rows_selected))
-      seriesToLeadLag$table <<- seriesToLeadLag$table[-which(rownames(seriesToLeadLag$table) %in% input$llag_table_selected_rows_selected),]
+      seriesToLeadLag$table <<- seriesToLeadLag$table[-input$llag_table_selected_rows_selected,]
   })
   
   ###DeleteAll Button
   observeEvent(input$llag_button_deleteAll, priority = 1,{
-    seriesToLeadLag$table <<- seriesToLeadLag$table[-which(rownames(seriesToLeadLag$table) %in% input$llag_table_selected_rows_all),]
+    seriesToLeadLag$table <<- seriesToLeadLag$table[-input$llag_table_selected_rows_all,]
   })
   
   
@@ -1965,7 +1962,8 @@ server <- function(input, output, session) {
       if (class(index(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@data@original.data))=="Date")
         date_indexed <- c(date_indexed,row)
     }
-    return (yuimaGUItable$model[rownames(yuimaGUItable$model) %in% date_indexed,])
+    hedging_databaseModels_table <<- yuimaGUItable$model[rownames(yuimaGUItable$model) %in% date_indexed,]
+    return (hedging_databaseModels_table)
   })
   
   output$hedging_assMarketPrice <- renderUI({
@@ -1973,7 +1971,7 @@ server <- function(input, output, session) {
       numericInput("hedging_assMarketPrice", label="Asset Market Price:", value=NA, min = 0)
     else {
       if(input$hedging_databaseModels_row_last_clicked %in% input$hedging_databaseModels_rows_selected){
-        id <- unlist(strsplit(input$hedging_databaseModels_row_last_clicked, split = " "))
+        id <- unlist(strsplit(rownames(hedging_databaseModels_table)[input$hedging_databaseModels_row_last_clicked], split = " "))
         numericInput("hedging_assMarketPrice", label="Asset Market Price:", value=as.numeric(tail(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@data@original.data,1)), min = 0)
       }
       else
@@ -1994,8 +1992,8 @@ server <- function(input, output, session) {
     }
     if (!is.null(input$hedging_databaseModels_rows_selected) & !is.null(input$hedging_databaseModels_row_last_clicked)){
       if(input$hedging_databaseModels_row_last_clicked %in% input$hedging_databaseModels_rows_selected){
-        modID <- input$hedging_databaseModels_row_last_clicked
-        id <- unlist(strsplit(input$hedging_databaseModels_row_last_clicked, split = " "))
+        modID <- rownames(hedging_databaseModels_table)[input$hedging_databaseModels_row_last_clicked]
+        id <- unlist(strsplit(modID, split = " "))
         data <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@data@original.data
         info = list(
           "model" = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$modName,
@@ -2045,7 +2043,7 @@ server <- function(input, output, session) {
   
   output$hedging_nOptLot_hedge <- renderUI({
     if (!is.null(input$hedging_table_results_row_last_clicked)){
-      info <- isolate({yuimaGUIdata$hedging[[as.numeric(input$hedging_table_results_row_last_clicked)]]$info})
+      info <- isolate({yuimaGUIdata$hedging[[input$hedging_table_results_row_last_clicked]]$info})
       nMax <- as.integer(input$hedging_maxCapital/(info$optLotMult*info$optPrice+input$hedging_lotCostOpt))
       isolate({hedging_values$id.changed <- TRUE})
       sliderInput("hedging_nOptLot_hedge", label = "Option - number of Lots", min = 0, max = nMax, value = info$LotsToBuy, step = 1, ticks = FALSE)
@@ -2055,7 +2053,7 @@ server <- function(input, output, session) {
   output$hedging_nAss_hedge <- renderUI({
     if (!is.null(input$hedging_table_results_row_last_clicked)){
       if (!is.null(input$hedging_nOptLot_hedge)){
-        info <- isolate({yuimaGUIdata$hedging[[as.numeric(input$hedging_table_results_row_last_clicked)]]$info})
+        info <- isolate({yuimaGUIdata$hedging[[input$hedging_table_results_row_last_clicked]]$info})
         assCapital <- input$hedging_maxCapital-input$hedging_nOptLot_hedge*(info$optLotMult*info$optPrice+input$hedging_lotCostOpt)
         nMax <- as.integer(assCapital/(info$assPrice*(1+input$hedging_percCostAss/100)))
         val <- min(nMax, isolate({input$hedging_nAss_hedge}))
@@ -2080,8 +2078,8 @@ server <- function(input, output, session) {
   
   observe({
     if (!is.null(input$hedging_table_results_row_last_clicked)){
-      if(isolate({length(yuimaGUIdata$hedging)})>=as.numeric(input$hedging_table_results_row_last_clicked) & !is.null(input$hedging_nOptLot_hedge) & !is.null(input$hedging_nAss_hedge)){
-        id <- as.numeric(input$hedging_table_results_row_last_clicked)
+      if(isolate({length(yuimaGUIdata$hedging)})>=input$hedging_table_results_row_last_clicked & !is.null(input$hedging_nOptLot_hedge) & !is.null(input$hedging_nAss_hedge)){
+        id <- input$hedging_table_results_row_last_clicked
         info <- isolate({yuimaGUIdata$hedging[[id]]$info})
         profits <- profit_distribution(nOpt=input$hedging_nOptLot_hedge*info$optLotMult, 
                                        nAss=input$hedging_nAss_hedge, 
@@ -2135,7 +2133,7 @@ server <- function(input, output, session) {
   })
   output$hedging_capital_text <- renderText({
     if (!is.null(input$hedging_table_results_row_last_clicked)){
-      id <- as.numeric(input$hedging_table_results_row_last_clicked)
+      id <- input$hedging_table_results_row_last_clicked
       info <- isolate({yuimaGUIdata$hedging[[id]]$info})
       optPrice <- ifelse(is.na(input$hedging_optMarketPrice2), info$optPrice, input$hedging_optMarketPrice2)
       cap <- input$hedging_nOptLot_hedge*(info$optLotMult*optPrice+input$hedging_lotCostOpt)+input$hedging_nAss_hedge*info$assPrice + ifelse(input$hedging_nAss_hedge>0,max(input$hedging_nAss_hedge*info$assPrice*input$hedging_percCostAss/100,input$hedging_minCostAss),0)
@@ -2144,7 +2142,7 @@ server <- function(input, output, session) {
   })
   output$hedging_meanPerc_text <- renderText({
     if (!is.null(input$hedging_table_results_row_last_clicked) & !is.null(hedging_values$profits)){
-      id <- as.numeric(input$hedging_table_results_row_last_clicked)
+      id <- input$hedging_table_results_row_last_clicked
       info <- isolate({yuimaGUIdata$hedging[[id]]$info})
       optPrice <- ifelse(is.na(input$hedging_optMarketPrice2), info$optPrice, input$hedging_optMarketPrice2)
       cap <- input$hedging_nOptLot_hedge*(info$optLotMult*optPrice+input$hedging_lotCostOpt)+input$hedging_nAss_hedge*info$assPrice + ifelse(input$hedging_nAss_hedge>0,max(input$hedging_nAss_hedge*info$assPrice*input$hedging_percCostAss/100,input$hedging_minCostAss),0)
@@ -2155,7 +2153,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$hedging_button_saveHedging, {
-    id <- as.numeric(input$hedging_table_results_row_last_clicked)
+    id <- input$hedging_table_results_row_last_clicked
     yuimaGUIdata$hedging[[id]]$info$assPercCost <<- input$hedging_percCostAss/100
     yuimaGUIdata$hedging[[id]]$info$assMinCost <<- input$hedging_minCostAss
     yuimaGUIdata$hedging[[id]]$info$assRateShortSelling <<- input$hedging_rateShort/100
@@ -2192,7 +2190,7 @@ server <- function(input, output, session) {
   observeEvent(input$hedging_button_delete, priority = 1, {
     if(!is.null(input$hedging_table_results_rows_selected) & !is.null(input$hedging_table_results_row_last_clicked)){
       if(input$hedging_table_results_row_last_clicked %in% input$hedging_table_results_rows_selected){
-        delHedging(n=as.numeric(input$hedging_table_results_row_last_clicked))
+        delHedging(n=input$hedging_table_results_row_last_clicked)
       }
     }
     shinyjs::hide("hedging_body")
@@ -2201,7 +2199,7 @@ server <- function(input, output, session) {
   ###DeleteAll Hedging
   observeEvent(input$hedging_button_deleteAll, priority = 1, {
     if(!is.null(input$hedging_table_results_rows_all))
-      delHedging(n=as.numeric(input$hedging_table_results_rows_all))
+      delHedging(n=input$hedging_table_results_rows_all)
     shinyjs::hide("hedging_body")
   })
   
