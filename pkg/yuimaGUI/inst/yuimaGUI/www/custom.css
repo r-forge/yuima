@@ -116,15 +116,6 @@ th{
 	border-radius: .7em;
 }
 
-::-webkit-file-upload-button {
-	width: 50%;  
-	color: #ffffff;
-	text-shadow: 1px 1px 1px #000;
-	box-shadow: 2px 2px 2px #bbb;
-	background-color: #202220;
-	background: linear-gradient(#606D60, #202220, #606D60);
-}
-
 
 a:link, a:visited, a:active {
     color: #53ea7c;
