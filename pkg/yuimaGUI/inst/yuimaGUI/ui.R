@@ -101,7 +101,7 @@ body<-dashboardBody(
       fluidRow(
         column(12, DT::dataTableOutput("database1"))
       ),
-      shinyjs::hidden(div(id="buttons_DataIO_fin",
+      shinyjs::hidden(div(id="buttons_DataIO_fin", br(),
         fluidRow(
           column(6),
           column(2,downloadButton(outputId = "finDataSave", label = "Save")),
@@ -153,7 +153,7 @@ body<-dashboardBody(
           DT::dataTableOutput("database2")
         )
       ),
-      shinyjs::hidden(div(id="buttons_DataIO_file",
+      shinyjs::hidden(div(id="buttons_DataIO_file", br(),
         fluidRow(
           column(6),
           column(2, downloadButton(outputId = "yourFileSave", label = "Save")),
@@ -187,9 +187,10 @@ body<-dashboardBody(
           br(),
           fluidRow(
             column(4,div(align="center",
-              selectInput("modelClass",label = "Model Class", choices = c("Diffusion process", "Compound Poisson"), selected = "Diffusion process"),
+              selectInput("modelClass",label = "Model Class", choices = c("Diffusion process", "Compound Poisson", "COGARCH"), selected = "Diffusion process"),
               uiOutput("model"),
-              uiOutput("jumps")
+              uiOutput("jumps"),
+              uiOutput("pq_C")
             )),
             column(5,
               shinyjs::hidden(h4(id="titlePrintModelLatex","Models to estimate:", style="color:#CDCECD;font-size: 2em; font-family: Goudy Old Style, Serif")),

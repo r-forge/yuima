@@ -54,7 +54,7 @@ server <- function(input, output, session) {
   })
 
   ###Display available data
-  output$database1 <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtiS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
+  output$database1 <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
     if (length(yuimaGUItable$series)!=0)
       return(yuimaGUItable$series)
   })
@@ -216,7 +216,7 @@ server <- function(input, output, session) {
   })
 
   ###Display data available
-  output$database2 <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtiS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
+  output$database2 <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', selection = "multiple", rownames = FALSE,{
     if (length(yuimaGUItable$series)!=0)
       return (yuimaGUItable$series)
   })
@@ -257,6 +257,14 @@ server <- function(input, output, session) {
   output$jumps <- renderUI({
     if (input$modelClass!="Diffusion process")
       return(selectInput("jumps",label = "Jumps", choices = defaultJumps))
+  })
+  
+  output$pq_C <- renderUI({
+    if (input$modelClass=="COGARCH")
+      return(div(
+        column(6,numericInput("p_C",label = "p", value = 1, min = 1, step = 1)),
+        column(6,numericInput("q_C",label = "q", value = 1, min = 1, step = 1))
+      ))
   })
 
   ###Print last selected model in Latex
@@ -357,7 +365,7 @@ server <- function(input, output, session) {
 
   ###Display Selected Data
   output$database4 <- DT::renderDataTable(options=list(order = list(1, 'desc'), scrollY = 150, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = FALSE, selection = "multiple",{
-    if (length(rownames(seriesToEstimate$table))==0){
+    if (nrow(seriesToEstimate$table)==0){
       NoData <- data.frame("Symb"=NA,"Select some data from the table beside"=NA, check.names = FALSE)
       return(NoData[-1,])
     }
@@ -401,8 +409,8 @@ server <- function(input, output, session) {
 
 
   observe({
-    shinyjs::toggle(id="plotsRangeErrorMessage", condition = length(rownames(seriesToEstimate$table))==0)
-    shinyjs::toggle(id="plotsRangeAll", condition = length(rownames(seriesToEstimate$table))!=0)
+    shinyjs::toggle(id="plotsRangeErrorMessage", condition = nrow(seriesToEstimate$table)==0)
+    shinyjs::toggle(id="plotsRangeAll", condition = nrow(seriesToEstimate$table)!=0)
   })
 
   ###Display charts: series and its increments
@@ -513,13 +521,31 @@ server <- function(input, output, session) {
         if (is.null(estimateSettings[[modName]][[symb]][["start"]]) | isolate({input$modelClass!="Diffusion process"}))
           estimateSettings[[modName]][[symb]][["start"]] <<- list()
         if (is.null(estimateSettings[[modName]][[symb]][["startMin"]]) | isolate({input$modelClass!="Diffusion process"}))
-          estimateSettings[[modName]][[symb]][["startMin"]] <<- defaultBounds(name = modName, jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps), lower = -100, upper = 100)$lower
+          estimateSettings[[modName]][[symb]][["startMin"]] <<- defaultBounds(name = modName, 
+                                                                              jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps, "COGARCH" = input$jumps), 
+                                                                              p_C = ifelse(isolate({input$modelClass})=="COGARCH", input$p_C, NA), 
+                                                                              q_C = ifelse(isolate({input$modelClass})=="COGARCH", input$q_C, NA), 
+                                                                              lower = -100, upper = 100
+                                                                              )$lower
         if (is.null(estimateSettings[[modName]][[symb]][["startMax"]]) | input$modelClass!="Diffusion process")
-          estimateSettings[[modName]][[symb]][["startMax"]] <<- defaultBounds(name = modName, jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps), lower = -100, upper = 100)$upper
+          estimateSettings[[modName]][[symb]][["startMax"]] <<- defaultBounds(name = modName, 
+                                                                              jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps, "COGARCH" = input$jumps), 
+                                                                              p_C = ifelse(isolate({input$modelClass})=="COGARCH", input$p_C, NA), 
+                                                                              q_C = ifelse(isolate({input$modelClass})=="COGARCH", input$q_C, NA), 
+                                                                              lower = -100, upper = 100
+                                                                              )$upper
         if (is.null(estimateSettings[[modName]][[symb]][["upper"]]) | input$modelClass!="Diffusion process")
-          estimateSettings[[modName]][[symb]][["upper"]] <<- defaultBounds(name = modName, jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps))$upper
+          estimateSettings[[modName]][[symb]][["upper"]] <<- defaultBounds(name = modName, 
+                                                                           jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps, "COGARCH" = input$jumps),
+                                                                           p_C = ifelse(isolate({input$modelClass})=="COGARCH", input$p_C, NA), 
+                                                                           q_C = ifelse(isolate({input$modelClass})=="COGARCH", input$q_C, NA)
+                                                                           )$upper
         if (is.null(estimateSettings[[modName]][[symb]][["lower"]]) | input$modelClass!="Diffusion process")
-          estimateSettings[[modName]][[symb]][["lower"]] <<- defaultBounds(name = modName, jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps))$lower
+          estimateSettings[[modName]][[symb]][["lower"]] <<- defaultBounds(name = modName, 
+                                                                           jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps, "COGARCH" = input$jumps),
+                                                                           p_C = ifelse(isolate({input$modelClass})=="COGARCH", input$p_C, NA), 
+                                                                           q_C = ifelse(isolate({input$modelClass})=="COGARCH", input$q_C, NA)
+                                                                           )$lower
         if (is.null(estimateSettings[[modName]][[symb]][["method"]]))
           estimateSettings[[modName]][[symb]][["method"]] <<- "L-BFGS-B"
         if (is.null(estimateSettings[[modName]][[symb]][["tries"]]))
@@ -538,13 +564,13 @@ server <- function(input, output, session) {
   
   observe({
     valid <- TRUE
-    if (is.null(rownames(seriesToEstimate$table)) | is.null(input$model)) valid <- FALSE
+    if (nrow(seriesToEstimate$table)==0 | is.null(input$model)) valid <- FALSE
     else if (input$modelClass!="Diffusion process") if (is.null(input$jumps)) valid <- FALSE
     shinyjs::toggle(id="advancedSettingsAll", condition = valid)
     shinyjs::toggle(id="advancedSettingsErrorMessage", condition = !valid)
   })
   output$advancedSettingsSeries <- renderUI({
-    if (!is.null(rownames(seriesToEstimate$table)))
+    if (nrow(seriesToEstimate$table)!=0)
       selectInput(inputId = "advancedSettingsSeries", label = "Series", choices = rownames(seriesToEstimate$table))
   })
   output$advancedSettingsDelta <- renderUI({
@@ -558,7 +584,7 @@ server <- function(input, output, session) {
   output$advancedSettingsParameter <- renderUI({
     if (!is.null(input$model))
       if (!is.null(input$advancedSettingsModel))
-        selectInput(inputId = "advancedSettingsParameter", label = "Parameter", choices = setModelByName(input$advancedSettingsModel, jumps = switch(input$modelClass, "Diffusion process" = NULL, "Compound Poisson" = input$jumps))@parameter@all)
+        selectInput(inputId = "advancedSettingsParameter", label = "Parameter", choices = setModelByName(input$advancedSettingsModel, jumps = switch(input$modelClass, "Diffusion process" = NULL, "Compound Poisson" = input$jumps, "COGARCH"=input$jumps), p_C = ifelse(input$modelClass=="COGARCH", input$p_C, NA), q_C = ifelse(input$modelClass=="COGARCH", input$q_C, NA))@parameter@all)
   })
   #REMOVE# output$advancedSettingsFixed <- renderUI({
   #REMOVE#  if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
@@ -686,7 +712,7 @@ server <- function(input, output, session) {
   ###Estimate models
   observeEvent(input$EstimateModels,{
     valid <- TRUE
-    if(is.null(input$model) | length(rownames(seriesToEstimate$table))==0 | is.null(rownames(seriesToEstimate$table))) valid <- FALSE
+    if(is.null(input$model) | nrow(seriesToEstimate$table)==0) valid <- FALSE
     else if (input$modelClass!="Diffusion process" & is.null(input$jumps)) valid <- FALSE
     if(!valid){
       createAlert(session = session, anchorId = "modelsAlert", alertId = "modelsAlert_err", content = "Select some series and models to estimate", style = "warning")
@@ -696,18 +722,21 @@ server <- function(input, output, session) {
         for (modName in input$model){
           for (i in rownames(seriesToEstimate$table)){
             symb <- as.character(seriesToEstimate$table[i,"Symb"])
-            incProgress(1/(length(input$model)*length(rownames(seriesToEstimate$table))), detail = paste(symb,"-",modName))
+            incProgress(1/(length(input$model)*nrow(seriesToEstimate$table)), detail = paste(symb,"-",modName))
             data <- getData(symb)
             start <- as.character(seriesToEstimate$table[i,"From"])
             end <- as.character(seriesToEstimate$table[i,"To"])
-            if (class(index(data))=="numeric")
-              data <- window(data, start = as.numeric(start), end = as.numeric(end))
+            times <- index(data)
+            if (class(times)=="numeric")
+              data <- data[(times >= as.numeric(start)) & (times <= as.numeric(end)), , drop = FALSE]
             else
-              data <- window(data, start = start, end = end)
+              data <- data[(times >= start) & (times <= end), , drop = FALSE]
             addModel(
               modName = modName,
               modClass = input$modelClass,
-              jumps = switch(input$modelClass, "Diffusion process" = NULL, "Compound Poisson" = input$jumps),
+              p_C = ifelse(input$modelClass=="COGARCH", input$p_C, NA), 
+              q_C = ifelse(input$modelClass=="COGARCH", input$q_C, NA),
+              jumps = switch(input$modelClass, "Diffusion process" = NULL, "Compound Poisson" = input$jumps, "COGARCH" = input$jumps),
               symbName = symb,
               data = data,
               delta = deltaSettings[[symb]],
@@ -735,7 +764,7 @@ server <- function(input, output, session) {
 
   observe({
     valid <- TRUE
-    if(is.null(input$model) | length(rownames(seriesToEstimate$table))==0 | is.null(rownames(seriesToEstimate$table))) valid <- FALSE
+    if(is.null(input$model) | nrow(seriesToEstimate$table)==0) valid <- FALSE
     else if (input$modelClass!="Diffusion process" & is.null(input$jumps)) valid <- FALSE
     if(valid) closeAlert(session, alertId = "modelsAlert_err")
   })
@@ -754,7 +783,7 @@ server <- function(input, output, session) {
   })
 
   ###Display estimated models
-  output$databaseModels <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
+  output$databaseModels <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
     if (length(yuimaGUItable$model)==0){
       NoData <- data.frame("Symb"=NA,"Here will be stored models you estimate in the previous tabs"=NA, check.names = FALSE)
       return(NoData[-1,])
@@ -901,7 +930,7 @@ server <- function(input, output, session) {
   ########################
   ########################
 
-  output$simulate_databaseModels <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "multiple",{
+  output$simulate_databaseModels <- DT::renderDataTable(options=list(scrollY = 200, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "multiple",{
     if (length(yuimaGUItable$model)==0){
       NoData <- data.frame("Symb"=NA,"Please estimate some models first (section Modelling)"=NA, check.names = FALSE)
       return(NoData[-1,])
@@ -1375,7 +1404,7 @@ server <- function(input, output, session) {
   })
 
   ###Create simulations table
-  output$simulate_monitor_table <- DT::renderDataTable(options=list(scrollY = 200, scrollX=TRUE, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
+  output$simulate_monitor_table <- DT::renderDataTable(options=list(scrollY = 200, scrollX=TRUE, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
     if (length(yuimaGUItable$simulation)==0){
       NoData <- data.frame("Symb"=NA,"Here will be stored simulations you run in the previous tabs"=NA, check.names = FALSE)
       return(NoData[-1,])
@@ -1951,7 +1980,7 @@ server <- function(input, output, session) {
   ########################
   ########################
   
-  output$hedging_databaseModels <- DT::renderDataTable(options=list(scrollY = 200, scrollX = TRUE, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
+  output$hedging_databaseModels <- DT::renderDataTable(options=list(scrollY = 200, scrollX = TRUE, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
     if (length(yuimaGUItable$model)==0){
       NoData <- data.frame("Symb"=NA,"Please estimate some models first (section Modelling)"=NA, check.names = FALSE)
       return(NoData[-1,])
@@ -2030,7 +2059,7 @@ server <- function(input, output, session) {
     else createAlert(session, anchorId = "hedging_alert", alertId = "hedging_alert_selectRow", content = "Please select a model to simulate the evolution of the underlying asset", style = "error")
   })
   
-  output$hedging_table_results <- DT::renderDataTable(options=list(scrollX=TRUE, scrollY = 200, scrollCollapse = TRUE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
+  output$hedging_table_results <- DT::renderDataTable(options=list(scrollX=TRUE, scrollY = 200, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
     if (length(yuimaGUItable$hedging)==0){
       NoData <- data.frame("Symb"=NA, "Here will be stored simulations you run in the previous tab"=NA, check.names = FALSE)
       return(NoData[-1,])
