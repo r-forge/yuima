@@ -187,7 +187,7 @@ body<-dashboardBody(
           br(),
           fluidRow(
             column(4,div(align="center",
-              selectInput("modelClass",label = "Model Class", choices = c("Diffusion process", "Compound Poisson", "COGARCH"), selected = "Diffusion process"),
+              selectInput("modelClass",label = "Model Class", choices = c("Diffusion process", "Compound Poisson", "CARMA", "COGARCH"), selected = "Diffusion process"),
               uiOutput("model"),
               uiOutput("jumps"),
               uiOutput("pq_C")
