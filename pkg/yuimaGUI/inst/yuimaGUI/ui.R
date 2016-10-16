@@ -293,6 +293,7 @@ body<-dashboardBody(
               br(),br(),br(),
               uiOutput("plotsRangeSeries", align = "center"),
               uiOutput("chooseRange", align = "center"),
+              uiOutput("chooseRange_specify", align = "center"),
               column(6,
                 tags$button(type="button", id="buttonApplyRange", class = "action-button", em("Apply")),
                 bsTooltip("buttonApplyRange", title = "Apply Range to selected symbol", placement = "top")
@@ -321,7 +322,7 @@ body<-dashboardBody(
                 h3("General Settings"),
                 uiOutput("advancedSettingsMethod", align="center"),
                 fluidRow(
-                  column(6,uiOutput("advancedSettingsTries", align="center")),
+                  column(6,uiOutput("advancedSettingsTrials", align="center")),
                   column(6,uiOutput("advancedSettingsSeed", align="center"))
                 ),
                 uiOutput("advancedSettingsJoint", align="center"),
@@ -588,41 +589,97 @@ body<-dashboardBody(
           hr(class = "hrHeader")
         )
       ),
-      fluidRow(column(12,bsAlert("changepoint_alert"))),
-      fluidRow(column(12,
-        column(4,
-          h4("Available data", style="color:#CDCECD"),
-          DT::dataTableOutput("changepoint_table_select")
+      fluidRow(column(12,tabsetPanel(id = "panel_cpoint", type = "tabs",
+        tabPanel(title = "Nonparametric",
+          fluidRow(column(12,bsAlert("nonparametric_changepoint_alert"))),
+          fluidRow(column(12,
+            column(4,
+              h4("Available data", style="color:#CDCECD"),
+              DT::dataTableOutput("changepoint_table_select")
+            ),
+            column(4,
+              h4("Selected data", style="color:#CDCECD"),
+              DT::dataTableOutput("changepoint_table_selected")
+            ),
+            column(4,br(),br(),br(),br(),
+              div(align="center", selectInput("changepoint_method", "Method", choices = c("Percentage Increments Distribution"="KSperc", "Increments Distribution"="KSdiff"))),
+              div(align="center", shinyjs::hidden(sliderInput("changepoint_pvalue", label = "p-value (%)", value=1, min=0, max=10, step = 0.1)))
+            )
+          )),
+          br(),
+          fluidRow(column(12,
+            column(2,actionButton("changepoint_button_select",label = "Select", align = "center")),
+            bsTooltip("changepoint_button_select", title = "Select data", placement = "top"),
+            column(2,actionButton("changepoint_button_selectAll",label = "Select All", align = "center")),
+            bsTooltip("changepoint_button_selectAll", title = "Select all data that are displayed", placement = "top"),
+            column(2,actionButton("changepoint_button_delete",label = "Delete", align = "center")),
+            bsTooltip("changepoint_button_delete", title = "Delete selected data", placement = "top"),
+            column(2,actionButton("changepoint_button_deleteAll",label = "Delete All", align = "center")),
+            bsTooltip("changepoint_button_deleteAll", title = "Delete all data that are displayed", placement = "top"),
+            column(4,actionButton("changepoint_button_startEstimation", label = "Start Estimation", align = "center"))
+          )),
+          br(),br(),
+          fluidRow(column(12,shinyjs::hidden(div(id="changepoint_charts",
+            hr(class = "hrHeader"),
+            uiOutput("changepoint_symb", align="center"),
+            div(fluidRow(
+              column(10, selectInput("changepoint_scale", label = "Scale", choices=c("Linear","Logarithmic (Y)","Logarithmic (X)", "Logarithmic (XY)"), width = "150px")),
+              column(2, a(id = "linkChangePointInfo", tags$u(h4("Change Points Info")), href = "", style="color:#FFF48B"))
+            )),
+            bsModal(id = "ChangePointInfo", trigger = "linkChangePointInfo", title = "Change Points Info",
+                    fluidRow(
+                      column(12, uiOutput("text_ChangePointInfo")),
+                      column(12, div(tableOutput("table_ChangePointInfo"), align="center"))
+                    )
+            ),
+            fluidRow(
+              column(6,plotOutput("changepoint_plot_series", brush = brushOpts(id = "changePoint_brush", delayType = "debounce", delay = 10000, resetOnNew = TRUE), dblclick = "changePoint_dbclick")),
+              column(6,plotOutput("changepoint_plot_incr", brush = brushOpts(id = "changePoint_brush", delayType = "debounce", delay = 10000, resetOnNew = TRUE), dblclick = "changePoint_dbclick"))
+            )
+          ))))
         ),
-        column(4,
-          h4("Selected data", style="color:#CDCECD"),
-          DT::dataTableOutput("changepoint_table_selected")
-        ),
-        column(4,br(),br(),br(),br(),
-          div(align="center", selectInput("changepoint_method", "Method", choices = c("Least Squares"="lSQ", "Kolmogorov - increments"="KSdiff", "Kolmogorov - percentage increments"="KSperc"))),
-          div(align="center", shinyjs::hidden(sliderInput("changepoint_pvalue", label = "p-value (%)", value=1, min=0, max=10, step = 0.1)))
+        tabPanel(title = "Parametric",
+                 fluidRow(column(12,bsAlert("parametric_changepoint_alert"))),
+                 fluidRow(column(12,
+                                 column(4,
+                                        h4("Available data", style="color:#CDCECD"),
+                                        DT::dataTableOutput("parametric_changepoint_table_select")
+                                 ),
+                                 column(4,
+                                        h4("Selected data", style="color:#CDCECD"),
+                                        DT::dataTableOutput("parametric_changepoint_table_selected")
+                                 ),
+                                 column(4,br(),br(),br(),br(),
+                                        div(align="center", uiOutput("parametric_changepoint_model")),
+                                        div(align="center", numericInput("parametric_changepoint_trials", label = "Trials", value = 1, min = 1, step = 1))
+                                 )
+                 )),
+                 br(),
+                 fluidRow(column(12,
+                                 column(2,actionButton("parametric_changepoint_button_select",label = "Select", align = "center")),
+                                 bsTooltip("changepoint_button_select", title = "Select data", placement = "top"),
+                                 column(2,actionButton("parametric_changepoint_button_selectAll",label = "Select All", align = "center")),
+                                 bsTooltip("changepoint_button_selectAll", title = "Select all data that are displayed", placement = "top"),
+                                 column(2,actionButton("parametric_changepoint_button_delete",label = "Delete", align = "center")),
+                                 bsTooltip("changepoint_button_delete", title = "Delete selected data", placement = "top"),
+                                 column(2,actionButton("parametric_changepoint_button_deleteAll",label = "Delete All", align = "center")),
+                                 bsTooltip("changepoint_button_deleteAll", title = "Delete all data that are displayed", placement = "top"),
+                                 column(4,actionButton("parametric_changepoint_button_startEstimation", label = "Start Estimation", align = "center"))
+                 )),
+                 br(),br(),
+                 fluidRow(column(12,shinyjs::hidden(div(id="parametric_changepoint_charts",
+                                                        hr(class = "hrHeader"),
+                                                        uiOutput("parametric_changepoint_symb", align="center"),
+                                                        div(fluidRow(
+                                                          column(12, selectInput("parametric_changepoint_scale", label = "Scale", choices=c("Linear","Logarithmic (Y)","Logarithmic (X)", "Logarithmic (XY)"), width = "150px"))
+                                                        )),
+                                                        fluidRow(
+                                                          column(6,plotOutput("parametric_changepoint_plot_series", brush = brushOpts(id = "parametric_changePoint_brush", delayType = "debounce", delay = 10000, resetOnNew = TRUE), dblclick = "parametric_changePoint_dbclick")),
+                                                          column(6,div(uiOutput("parametric_changepoint_info"),align="center"))
+                                                        )
+                 ))))
         )
-      )),
-      br(),
-      fluidRow(column(12,
-        column(2,actionButton("changepoint_button_select",label = "Select", align = "center")),
-        bsTooltip("changepoint_button_select", title = "Select data", placement = "top"),
-        column(2,actionButton("changepoint_button_selectAll",label = "Select All", align = "center")),
-        bsTooltip("changepoint_button_selectAll", title = "Select all data that are displayed", placement = "top"),
-        column(2,actionButton("changepoint_button_delete",label = "Delete", align = "center")),
-        bsTooltip("changepoint_button_delete", title = "Delete selected data", placement = "top"),
-        column(2,actionButton("changepoint_button_deleteAll",label = "Delete All", align = "center")),
-        bsTooltip("changepoint_button_deleteAll", title = "Delete all data that are displayed", placement = "top"),
-        column(4,actionButton("changepoint_button_startEstimation", label = "Start Estimation", align = "center"))
-      )),
-      br(),br(),
-      fluidRow(column(12,shinyjs::hidden(div(id="changepoint_charts",
-        hr(class = "hrHeader"),
-        uiOutput("changepoint_symb", align="center"),
-        selectInput("changepoint_scale", label = "Scale", choices=c("Linear","Logarithmic (Y)","Logarithmic (X)", "Logarithmic (XY)"), width = "150px"),
-        column(6,plotOutput("changepoint_plot_series", brush = brushOpts(id = "changePoint_brush", delayType = "debounce", delay = 10000, resetOnNew = TRUE), dblclick = "changePoint_dbclick")),
-        column(6,plotOutput("changepoint_plot_incr", brush = brushOpts(id = "changePoint_brush", delayType = "debounce", delay = 10000, resetOnNew = TRUE), dblclick = "changePoint_dbclick"))
-      ))))
+      )))
     ),
     tabItem(tabName = "llag",
       fluidRow(column(12,bsAlert("llag_alert"))),
