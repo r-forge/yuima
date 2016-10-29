@@ -187,7 +187,13 @@ body<-dashboardBody(
           br(),
           fluidRow(
             column(4,div(align="center",
+<<<<<<< .mine
+              selectInput("modelClass",label = "Model Class", choices = c("Diffusion process", "Fractional process", "Compound Poisson", "CARMA", "COGARCH"), selected = "Diffusion process"),
+||||||| .r460
+              selectInput("modelClass",label = "Model Class", choices = c("Diffusion process", "Compound Poisson"), selected = "Diffusion process"),
+=======
               selectInput("modelClass",label = "Model Class", choices = c("Diffusion process", "Compound Poisson", "CARMA", "COGARCH"), selected = "Diffusion process"),
+>>>>>>> .r498
               uiOutput("model"),
               uiOutput("jumps"),
               uiOutput("pq_C")
@@ -231,7 +237,7 @@ body<-dashboardBody(
           br(),
           fluidRow(div(align="center",
             column(6,
-              selectInput("usr_modelClass",label = "Model Class", width = "50%", choices = c("Diffusion process", "Compound Poisson"), selected = "Diffusion process"),
+              selectInput("usr_modelClass",label = "Model Class", width = "50%", choices = c("Diffusion process", "Fractional process", "Compound Poisson"), selected = "Diffusion process"),
               textInput("usr_model_name", label = "Model Name", width = "50%"),
               uiOutput("usr_modelClass_latex"),
               uiOutput("usr_model_coeff"),
@@ -314,9 +320,14 @@ body<-dashboardBody(
               box(width = 12,div(align="center",
                 h3("Series Settings"),
                 uiOutput("advancedSettingsSeries", align="center"),
-                uiOutput("advancedSettingsDelta", align="center"),
-                column(6, tags$button(type="button", id="advancedSettingsButtonApplyDelta", class = "action-button", em("Apply"))),
-                column(6, tags$button(type="button", id="advancedSettingsButtonApplyAllDelta", class = "action-button", em("Apply All")))
+                fluidRow(
+                  column(6,uiOutput("advancedSettingsDelta", align="center")),
+                  column(6,uiOutput("advancedSettingsToLog", align="center"))       
+                ),
+                fluidRow(
+                  column(6, tags$button(type="button", id="advancedSettingsButtonApplyDelta", class = "action-button", em("Apply"))),
+                  column(6, tags$button(type="button", id="advancedSettingsButtonApplyAllDelta", class = "action-button", em("Apply to All series")))
+                )
               )),
               box(width = 12,div(align="center",
                 h3("General Settings"),
@@ -328,9 +339,11 @@ body<-dashboardBody(
                 uiOutput("advancedSettingsJoint", align="center"),
                 uiOutput("advancedSettingsAggregation", align="center"),
                 uiOutput("advancedSettingsThreshold", align="center"),
-                column(6, tags$button(type="button", id="advancedSettingsButtonApplyGeneral", class = "action-button", em("Apply"))),
-                column(6, tags$button(type="button", id="advancedSettingsButtonApplyAllModelGeneral", class = "action-button", em("Apply to Model"))),
-                column(12, tags$button(type="button", id="advancedSettingsButtonApplyAllGeneral", class = "action-button", em("Apply to All")))
+                fluidRow(
+                  column(6, tags$button(type="button", id="advancedSettingsButtonApplyGeneral", class = "action-button", em("Apply"))),
+                  column(6, tags$button(type="button", id="advancedSettingsButtonApplyAllModelGeneral", class = "action-button", em("Apply to All series")))
+                ),
+                fluidRow(column(12, tags$button(type="button", id="advancedSettingsButtonApplyAllGeneral", class = "action-button", em("Apply to All series & models"))))
               ))
             ),
             column(6,
@@ -348,8 +361,10 @@ body<-dashboardBody(
                   column(6,uiOutput("advancedSettingsLower", align="center")),
                   column(6,uiOutput("advancedSettingsUpper", align="center"))
                 ),
-                column(6, tags$button(type="button", id="advancedSettingsButtonApplyModel", class = "action-button", em("Apply"))),
-                column(6, tags$button(type="button", id="advancedSettingsButtonApplyAllModel", class = "action-button", em("Apply to Model")))
+                fluidRow(
+                  column(6, tags$button(type="button", id="advancedSettingsButtonApplyModel", class = "action-button", em("Apply"))),
+                  column(6, tags$button(type="button", id="advancedSettingsButtonApplyAllModel", class = "action-button", em("Apply to All series")))
+                )
               ))
             )
           )
@@ -394,10 +409,10 @@ body<-dashboardBody(
           ),
           fluidRow(
             column(6, br(), div(align="center",
-              column(6,selectInput("simulate_model_usr_selectClass", label = "Class", choices = c("Diffusion process", "Compound Poisson"))),
+              column(6,selectInput("simulate_model_usr_selectClass", label = "Class", choices = c("Diffusion process", "Fractional process", "Compound Poisson"))),
               column(6,uiOutput("simulate_model_usr_selectModel")),
-              uiOutput("simulate_model_usr_selectJumps"),
               uiOutput("simulate_model_usr_ID"),
+              uiOutput("simulate_model_usr_selectJumps"),
               column(6,uiOutput("simulate_model_usr_selectParam")),
               column(6,uiOutput("simulate_model_usr_param")),
               column(12,actionButton("simulate_model_usr_button_save", label = "Save", align = "center"))
