@@ -22,6 +22,9 @@ if(!exists("estimateSettings"))
 if(!exists("deltaSettings"))
   deltaSettings <<- list()
 
+if(!exists("toLogSettings"))
+  toLogSettings <<- list()
+
 if(!exists("usr_models"))
   usr_models <<- reactiveValues(model=list(), simulation=list())
 
@@ -130,9 +133,19 @@ observe({
   if (length(differ)!=0) for (i in differ) yuimaGUIdata$cpYuima[[i]] <<- NULL
 })
 
+setDataGUI <- function(original.data, delta){
+  t <- index(original.data)
+  t0 <- 0
+  if(is.numeric(t)){
+    delta.original.data <- mean(diff(t), na.rm = TRUE)
+    t0 <- min(t, na.rm = TRUE)*delta/delta.original.data
+  }
+  setData(original.data = original.data, delta = delta, t0 = t0)
+}
+
 
 addData <- function(x, typeIndex, session, anchorId, printSuccess = TRUE){
-  x <- data.frame(x, check.names = FALSE)
+  x <- data.frame(x, check.names = TRUE)
   err <- c()
   alreadyIn <- c()
   for (symb in colnames(x)){
@@ -194,14 +207,31 @@ defaultModels <-  c("Diffusion process"="Geometric Brownian Motion",
                     "Compound Poisson" = "Linear Intensity",
                     "Compound Poisson" = "Power Low Intensity",
                     "Compound Poisson" = "Exponentially Decaying Intensity",
+<<<<<<< .mine
+                    "Compound Poisson" = "Periodic Intensity",
+                    #"Fractional process"="Frac. Geometric Brownian Motion",
+                    #"Fractional process"="Frac. Brownian Motion",
+                    "Fractional process"="Frac. Ornstein-Uhlenbeck (OU)",
+                    "CARMA" = "Carma(p,q)",
+                    "COGARCH" = "Cogarch(p,q)"
+||||||| .r460
+                    "Compound Poisson" = "Periodic Intensity"
+=======
                     "Compound Poisson" = "Periodic Intensity",
                     "CARMA" = "Carma(p,q)",
                     "COGARCH" = "Cogarch(p,q)"
+>>>>>>> .r498
                     )
 
 defaultJumps <- c("Gaussian", "Uniform")
 
+<<<<<<< .mine
+defaultBounds <- function(name, delta, jumps = NA, lower = NA, upper = NA, AR_C = NA, MA_C = NA, lastPrice = NA){
+||||||| .r460
+defaultBounds <- function(name, jumps = NULL, lower = NA, upper = NA){
+=======
 defaultBounds <- function(name, jumps = NA, lower = NA, upper = NA, AR_C = NA, MA_C = NA){
+>>>>>>> .r498
   if (name %in% names(isolate({usr_models$model}))){
     par <- setModelByName(name = name, jumps = jumps,  AR_C = AR_C, MA_C = MA_C)@parameter@all
     startmin <- rep(lower, length(par))
@@ -217,6 +247,44 @@ defaultBounds <- function(name, jumps = NA, lower = NA, upper = NA, AR_C = NA, M
     }
     return(list(lower=as.list(startmin), upper=as.list(startmax)))
   }
+<<<<<<< .mine
+  if (name %in% defaultModels[names(defaultModels) == "COGARCH"]){
+    par <- setModelByName(name = name, jumps = jumps,  AR_C = AR_C, MA_C = MA_C)@parameter
+    par <- unique(c(par@drift, par@xinit))
+    startmin <- rep(ifelse(is.na(lower),NA,0), length(par))
+    startmax <- rep(ifelse(is.na(upper),NA,1), length(par))
+    names(startmin) <- par
+    names(startmax) <- par
+    startmax["a0"] <- ifelse(is.na(upper),NA,10)
+#     if (!is.na(jumps)){
+#       boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
+#       for (i in par[par %in% names(boundsJump$lower)]){
+#         startmin[[i]] <- boundsJump$lower[[i]]
+#         startmax[[i]] <- boundsJump$upper[[i]]
+#       }
+#     }
+    return(list(lower=as.list(startmin), upper=as.list(startmax)))
+  }
+  if (name %in% defaultModels[names(defaultModels) == "CARMA"]){
+    par <- setModelByName(name = name, jumps = jumps,  AR_C = AR_C, MA_C = MA_C)@parameter
+    par <- par@drift
+    startmin <- rep(ifelse(is.na(lower),NA,0), length(par))
+    startmax <- rep(ifelse(is.na(upper),NA,1), length(par))
+    names(startmin) <- par
+    names(startmax) <- par
+    startmin["MA0"] <- ifelse(is.na(lower),NA,lastPrice*0.5)
+    startmax["MA0"] <- ifelse(is.na(upper),NA,lastPrice*1.5)
+#     if (!is.na(jumps)){
+#       boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
+#       for (i in par[par %in% names(boundsJump$lower)]){
+#         startmin[[i]] <- boundsJump$lower[[i]]
+#         startmax[[i]] <- boundsJump$upper[[i]]
+#       }
+#     }
+    return(list(lower=as.list(startmin), upper=as.list(startmax)))
+  }
+||||||| .r460
+=======
   if (name %in% defaultModels[names(defaultModels) == "COGARCH"]){
     par <- setModelByName(name = name, jumps = jumps,  AR_C = AR_C, MA_C = MA_C)@parameter
     par <- unique(c(par@drift, par@xinit))
@@ -251,43 +319,44 @@ defaultBounds <- function(name, jumps = NA, lower = NA, upper = NA, AR_C = NA, M
 #     }
     return(list(lower=as.list(startmin), upper=as.list(startmax)))
   }
+>>>>>>> .r498
   if (name == "Brownian Motion" | name == "Bm")
-    return (list(lower=list("sigma"=0, "mu"=lower), upper=list("sigma"=upper, "mu"=upper)))
+    return (list(lower=list("sigma"=0, "mu"=lower*delta), upper=list("sigma"=upper*sqrt(delta), "mu"=upper*delta)))
   if (name == "Geometric Brownian Motion" | name == "gBm")
-    return (list(lower=list("sigma"=0, "mu"=lower), upper=list("sigma"=upper, "mu"=upper)))
+    return (list(lower=list("sigma"=0, "mu"=lower*delta), upper=list("sigma"=upper*sqrt(delta), "mu"=upper*delta)))
   if (name == "Ornstein-Uhlenbeck (OU)" | name == "OU")
-    return(list(lower=list("theta"=lower),upper=list("theta"=upper)))
+    return(list(lower=list("theta"=0, "sigma"=0),upper=list("theta"=upper*delta, "sigma"=upper*sqrt(delta))))
   if (name == "Vasicek model (VAS)" | name == "VAS")
-    return(list(lower=list("theta3"=0, "theta1"=lower, "theta2"=lower),upper=list("theta3"=upper, "theta1"=upper, "theta2"=upper)))
+    return(list(lower=list("theta3"=0, "theta1"=lower*delta, "theta2"=lower*delta),upper=list("theta3"=upper*sqrt(delta), "theta1"=upper*delta, "theta2"=upper*delta)))
   if (name == "Constant elasticity of variance (CEV)" | name == "CEV")
-    return(list(lower=list("mu"=lower, "sigma"=lower, "gamma"=ifelse(is.na(lower),NA,-3)),upper=list("mu"=upper, "sigma"=upper, "gamma"=ifelse(is.na(upper),NA,3))))
+    return(list(lower=list("mu"=lower*delta, "sigma"=0, "gamma"=0),upper=list("mu"=upper*delta, "sigma"=upper*sqrt(delta), "gamma"=ifelse(is.na(upper),NA,3))))
   if (name == "Cox-Ingersoll-Ross (CIR)" | name == "CIR")
-    return(list(lower=list("theta1"=0,"theta2"=0,"theta3"=0),upper=list("theta1"=upper,"theta2"=upper,"theta3"=upper)))
+    return(list(lower=list("theta1"=0,"theta2"=0,"theta3"=0),upper=list("theta1"=upper*delta,"theta2"=upper*delta,"theta3"=upper*sqrt(delta))))
   if (name == "Chan-Karolyi-Longstaff-Sanders (CKLS)" | name == "CKLS")
-    return(list(lower=list("theta1"=lower, "theta2"=lower, "theta3"=0, "theta4"=ifelse(is.na(lower),NA,-3)),upper=list("theta1"=upper, "theta2"=upper, "theta3"=upper, "theta4"=ifelse(is.na(upper),NA,3))))
+    return(list(lower=list("theta1"=lower*delta, "theta2"=lower*delta, "theta3"=0, "theta4"=0),upper=list("theta1"=upper*delta, "theta2"=upper*delta, "theta3"=upper*sqrt(delta), "theta4"=ifelse(is.na(upper),NA,3))))
   if (name == "Hyperbolic (Barndorff-Nielsen)" | name == "hyp1")
-    return(list(lower=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=0, "mu"=lower),upper=list("delta"=upper, "alpha"=upper, "beta"=upper, "sigma"=upper, "mu"=upper)))
+    return(list(lower=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=0, "mu"=0),upper=list("delta"=upper, "alpha"=ifelse(is.na(upper),NA,10), "beta"=ifelse(is.na(upper),NA,10), "sigma"=upper*sqrt(delta), "mu"=ifelse(is.na(upper),NA,lastPrice))))
   if (name == "Hyperbolic (Bibby and Sorensen)" | name == "hyp2")
-    return(list(lower=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=0, "mu"=lower),upper=list("delta"=upper, "alpha"=upper, "beta"=upper, "sigma"=upper, "mu"=upper)))
+    return(list(lower=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=0, "mu"=0),upper=list("delta"=upper, "alpha"=ifelse(is.na(upper),NA,10), "beta"=ifelse(is.na(upper),NA,10), "sigma"=upper*sqrt(delta), "mu"=ifelse(is.na(upper),NA,lastPrice))))
   if (name == "Power Low Intensity"){
     boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
     return(list(lower=c(list("alpha"=0, "beta"=ifelse(is.na(lower),NA,-3)), boundsJump$lower),upper=c(list("alpha"=upper, "beta"=ifelse(is.na(upper),NA,3)), boundsJump$upper)))
   }
   if (name == "Constant Intensity"){
     boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
-    return(list(lower=c(list("lambda"=0), boundsJump$lower),upper=c(list("lambda"=upper), boundsJump$upper)))
+    return(list(lower=c(list("lambda"=0), boundsJump$lower),upper=c(list("lambda"=upper*delta*100), boundsJump$upper)))
   }
   if (name == "Linear Intensity"){
     boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
-    return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=upper, "beta"=upper), boundsJump$upper)))
+    return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=upper*delta*100, "beta"=upper*delta^2), boundsJump$upper)))
   }
   if (name == "Exponentially Decaying Intensity"){
     boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
-    return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=upper, "beta"=ifelse(is.na(upper),NA,3)), boundsJump$upper)))
+    return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=upper*delta*100, "beta"=upper*delta), boundsJump$upper)))
   }
   if (name == "Periodic Intensity"){
     boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
-    return(list(lower=c(list("a"=0, "b"=0, "omega"=0, "phi"=0), boundsJump$lower),upper=c(list("a"=upper, "b"=upper, "omega"=upper, "phi"=2*pi), boundsJump$upper)))
+    return(list(lower=c(list("a"=0, "b"=0, "omega"=0, "phi"=0), boundsJump$lower),upper=c(list("a"=upper*delta*100, "b"=upper*delta*100, "omega"=upper*delta, "phi"=2*pi), boundsJump$upper)))
   }
 }
 
@@ -330,11 +399,56 @@ estimateJumps <- function(data, jumps, threshold = 0){
 
 setModelByName <- function(name, jumps = NA, AR_C = NA, MA_C = NA, XinExpr = FALSE){
   if (name %in% names(isolate({usr_models$model}))){
-    if (isolate({usr_models$model[[name]]$class=="Diffusion process"}))
+    if (isolate({usr_models$model[[name]]$class=="Diffusion process" | usr_models$model[[name]]$class=="Fractional process"}))
       return(isolate({usr_models$model[[name]]$object}))
     if (isolate({usr_models$model[[name]]$class=="Compound Poisson"}))
       return(setPoisson(intensity = isolate({usr_models$model[[name]]$intensity}), df = setJumps(jumps = jumps), solve.variable = "x"))
   }
+<<<<<<< .mine
+  if (name == "Brownian Motion" | name == "Bm") return(yuima::setModel(drift="mu", diffusion="sigma", solve.variable = "x"))
+  if (name == "Geometric Brownian Motion" | name == "gBm") return(yuima::setModel(drift="mu*x", diffusion="sigma*x", solve.variable = "x"))
+  if (name == "Ornstein-Uhlenbeck (OU)" | name == "OU") return(yuima::setModel(drift="-theta*x", diffusion="sigma", solve.variable = "x"))
+  if (name == "Vasicek model (VAS)" | name == "VAS") return(yuima::setModel(drift="theta1-theta2*x", diffusion="theta3", solve.variable = "x"))
+  if (name == "Constant elasticity of variance (CEV)" | name == "CEV") return(yuima::setModel(drift="mu*x", diffusion="sigma*x^gamma", solve.variable = "x"))
+  if (name == "Cox-Ingersoll-Ross (CIR)" | name == "CIR") return(yuima::setModel(drift="theta1-theta2*x", diffusion="theta3*sqrt(x)", solve.variable = "x"))
+  if (name == "Chan-Karolyi-Longstaff-Sanders (CKLS)" | name == "CKLS") return(yuima::setModel(drift="theta1+theta2*x", diffusion="theta3*x^theta4", solve.variable = "x"))
+  if (name == "Hyperbolic (Barndorff-Nielsen)" | name == "hyp1") return(yuima::setModel(drift="(sigma/2)^2*(beta-alpha*((x-mu)/(sqrt(delta^2+(x-mu)^2))))", diffusion="sigma", solve.variable = "x"))
+  if (name == "Hyperbolic (Bibby and Sorensen)" | name == "hyp2") return(yuima::setModel(drift="0", diffusion="sigma*exp(0.5*(alpha*sqrt(delta^2+(x-mu)^2)-beta*(x-mu)))", solve.variable = "x"))
+  if (name == "Frac. Brownian Motion" | name == "Bm") return(yuima::setModel(drift="mu", diffusion="sigma", solve.variable = "x", hurst = NA))
+  if (name == "Frac. Geometric Brownian Motion" | name == "gBm") return(yuima::setModel(drift="mu*x", diffusion="sigma*x", solve.variable = "x", hurst = NA))
+  if (name == "Frac. Ornstein-Uhlenbeck (OU)" | name == "OU") return(yuima::setModel(drift="-theta*x", diffusion="sigma", solve.variable = "x", hurst = NA))
+  if (name == "Power Low Intensity") return(yuima::setPoisson(intensity="alpha*t^(beta)", df=setJumps(jumps = jumps), solve.variable = "x"))
+  if (name == "Constant Intensity") return(yuima::setPoisson(intensity="lambda", df=setJumps(jumps = jumps), solve.variable = "x"))
+  if (name == "Linear Intensity") return(yuima::setPoisson(intensity="alpha+beta*t", df=setJumps(jumps = jumps), solve.variable = "x"))
+  if (name == "Exponentially Decaying Intensity") return(yuima::setPoisson(intensity="alpha*exp(-beta*t)", df=setJumps(jumps = jumps), solve.variable = "x"))
+  if (name == "Periodic Intensity") return(yuima::setPoisson(intensity="a/2*(1+cos(omega*t+phi))+b", df=setJumps(jumps = jumps), solve.variable = "x"))
+  if (name == "Cogarch(p,q)") return(yuima::setCogarch(p = MA_C, q = AR_C, measure.type = "CP", measure = list(intensity = "lambda", df = setJumps(jumps = "Gaussian")), XinExpr = XinExpr, Cogarch.var="y", V.var="v", Latent.var="x", ma.par="MA", ar.par="AR")) 
+  if (name == "Carma(p,q)") return(yuima::setCarma(p = AR_C, q = MA_C, ma.par="MA", ar.par="AR", XinExpr = XinExpr))
+||||||| .r460
+  if (name == "Brownian Motion" | name == "Bm")
+    return(yuima::setModel(drift="mu", diffusion="sigma", solve.variable = "x"))
+  if (name == "Geometric Brownian Motion" | name == "gBm")
+    return(yuima::setModel(drift="mu*x", diffusion="sigma*x", solve.variable = "x"))
+  if (name == "Ornstein-Uhlenbeck (OU)" | name == "OU")
+    return(yuima::setModel(drift="-theta*x", diffusion="1", solve.variable = "x"))
+  if (name == "Vasicek model (VAS)" | name == "VAS")
+    return(yuima::setModel(drift="theta1-theta2*x", diffusion="theta3", solve.variable = "x"))
+  if (name == "Constant elasticity of variance (CEV)" | name == "CEV")
+    return(yuima::setModel(drift="mu*x", diffusion="sigma*x^gamma", solve.variable = "x"))
+  if (name == "Cox-Ingersoll-Ross (CIR)" | name == "CIR")
+    return(yuima::setModel(drift="theta1-theta2*x", diffusion="theta3*sqrt(x)", solve.variable = "x"))
+  if (name == "Chan-Karolyi-Longstaff-Sanders (CKLS)" | name == "CKLS")
+    return(yuima::setModel(drift="theta1+theta2*x", diffusion="theta3*x^theta4", solve.variable = "x"))
+  if (name == "Hyperbolic (Barndorff-Nielsen)" | name == "hyp1")
+    return(yuima::setModel(drift="(sigma/2)^2*(beta-alpha*((x-mu)/(sqrt(delta^2+(x-mu)^2))))", diffusion="sigma", solve.variable = "x"))
+  if (name == "Hyperbolic (Bibby and Sorensen)" | name == "hyp2")
+    return(yuima::setModel(drift="0", diffusion="sigma*exp(0.5*(alpha*sqrt(delta^2+(x-mu)^2)-beta*(x-mu)))", solve.variable = "x"))
+  if (name == "Power Low Intensity") return(yuima::setPoisson(intensity="alpha*t^(beta)", df=setJumps(jumps), solve.variable = "x"))
+  if (name == "Constant Intensity") return(yuima::setPoisson(intensity="lambda", df=setJumps(jumps), solve.variable = "x"))
+  if (name == "Linear Intensity") return(yuima::setPoisson(intensity="alpha+beta*t", df=setJumps(jumps), solve.variable = "x"))
+  if (name == "Exponentially Decaying Intensity") return(yuima::setPoisson(intensity="alpha*exp(-beta*t)", df=setJumps(jumps), solve.variable = "x"))
+  if (name == "Periodic Intensity") return(yuima::setPoisson(intensity="a/2*(1+cos(omega*t+phi))+b", df=setJumps(jumps), solve.variable = "x"))
+=======
   if (name == "Brownian Motion" | name == "Bm")
     return(yuima::setModel(drift="mu", diffusion="sigma", solve.variable = "x"))
   if (name == "Geometric Brownian Motion" | name == "gBm")
@@ -360,6 +474,7 @@ setModelByName <- function(name, jumps = NA, AR_C = NA, MA_C = NA, XinExpr = FAL
   if (name == "Periodic Intensity") return(yuima::setPoisson(intensity="a/2*(1+cos(omega*t+phi))+b", df=setJumps(jumps = jumps), solve.variable = "x"))
   if (name == "Cogarch(p,q)") return(yuima::setCogarch(p = MA_C, q = AR_C, measure.type = "CP", measure = list(intensity = "lambda", df = setJumps(jumps = "Gaussian")), XinExpr = XinExpr, Cogarch.var="y", V.var="v", Latent.var="x", ma.par="MA", ar.par="AR")) 
   if (name == "Carma(p,q)") return(yuima::setCarma(p = AR_C, q = MA_C, ma.par="MA", ar.par="AR", XinExpr = XinExpr))
+>>>>>>> .r498
 }
 
 printModelLatex <- function(names, process, jumps = NA){
@@ -380,7 +495,7 @@ printModelLatex <- function(names, process, jumps = NA){
       if (name == "Geometric Brownian Motion" | name == "gBm")
         mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu X_t \\; dt + \\sigma X_t \\; dW_t")
       if (name == "Ornstein-Uhlenbeck (OU)" | name == "OU")
-        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = -\\theta X_t \\; dt + \\; dW_t")
+        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = -\\theta X_t \\; dt + \\sigma \\; dW_t")
       if (name == "Vasicek model (VAS)" | name == "VAS")
         mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = (\\theta_1 - \\theta_2 X_t) \\;dt + \\theta_3 \\; dW_t")
       if (name == "Constant elasticity of variance (CEV)" | name == "CEV")
@@ -393,6 +508,27 @@ printModelLatex <- function(names, process, jumps = NA){
         mod <- paste(mod, ifelse(mod=="","","\\\\"),"dX_t = \\frac{\\sigma}{2}^2 \\Bigl (\\beta-\\alpha \\frac{X_t-\\mu}{\\sqrt{\\delta^2+(X_t-\\mu)^2}} \\Bigl ) \\; dt + \\sigma \\; dW_t")
       if (name == "Hyperbolic (Bibby and Sorensen)" | name == "hyp2")
         mod <- paste(mod, ifelse(mod=="","","\\\\"),"dX_t = \\sigma \\; exp\\Bigl[\\frac{1}{2} \\Bigl( \\alpha \\sqrt{\\delta^2+(X_t-\\mu)^2}-\\beta (X_t-\\mu)\\Bigl)\\Bigl] \\; dW_t")
+    }
+    return(paste("$$",mod,"$$"))
+  }
+  if (process=="Fractional process"){
+    mod <- ""
+    for (name in names){
+      if (name %in% names(isolate({usr_models$model}))){
+        text <- toLatex(setModelByName(name))
+        x <- paste(text[2:9], collapse = "")
+        x <- substr(x,3,nchar(x))
+        x <- gsub(x, pattern = "'", replacement = "")
+        x <- gsub(x, pattern = "x", replacement = "X_t")
+        x <- gsub(x, pattern = "W1", replacement = "W_t^H")
+        mod <- paste(mod, ifelse(mod=="","","\\\\"), x)
+      }
+      if (name == "Frac. Brownian Motion" | name == "Bm")
+        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu \\; dt + \\sigma \\; dW_t^H")
+      if (name == "Frac. Geometric Brownian Motion" | name == "gBm")
+        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu X_t \\; dt + \\sigma X_t \\; dW_t^H")
+      if (name == "Frac. Ornstein-Uhlenbeck (OU)" | name == "OU")
+        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = -\\theta X_t \\; dt + \\sigma \\; dW_t^H")
     }
     return(paste("$$",mod,"$$"))
   }
@@ -449,6 +585,7 @@ changeBase <- function(param, StdErr, delta, original.data, paramName, modelName
   }
   if (modelName %in% c("Ornstein-Uhlenbeck (OU)","OU")){
     if(paramName == "theta") return(list("Estimate"= param*delta/dt1, "Std. Error"=StdErr*delta/dt1))
+    if(paramName == "sigma") return(list("Estimate"= param*sqrt(delta/dt1), "Std. Error"=StdErr*sqrt(delta/dt1)))
   }
   if (modelName %in% c("Vasicek model (VAS)","VAS")){
     if(paramName == "theta1") return(list("Estimate"= param*delta/dt1, "Std. Error"=StdErr*delta/dt1))
@@ -517,6 +654,18 @@ qmleGUI <- function(upper, lower, ...){
     return (qmle(...))
 }
 
+<<<<<<< .mine
+clearNA <- function(List){
+  for (i in names(List))
+    if (is.na(List[[i]]))
+      List[[i]] <- NULL
+    return (List)
+}
+
+addModel <- function(modName, modClass, AR_C, MA_C, jumps, symbName, data, toLog, delta, start, startMin, startMax, trials, seed, method="BFGS", fixed = list(), lower, upper, joint=FALSE, aggregation=TRUE, threshold=NULL, session, anchorId, alertId){
+||||||| .r460
+addModel <- function(modName, modClass, jumps, symbName, data, delta, start, startMin, startMax, tries, seed, method="BFGS", fixed = list(), lower, upper, joint=FALSE, aggregation=TRUE, threshold=NULL, session, anchorId){
+=======
 clearNA <- function(List){
   for (i in names(List))
     if (is.na(List[[i]]))
@@ -525,6 +674,7 @@ clearNA <- function(List){
 }
 
 addModel <- function(modName, modClass, AR_C, MA_C, jumps, symbName, data, delta, start, startMin, startMax, trials, seed, method="BFGS", fixed = list(), lower, upper, joint=FALSE, aggregation=TRUE, threshold=NULL, session, anchorId, alertId){
+>>>>>>> .r498
   info <- list(
     class = modClass,
     modName = modName,
@@ -533,6 +683,7 @@ addModel <- function(modName, modClass, AR_C, MA_C, jumps, symbName, data, delta
     jumps = ifelse(is.null(jumps),NA,jumps),
     method=method,
     delta = delta,
+    toLog = toLog,
     start = start,
     startMin = startMin,
     startMax = startMax,
@@ -551,6 +702,34 @@ addModel <- function(modName, modClass, AR_C, MA_C, jumps, symbName, data, delta
   fixed <- clearNA(fixed)
   lower <- clearNA(lower)
   upper <- clearNA(upper)
+<<<<<<< .mine
+  if(toLog==TRUE) data <- try(log(data))
+  if(class(data)=="try-error"){
+    createAlert(session = session, anchorId = anchorId, alertId = alertId, content =  paste("Cannot convert series ", symbName, "to log. Try to use 'Advanced Settings' and customize estimation.", sep = ""), style = "error")
+    return()
+  }
+  model <- setYuima(data = setDataGUI(data, delta = delta), model=setModelByName(name = modName, jumps = jumps, MA_C = MA_C, AR_C = AR_C))
+  index(model@data@original.data) <- index(data)
+  parameters <- model@model@parameter
+  if (modName == "Geometric Brownian Motion" | modName == "gBm"){
+    X <- as.numeric(na.omit(Delt(data, type = "log")))
+    alpha <- mean(X)/delta
+    sigma <- sqrt(var(X)/delta)
+    mu <- alpha +0.5*sigma^2
+    if (is.null(start$sigma)) start$sigma <- sigma
+    if (is.null(start$mu)) start$mu <- mu
+    QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, rcpp = TRUE))
+||||||| .r460
+  model <- setYuima(data = setData(data, delta = delta), model=setModelByName(name = modName, jumps = jumps))
+  parameters <- setModelByName(name = modName, jumps = jumps)@parameter
+  if (!is.null(jumps)){
+    jumpParam <- estimateJumps(data = data, jumps = jumps, threshold = threshold)
+    for (i in names(jumpParam)) if (is.null(start[[i]])) start[[i]] <- jumpParam[[i]]
+  }
+  if (all(parameters@all %in% c(names(start),names(fixed)))){
+    QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #REMOVE# joint = joint, aggregation = aggregation,
+                 threshold = threshold))
+=======
   model <- setYuima(data = setData(data, delta = delta), model=setModelByName(name = modName, jumps = jumps, MA_C = MA_C, AR_C = AR_C))
   index(model@data@original.data) <- index(data)
   parameters <- setModelByName(name = modName, jumps = jumps, MA_C = MA_C, AR_C = AR_C)@parameter
@@ -562,10 +741,26 @@ addModel <- function(modName, modClass, AR_C, MA_C, jumps, symbName, data, delta
     if (is.null(start$sigma)) start$sigma <- sigma
     if (is.null(start$mu)) start$mu <- mu
     QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, rcpp = TRUE))
+>>>>>>> .r498
     if (class(QMLE)=="try-error"){
       createAlert(session = session, anchorId = anchorId, alertId = alertId, content =  paste("Unable to estimate ", modName," on ", symbName, ". Try to use 'Advanced Settings' and customize estimation.", sep = ""), style = "danger")
       return()
     }
+<<<<<<< .mine
+  } 
+  else if (modClass == "Fractional process"){
+    QMLEtemp <- try(mmfrac(model))
+    if(class(QMLEtemp)!="try-error") {
+      estimates <- QMLEtemp[[1]]
+      dev <- diag(QMLEtemp[[2]])
+      QMLE <- rbind(estimates, dev)
+      col <- gsub(colnames(QMLE), pattern = "\\(", replacement = "")
+      col <- gsub(col, pattern = "\\)", replacement = "")
+      colnames(QMLE) <- col
+      rownames(QMLE) <- c("Estimate", "Std. Error")
+    }
+||||||| .r460
+=======
   } 
   else if (modClass=="CARMA") {
     allParam <- unique(c(parameters@drift, parameters@xinit[1]))
@@ -623,11 +818,157 @@ addModel <- function(modName, modClass, AR_C, MA_C, jumps, symbName, data, delta
         }
       })
     }
+>>>>>>> .r498
+  }
+<<<<<<< .mine
+  else if (modClass=="CARMA") {
+    allParam <- parameters@drift
+    if (all(allParam %in% c(names(start),names(fixed))))
+      QMLE <- try(qmleGUI(model, start = start, method = method, lower = lower, upper = upper))
+    else {
+      miss <- allParam[!(allParam %in% c(names(start),names(fixed)))]
+      m2logL_prec <- NA
+      na_prec <- NA
+      withProgress(message = 'Step: ', value = 0, {
+        for(iter in 1:trials){
+          incProgress(1/trials, detail = paste(iter,"(/", trials ,")"))
+          for(j in 1:3){
+            for (i in miss)
+              start[[i]] <- runif(1, min = max(lower[[i]],startMin[[i]], na.rm = TRUE), max = min(upper[[i]],startMax[[i]],na.rm = TRUE))
+            QMLEtemp <- try(qmleGUI(model, start = start, method = method, lower = lower, upper = upper))
+            if (class(QMLEtemp)!="try-error") if (all(!is.na(summary(QMLEtemp)@coef[,"Estimate"])))
+              break
+          }
+          if (class(QMLEtemp)!="try-error") if (all(!is.na(summary(QMLEtemp)@coef[,"Estimate"]))){
+            repeat{
+              m2logL <- summary(QMLEtemp)@m2logL
+              coefTable <- summary(QMLEtemp)@coef
+              for (param in rownames(coefTable))
+                start[[param]] <- as.numeric(coefTable[param,"Estimate"])
+              QMLEtemp <- try(qmleGUI(model, start = start, method = method, lower = lower, upper = upper))
+              if (class(QMLEtemp)=="try-error") break
+              else if(summary(QMLEtemp)@m2logL>=m2logL*abs(sign(m2logL)-0.001)) break
+            }
+            if(is.na(m2logL_prec) & class(QMLEtemp)!="try-error"){
+              QMLE <- QMLEtemp
+              m2logL_prec <- summary(QMLE)@m2logL
+              na_prec <- sum(is.na(coefTable))
+            }
+            else if (class(QMLEtemp)!="try-error"){
+              if (sum(is.na(coefTable)) < na_prec){
+                QMLE <- QMLEtemp
+                m2logL_prec <- summary(QMLE)@m2logL
+                na_prec <- sum(is.na(coefTable))
+              }
+              else {
+                test <- summary(QMLEtemp)@m2logL
+                if(test < m2logL_prec & sum(is.na(coefTable))==na_prec){
+                  QMLE <- QMLEtemp
+                  m2logL_prec <- test
+                  na_prec <- sum(is.na(coefTable))
+                }
+              }
+            }
+          }
+        }
+      })
+    }
   }
   else if (modClass=="COGARCH") {
     allParam <- unique(c(parameters@drift, parameters@xinit))
     if (all(allParam %in% c(names(start),names(fixed))))
+||||||| .r460
+  else{
+    if (modName == "Geometric Brownian Motion" | modName == "gBm"){
+      X <- as.numeric(na.omit(Delt(data, type = "log")))
+      alpha <- mean(X)/delta
+      sigma <- sqrt(var(X)/delta)
+      mu <- alpha +0.5*sigma^2
+      if (is.null(start$sigma)) start$sigma <- sigma
+      if (is.null(start$mu)) start$mu <- mu
+=======
+  else if (modClass=="COGARCH") {
+    allParam <- unique(c(parameters@drift, parameters@xinit))
+    if (all(allParam %in% c(names(start),names(fixed))))
+>>>>>>> .r498
       QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #REMOVE# joint = joint, aggregation = aggregation,
+<<<<<<< .mine
+                       threshold = threshold, grideq = TRUE, rcpp = TRUE))
+    else {
+      miss <- allParam[!(allParam %in% c(names(start),names(fixed)))]
+      m2logL_prec <- NA
+      na_prec <- NA
+      withProgress(message = 'Step: ', value = 0, {
+        for(iter in 1:trials){
+          incProgress(1/trials, detail = paste(iter,"(/", trials ,")"))
+          for(j in 1:3){
+            for (i in miss)
+              start[[i]] <- runif(1, min = max(lower[[i]],startMin[[i]], na.rm = TRUE), max = min(upper[[i]],startMax[[i]],na.rm = TRUE))
+            QMLEtemp <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #joint = joint, aggregation = aggregation,
+                                 threshold = threshold, grideq = TRUE, rcpp = TRUE))
+            if (class(QMLEtemp)!="try-error") if (all(!is.na(summary(QMLEtemp)@coef[,"Estimate"])))
+              break
+          }
+          if (class(QMLEtemp)!="try-error") if (all(!is.na(summary(QMLEtemp)@coef[,"Estimate"]))){
+            repeat{
+              m2logL <- summary(QMLEtemp)@objFunVal
+              coefTable <- summary(QMLEtemp)@coef
+              for (param in rownames(coefTable))
+                start[[param]] <- as.numeric(coefTable[param,"Estimate"])
+              QMLEtemp <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #joint = joint, aggregation = aggregation,
+                                   threshold = threshold, grideq = TRUE, rcpp = TRUE))
+              if (class(QMLEtemp)=="try-error") break
+              else if(summary(QMLEtemp)@objFunVal>=m2logL*abs(sign(m2logL)-0.001)) break
+            }
+            if(is.na(m2logL_prec) & class(QMLEtemp)!="try-error"){
+              QMLE <- QMLEtemp
+              m2logL_prec <- summary(QMLE)@objFunVal
+              na_prec <- sum(is.na(coefTable))
+            }
+            else if (class(QMLEtemp)!="try-error"){
+              if (sum(is.na(coefTable)) < na_prec){
+                QMLE <- QMLEtemp
+                m2logL_prec <- summary(QMLE)@objFunVal
+                na_prec <- sum(is.na(coefTable))
+              }
+              else {
+                test <- summary(QMLEtemp)@objFunVal
+                if(test < m2logL_prec & sum(is.na(coefTable))==na_prec){
+                  QMLE <- QMLEtemp
+                  m2logL_prec <- test
+                  na_prec <- sum(is.na(coefTable))
+                }
+              }
+            }
+          }
+        }
+      })
+    }
+  }
+  else if (modClass == "Compound Poisson") {
+    jumpParam <- estimateJumps(data = data, jumps = jumps, threshold = threshold)
+    for (i in names(jumpParam)) if (is.null(start[[i]])) start[[i]] <- jumpParam[[i]]
+    if (all(parameters@all %in% c(names(start),names(fixed))))
+      QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #REMOVE# joint = joint, aggregation = aggregation,
+                        threshold = threshold))
+    else {
+||||||| .r460
+                   threshold = threshold))
+      if (class(QMLE)=="try-error"){
+        createAlert(session = session, anchorId = anchorId, content =  paste("Unable to estimate ", modName," on ", symbName, ". Try to use 'Advanced Settings' and customize estimation.", sep = ""), style = "danger")
+        return()
+      }
+    #} else if (modName == "Brownian Motion" | modName == "Bm") {
+      #Delta <- ifelse(is.null(delta), 1, delta)
+      #X <- as.numeric(na.omit(Delt(data, type = "arithmetic")))
+      #mu <- mean(X)/Delta
+      #sigma <- sqrt(var(X)/Delta)
+      #if (is.null(start$sigma)) start$sigma <- sigma
+      #if (is.null(start$mu)) start$mu <- mu
+      #QMLE <- qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #joint = joint, aggregation = aggregation,
+      #             threshold = threshold)
+    } else {
+=======
                        threshold = threshold, grideq = TRUE, rcpp = TRUE))
     else {
       miss <- allParam[!(allParam %in% c(names(start),names(fixed)))]
@@ -691,6 +1032,7 @@ addModel <- function(modName, modClass, AR_C, MA_C, jumps, symbName, data, delta
       QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #REMOVE# joint = joint, aggregation = aggregation,
                         threshold = threshold))
     else {
+>>>>>>> .r498
       miss <- parameters@all[!(parameters@all %in% c(names(start),names(fixed)))]
       m2logL_prec <- NA
       na_prec <- NA
@@ -727,6 +1069,61 @@ addModel <- function(modName, modClass, AR_C, MA_C, jumps, symbName, data, delta
                 m2logL_prec <- summary(QMLE)@m2logL
                 na_prec <- sum(is.na(coefTable))
               }
+<<<<<<< .mine
+              else {
+                test <- summary(QMLEtemp)@m2logL
+                if(test < m2logL_prec & sum(is.na(coefTable))==na_prec){
+                  QMLE <- QMLEtemp
+                  m2logL_prec <- test
+                  na_prec <- sum(is.na(coefTable))
+                }
+              }
+            }
+          }
+        }
+      })
+    }
+  }
+  else {
+    if (all(parameters@all %in% c(names(start),names(fixed))))
+      QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #REMOVE# joint = joint, aggregation = aggregation,
+                       threshold = threshold, rcpp = TRUE))
+    else {
+      miss <- parameters@all[!(parameters@all %in% c(names(start),names(fixed)))]
+      m2logL_prec <- NA
+      na_prec <- NA
+      withProgress(message = 'Step: ', value = 0, {
+        for(iter in 1:trials){
+          incProgress(1/trials, detail = paste(iter,"(/", trials ,")"))
+          for(j in 1:3){
+            for (i in miss)
+              start[[i]] <- runif(1, min = max(lower[[i]],startMin[[i]], na.rm = TRUE), max = min(upper[[i]],startMax[[i]],na.rm = TRUE))
+            QMLEtemp <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #joint = joint, aggregation = aggregation,
+                                 threshold = threshold, rcpp = TRUE))
+            if (class(QMLEtemp)!="try-error") if (all(!is.na(summary(QMLEtemp)@coef[,"Estimate"])))
+              break
+          }
+          if (class(QMLEtemp)!="try-error") if (all(!is.na(summary(QMLEtemp)@coef[,"Estimate"]))){
+            repeat{
+              m2logL <- summary(QMLEtemp)@m2logL
+              coefTable <- summary(QMLEtemp)@coef
+              for (param in names(start))
+                start[[param]] <- as.numeric(coefTable[param,"Estimate"])
+              QMLEtemp <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #joint = joint, aggregation = aggregation,
+                                   threshold = threshold, rcpp = TRUE))
+              if (class(QMLEtemp)=="try-error") break
+              else if (summary(QMLEtemp)@m2logL>=m2logL*abs(sign(m2logL)-0.001)) break
+            }
+            if(is.na(m2logL_prec) & class(QMLEtemp)!="try-error"){
+              QMLE <- QMLEtemp
+              m2logL_prec <- summary(QMLE)@m2logL
+              na_prec <- sum(is.na(coefTable))
+            }
+            else if (class(QMLEtemp)!="try-error"){
+              if (sum(is.na(coefTable)) < na_prec){
+||||||| .r460
+              else if(summary(QMLEtemp)@m2logL < m2logL_prec & sum(is.na(coefTable))==na_prec){
+=======
               else {
                 test <- summary(QMLEtemp)@m2logL
                 if(test < m2logL_prec & sum(is.na(coefTable))==na_prec){
@@ -782,6 +1179,7 @@ addModel <- function(modName, modClass, AR_C, MA_C, jumps, symbName, data, delta
             }
             else if (class(QMLEtemp)!="try-error"){
               if (sum(is.na(coefTable)) < na_prec){
+>>>>>>> .r498
                 QMLE <- QMLEtemp
                 m2logL_prec <- summary(QMLE)@m2logL
                 na_prec <- sum(is.na(coefTable))
@@ -796,28 +1194,119 @@ addModel <- function(modName, modClass, AR_C, MA_C, jumps, symbName, data, delta
               }
             }
           }
+<<<<<<< .mine
+||||||| .r460
+          if (iter==tries & class(QMLEtemp)=="try-error" & !exists("QMLE")){
+            createAlert(session = session, anchorId = anchorId, content =  paste("Unable to estimate ", modName," on ", symbName, ". Try to use 'Advanced Settings' and customize estimation.", sep = ""), style = "danger")
+            return()
+          }
+=======
           if (iter==trials & class(QMLEtemp)=="try-error" & !exists("QMLE")){
             createAlert(session = session, anchorId = anchorId, alertId = alertId, content =  paste("Unable to estimate ", modName," on ", symbName, ". Try to use 'Advanced Settings' and customize estimation.", sep = ""), style = "danger")
             return()
           }
+>>>>>>> .r498
         }
       })
     }
   }
   
+<<<<<<< .mine
+  if (!exists("QMLE")){
+    createAlert(session = session, anchorId = anchorId, alertId = alertId, content =  paste("Unable to estimate ", modName," on ", symbName, ". Try to use 'Advanced Settings' and customize estimation.", sep = ""), style = "error")
+    return()
+||||||| .r460
+  if(!exists("QMLE"))
+    return()
+=======
   if(!exists("QMLE")) return()
+>>>>>>> .r498
+  }
   
   yuimaGUIdata$model[[symbName]][[ifelse(is.null(length(yuimaGUIdata$model[[symbName]])),1,length(yuimaGUIdata$model[[symbName]])+1)]] <<- list(
    model = model,
    qmle = QMLE,
+<<<<<<< .mine
+   aic = ifelse(!(modClass %in% c("CARMA","COGARCH","Fractional process")), AIC(QMLE), NA),
+   bic = ifelse(!(modClass %in% c("CARMA","COGARCH","Fractional process")), BIC(QMLE), NA),
+||||||| .r460
+   aic = AIC(QMLE),
+   bic = BIC(QMLE),
+=======
    aic = ifelse(!(modClass %in% c("CARMA","COGARCH")), AIC(QMLE), NA),
    bic = ifelse(!(modClass %in% c("CARMA","COGARCH")), BIC(QMLE), NA),
+>>>>>>> .r498
    info = info
  )
 }
 
 
 
+<<<<<<< .mine
+addCPoint <- function(modelName, symb, trials, frac = 0.2, delta = 0.01, session, anchorId, alertId = NULL){
+  series <- getData(symb)
+  mod <- setModelByName(name = modelName)
+  bounds <- defaultBounds(name = modelName)
+  startBounds <- defaultBounds(name = modelName, lower = -100, upper = 100)
+  yuima <- setYuima(data = setDataGUI(series, delta = delta), model = mod)
+  start <- list()
+  startMin <- startBounds$lower
+  startMax <- startBounds$upper
+  lower <- clearNA(bounds$lower)
+  upper <- clearNA(bounds$upper)
+  miss <- mod@parameter@all
+  
+  m2logL_prec <- NA
+  na_prec <- NA
+  for(iter in 1:trials){
+    for(j in 1:3){
+      for (i in miss)
+        start[[i]] <- runif(1, min = max(lower[[i]],startMin[[i]], na.rm = TRUE), max = min(upper[[i]],startMax[[i]],na.rm = TRUE))
+      QMLEtempL <- try(qmleL(yuima = yuima, t = frac*length(series)*delta, start = start, method="L-BFGS-B", lower = lower, upper = upper, rcpp = TRUE))
+      if (class(QMLEtempL)!="try-error") if (all(!is.na(summary(QMLEtempL)@coef[,"Estimate"])))
+        break
+    }
+    if (class(QMLEtempL)!="try-error") if (all(!is.na(summary(QMLEtempL)@coef[,"Estimate"]))){
+      repeat{
+        m2logL <- summary(QMLEtempL)@m2logL
+        coefTable <- summary(QMLEtempL)@coef
+        for (param in names(start))
+          start[[param]] <- as.numeric(coefTable[param,"Estimate"])
+        QMLEtempL <- try(qmleL(yuima = yuima, t = frac*length(series)*delta, start = start, method="L-BFGS-B", lower = lower, upper = upper, rcpp = TRUE))
+        if (class(QMLEtempL)=="try-error") break
+        else if (summary(QMLEtempL)@m2logL>=m2logL*abs(sign(m2logL)-0.001)) break
+      }
+      if(is.na(m2logL_prec) & class(QMLEtempL)!="try-error"){
+        QMLEL <- QMLEtempL
+        m2logL_prec <- summary(QMLEL)@m2logL
+        na_prec <- sum(is.na(coefTable))
+      }
+      else if (class(QMLEtempL)!="try-error"){
+        if (sum(is.na(coefTable)) < na_prec){
+          QMLEL <- QMLEtempL
+          m2logL_prec <- summary(QMLEL)@m2logL
+          na_prec <- sum(is.na(coefTable))
+        }
+        else {
+          test <- summary(QMLEtempL)@m2logL
+          if(test < m2logL_prec & sum(is.na(coefTable))==na_prec){
+            QMLEL <- QMLEtempL
+            m2logL_prec <- test
+            na_prec <- sum(is.na(coefTable))
+          }
+        }
+      }
+    }
+  }
+  if (!exists("QMLEL")){
+    createAlert(session = session, anchorId = anchorId, alertId = alertId, content =  paste("Unable to estimate change points of ", symb, ". Try to increase the number of Trials", sep = ""), style = "error")
+    return()
+  }
+  
+  tmpL <- QMLEL
+  tmpR <- try(qmleR(yuima = yuima, t = (1-frac)*length(series)*delta, start = as.list(coef(tmpL)), method="L-BFGS-B", lower = lower, upper = upper, rcpp = TRUE))
+||||||| .r460
+=======
 addCPoint <- function(modelName, symb, trials, frac = 0.15, delta = 0.01, session, anchorId, alertId = NULL){
   series <- getData(symb)
   mod <- setModelByName(name = modelName)
@@ -879,7 +1368,28 @@ addCPoint <- function(modelName, symb, trials, frac = 0.15, delta = 0.01, sessio
   }
   if(!exists("QMLEL")) return()
   tmpL <- QMLEL
+>>>>>>> .r498
 
+<<<<<<< .mine
+  if (class(tmpR)=="try-error"){
+    createAlert(session = session, anchorId = anchorId, alertId = alertId, content =  paste("Unable to estimate change points of ", symb, ". Try to increase the number of Trials", sep = ""), style = "error")
+    return()
+  }
+  
+  cp_prec <- CPoint(yuima = yuima, param1=coef(tmpL), param2=coef(tmpR))
+  repeat{
+    tmpL <- qmleL(yuima, start=as.list(coef(tmpL)), t = cp_prec$tau, lower=lower, upper = upper, method="L-BFGS-B", rcpp = TRUE)
+    tmpR <- qmleR(yuima, start=as.list(coef(tmpR)), t = cp_prec$tau, lower=lower, upper = upper, method="L-BFGS-B", rcpp = TRUE)
+    cp <- CPoint(yuima = yuima, param1=coef(tmpL), param2=coef(tmpR))
+    if (abs(cp$tau - cp_prec$tau)<delta) break
+    else cp_prec <- cp
+  }
+  
+  yuimaGUIdata$cpYuima[[symb]] <<- list(tau = index(series)[as.integer(cp$tau/delta)], model = modelName, trials = trials)
+  
+}
+||||||| .r460
+=======
   m2logL_prec <- NA
   na_prec <- NA
   for(iter in 1:trials){
@@ -941,6 +1451,7 @@ addCPoint <- function(modelName, symb, trials, frac = 0.15, delta = 0.01, sessio
   yuimaGUIdata$cpYuima[[symb]] <<- list(tau = index(series)[as.integer(cp$tau/delta)], model = modelName, trials = trials)
   
 }
+>>>>>>> .r498
 
 
 
@@ -967,7 +1478,13 @@ delModel <- function(symb, n=1){
 
 
 
+<<<<<<< .mine
+addSimulation <- function(modelYuima, symbName, info, toLog = FALSE, xinit, true.parameter, nsim, data = NA, saveTraj = TRUE, seed=NULL, sampling, space.discretized = FALSE, method = "euler", session, anchorId){
+||||||| .r460
+addSimulation <- function(model, symbName, info = list("simulate.from"=NA, "simulate.to"=NA,"model"=NA, "estimate.from"=NA, "estimate.to"=NA), xinit, true.parameter, nsim, saveTraj = TRUE, seed=NULL, sampling, subsampling = NULL, space.discretized = FALSE, method = "euler", session, anchorId){
+=======
 addSimulation <- function(modelYuima, symbName, info, xinit, true.parameter, nsim, data = NA, saveTraj = TRUE, seed=NULL, sampling, space.discretized = FALSE, method = "euler", session, anchorId){
+>>>>>>> .r498
   if(!is.na(seed)) set.seed(seed)
   if(is.na(seed)) set.seed(NULL)
   if(saveTraj==TRUE){
@@ -978,33 +1495,91 @@ addSimulation <- function(modelYuima, symbName, info, xinit, true.parameter, nsi
     trajectory <- NA
     hist <- numeric(nsim)
   }
+  if(toLog==TRUE) xinit <- log(xinit)
   is.valid <- TRUE
+<<<<<<< .mine
+  model <- modelYuima@model
+  if (info$class=="COGARCH") {
+    noise <- cogarchNoise(yuima = modelYuima, param = true.parameter)
+    xinit <- c(xinit, as.numeric(last(yuima:::onezoo(noise$Cogarch)))[-1])
+    increments <- noise$incr.L
+  }
+  if (info$class=="CARMA") {
+    increments <- CarmaNoise(yuima = modelYuima, param = true.parameter)
+    x <- try(yuima::simulate(object = model, increment.W = t(increments), xinit = as.numeric(first(modelYuima@data@original.data)), true.parameter = true.parameter, sampling = setSampling(Initial = modelYuima@sampling@Initial, delta = modelYuima@sampling@delta, n = length(increments)), space.discretized = space.discretized, method = method))
+    if (class(x)=="try-error"){
+      createAlert(session = session, anchorId = anchorId, content = paste("Unable to simulate ", symbName," by ", info$model, ". Probably something wrong with the estimation of this model", sep = ""), style = "danger")
+      return()
+    }
+    xinit <- c(xinit, as.numeric(last(yuima:::onezoo(x)))[-1])
+  }
+  if (info$class=="Fractional process") if (true.parameter[["hurst"]]>=1 | true.parameter[["hurst"]]<=0) {
+    createAlert(session = session, anchorId = anchorId, content = "Hurst coefficient must greater than 0 and less than 1", style = "danger")
+    return()
+  }
+||||||| .r460
+=======
   model <- modelYuima@model
   if (info$class=="COGARCH") increments <- cogarchNoise(yuima = modelYuima, param = true.parameter)$incr.L
   if (info$class=="CARMA") increments <- CarmaNoise(yuima = modelYuima, param = true.parameter)
+>>>>>>> .r498
   withProgress(message = 'Simulating: ', value = 0, {
     for (i in 1:nsim){
       incProgress(1/nsim, detail = paste("Simulating:",i,"(/",nsim,")"))
+<<<<<<< .mine
+      if (info$class=="COGARCH")
+        simulation <- try(yuima::simulate(object = model, increment.L = sample(x = increments, size = sampling@n, replace = TRUE), xinit = xinit, true.parameter = true.parameter, sampling = sampling, space.discretized = space.discretized, method = method))
+      else if (info$class=="CARMA")
+        simulation <- try(yuima::simulate(object = model, increment.W = t(sample(x = increments, size = sampling@n, replace = TRUE)), xinit = xinit, true.parameter = true.parameter, sampling = sampling, space.discretized = space.discretized, method = method))
+      else if (info$class=="Fractional process")
+        simulation <- try(yuima::simulate(object = model, xinit = xinit, true.parameter = true.parameter, hurst = true.parameter[["hurst"]], sampling = sampling, space.discretized = space.discretized, method = method))
+||||||| .r460
+      if(is.null(subsampling))
+        simulation <- try(yuima::simulate(object = model, xinit = xinit, true.parameter = true.parameter, nsim = nsim, sampling = sampling, space.discretized = space.discretized, method = method))
+=======
       if (info$class=="COGARCH")
         simulation <- try(yuima::simulate(object = model, increment.L = sample(x = increments, size = sampling@n, replace = TRUE), xinit = xinit, true.parameter = true.parameter, nsim = nsim, sampling = sampling, space.discretized = space.discretized, method = method))
       else if (info$class=="CARMA")
         simulation <- try(yuima::simulate(object = model, increment.W = t(sample(x = increments, size = sampling@n, replace = TRUE)), xinit = xinit, true.parameter = true.parameter, nsim = nsim, sampling = sampling, space.discretized = space.discretized, method = method))
       else
         simulation <- try(yuima::simulate(object = model, xinit = xinit, true.parameter = true.parameter, nsim = nsim, sampling = sampling, space.discretized = space.discretized, method = method))
+>>>>>>> .r498
+<<<<<<< .mine
+      else
+        simulation <- try(yuima::simulate(object = model, xinit = xinit, true.parameter = true.parameter, sampling = sampling, space.discretized = space.discretized, method = method))
+||||||| .r460
+      else
+        simulation <- try(yuima::simulate(object = model, xinit = xinit, true.parameter = true.parameter, nsim = nsim, sampling = sampling, subsampling = subsampling, space.discretized = space.discretized, method = method))
+=======
+>>>>>>> .r498
       if (class(simulation)=="try-error"){
         is.valid <- FALSE
         break()
       }
-      if(is.valid){
+      else if (any(is.na(as.numeric(simulation@data@zoo.data[[1]])))){
+        is.valid <- FALSE
+        break()
+      }
+      else {
         if (saveTraj==TRUE)
           trajectory <- merge(trajectory, simulation@data@zoo.data[[1]])
+<<<<<<< .mine
+        if (saveTraj==FALSE)
+          hist[i] <- as.numeric(tail(simulation@data@zoo.data[[1]],1))
+||||||| .r460
+        else
+          hist <- c(hist, as.numeric(tail(simulation@data@zoo.data[[1]],1)))
+=======
         else
           hist[i] <- as.numeric(tail(simulation@data@zoo.data[[1]],1))
+>>>>>>> .r498
       }
     }
   })
   if (!is.valid){
-    createAlert(session = session, anchorId = anchorId, content = paste("Unable to simulate", symbName,"by", info$model), style = "danger")
+    if(info$class %in% c("CARMA","COGARCH")) msg <- paste("Unable to simulate ", symbName," by ", info$model, ". Probably something wrong with the estimation of this model", sep = "")
+    else msg <- paste("Unable to simulate", symbName,"by", info$model)
+    createAlert(session = session, anchorId = anchorId, content = msg, style = "danger")
     return()
   }
 
@@ -1018,6 +1593,11 @@ addSimulation <- function(modelYuima, symbName, info, xinit, true.parameter, nsi
       colnames(trajectory) <- seq(1:length(colnames(trajectory)))
   }
 
+  if(toLog==TRUE){
+    trajectory <- exp(trajectory)
+    hist <- exp(hist)
+  }
+  
   info$nsim <- nsim
   yuimaGUIdata$simulation[[symbName]][[ifelse(is.null(length(yuimaGUIdata$simulation[[symbName]])),1,length(yuimaGUIdata$simulation[[symbName]])+1)]] <<- list(
     trajectory = trajectory,
