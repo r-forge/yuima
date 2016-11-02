@@ -1,7 +1,7 @@
 header<-dashboardHeader(
   title = "yuimaGUI"
 )
-
+ 
 sidebar<-dashboardSidebar(
   sidebarMenu(
     menuItem("Home", tabName = "home", icon = icon("home")),
@@ -187,13 +187,7 @@ body<-dashboardBody(
           br(),
           fluidRow(
             column(4,div(align="center",
-<<<<<<< .mine
               selectInput("modelClass",label = "Model Class", choices = c("Diffusion process", "Fractional process", "Compound Poisson", "CARMA", "COGARCH"), selected = "Diffusion process"),
-||||||| .r460
-              selectInput("modelClass",label = "Model Class", choices = c("Diffusion process", "Compound Poisson"), selected = "Diffusion process"),
-=======
-              selectInput("modelClass",label = "Model Class", choices = c("Diffusion process", "Compound Poisson", "CARMA", "COGARCH"), selected = "Diffusion process"),
->>>>>>> .r498
               uiOutput("model"),
               uiOutput("jumps"),
               uiOutput("pq_C")
