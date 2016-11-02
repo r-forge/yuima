@@ -1,5 +1,5 @@
 options(shiny.maxRequestSize = 9*1024^2)
-
+ 
 
 server <- function(input, output, session) {
 
@@ -257,17 +257,11 @@ server <- function(input, output, session) {
           if(input$modelClass!="Diffusion process") choices <- c(i, choices)
           else if (length(setModelByName(name = i)@parameter@all)!=0) choices <- c(i, choices)
         }
-    return (selectInput("model",label = "Model Name", choices = choices, multiple = TRUE, selected = choices[1]))
+    return (selectInput("model",label = "Model Name", choices = choices, multiple = TRUE))
   })
   
   output$jumps <- renderUI({
-<<<<<<< .mine
     if (input$modelClass=="Compound Poisson")
-||||||| .r460
-    if (input$modelClass!="Diffusion process")
-=======
-    if (input$modelClass!="Diffusion process" & input$modelClass!="COGARCH" & input$modelClass!="CARMA")
->>>>>>> .r498
       return(selectInput("jumps",label = "Jumps", choices = defaultJumps))
   })
   
@@ -591,24 +585,13 @@ server <- function(input, output, session) {
   prev_buttonDelta <- 0
   prev_buttonAllDelta <- 0
   observe({
-<<<<<<< .mine
     class <- isolate({input$modelClass})
     for (symb in rownames(seriesToEstimate$table)){
       if (is.null(deltaSettings[[symb]])) deltaSettings[[symb]] <<- 0.01
       if (is.null(toLogSettings[[symb]])) toLogSettings[[symb]] <<- FALSE
       lastPrice <- as.numeric(last(getData(symb)))
       if (toLogSettings[[symb]]==TRUE) lastPrice <- log(lastPrice)
-||||||| .r460
-    for (symb in input$database4_rows_all){
-      if (is.null(deltaSettings[[symb]]))
-        deltaSettings[[symb]] <<- 0.01
-=======
-    for (symb in rownames(seriesToEstimate$table)){
-      if (is.null(deltaSettings[[symb]]))
-        deltaSettings[[symb]] <<- 0.01
->>>>>>> .r498
       for (modName in input$model){
-<<<<<<< .mine
         if (class(try(setModelByName(modName, jumps = jumps_shortcut(class = class, jumps = input$jumps), AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA))))!="try-error"){
           if (is.null(estimateSettings[[modName]]))
             estimateSettings[[modName]] <<- list()
@@ -667,85 +650,6 @@ server <- function(input, output, session) {
           if (is.null(estimateSettings[[modName]][[symb]][["threshold"]]))
             estimateSettings[[modName]][[symb]][["threshold"]] <<- NA
         }
-||||||| .r460
-        if (is.null(estimateSettings[[modName]]))
-          estimateSettings[[modName]] <<- list()
-        if (is.null(estimateSettings[[modName]][[symb]]))
-          estimateSettings[[modName]][[symb]] <<- list()
-        if (is.null(estimateSettings[[modName]][[symb]][["fixed"]]) | isolate({input$modelClass!="Diffusion process"}))
-          estimateSettings[[modName]][[symb]][["fixed"]] <<- list()
-        if (is.null(estimateSettings[[modName]][[symb]][["start"]]) | isolate({input$modelClass!="Diffusion process"}))
-          estimateSettings[[modName]][[symb]][["start"]] <<- list()
-        if (is.null(estimateSettings[[modName]][[symb]][["startMin"]]) | isolate({input$modelClass!="Diffusion process"}))
-          estimateSettings[[modName]][[symb]][["startMin"]] <<- defaultBounds(name = modName, jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps), lower = -100, upper = 100)$lower
-        if (is.null(estimateSettings[[modName]][[symb]][["startMax"]]) | input$modelClass!="Diffusion process")
-          estimateSettings[[modName]][[symb]][["startMax"]] <<- defaultBounds(name = modName, jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps), lower = -100, upper = 100)$upper
-        if (is.null(estimateSettings[[modName]][[symb]][["upper"]]) | input$modelClass!="Diffusion process")
-          estimateSettings[[modName]][[symb]][["upper"]] <<- defaultBounds(name = modName, jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps))$upper
-        if (is.null(estimateSettings[[modName]][[symb]][["lower"]]) | input$modelClass!="Diffusion process")
-          estimateSettings[[modName]][[symb]][["lower"]] <<- defaultBounds(name = modName, jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps))$lower
-        if (is.null(estimateSettings[[modName]][[symb]][["method"]]))
-          estimateSettings[[modName]][[symb]][["method"]] <<- "L-BFGS-B"
-        if (is.null(estimateSettings[[modName]][[symb]][["tries"]]))
-          estimateSettings[[modName]][[symb]][["tries"]] <<- 1
-        if (is.null(estimateSettings[[modName]][[symb]][["seed"]]))
-          estimateSettings[[modName]][[symb]][["seed"]] <<- NA
-        if (is.null(estimateSettings[[modName]][[symb]][["joint"]]))
-          estimateSettings[[modName]][[symb]][["joint"]] <<- FALSE
-        if (is.null(estimateSettings[[modName]][[symb]][["aggregation"]]))
-          estimateSettings[[modName]][[symb]][["aggregation"]] <<- TRUE
-        if (is.null(estimateSettings[[modName]][[symb]][["threshold"]]))
-          estimateSettings[[modName]][[symb]][["threshold"]] <<- NA
-=======
-        if (class(try(setModelByName(modName, jumps = switch(input$modelClass, "Diffusion process" = NA, "Compound Poisson" = input$jumps, "COGARCH"=NA, "CARMA"=NA), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))))!="try-error"){
-          if (is.null(estimateSettings[[modName]]))
-            estimateSettings[[modName]] <<- list()
-          if (is.null(estimateSettings[[modName]][[symb]]))
-            estimateSettings[[modName]][[symb]] <<- list()
-          if (is.null(estimateSettings[[modName]][[symb]][["fixed"]]) | isolate({input$modelClass!="Diffusion process"}))
-            estimateSettings[[modName]][[symb]][["fixed"]] <<- list()
-          if (is.null(estimateSettings[[modName]][[symb]][["start"]]) | isolate({input$modelClass!="Diffusion process"}))
-            estimateSettings[[modName]][[symb]][["start"]] <<- list()
-          if (is.null(estimateSettings[[modName]][[symb]][["startMin"]]) | isolate({input$modelClass!="Diffusion process"}))
-            estimateSettings[[modName]][[symb]][["startMin"]] <<- defaultBounds(name = modName, 
-                                                                                jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps, "COGARCH" = NA, "CARMA" = NA), 
-                                                                                AR_C = ifelse(isolate({input$modelClass}) %in% c("CARMA","COGARCH"), input$AR_C, NA), 
-                                                                                MA_C = ifelse(isolate({input$modelClass}) %in% c("CARMA","COGARCH"), input$MA_C, NA), 
-                                                                                lower = -100, upper = 100
-                                                                                )$lower
-          if (is.null(estimateSettings[[modName]][[symb]][["startMax"]]) | input$modelClass!="Diffusion process")
-            estimateSettings[[modName]][[symb]][["startMax"]] <<- defaultBounds(name = modName, 
-                                                                                jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps, "COGARCH" = NA, "CARMA" = NA), 
-                                                                                AR_C = ifelse(isolate({input$modelClass}) %in% c("CARMA","COGARCH"), input$AR_C, NA), 
-                                                                                MA_C = ifelse(isolate({input$modelClass}) %in% c("CARMA","COGARCH"), input$MA_C, NA), 
-                                                                                lower = -100, upper = 100
-                                                                                )$upper
-          if (is.null(estimateSettings[[modName]][[symb]][["upper"]]) | input$modelClass!="Diffusion process")
-            estimateSettings[[modName]][[symb]][["upper"]] <<- defaultBounds(name = modName, 
-                                                                             jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps, "COGARCH" = NA, "CARMA" = NA),
-                                                                             AR_C = ifelse(isolate({input$modelClass}) %in% c("CARMA","COGARCH"), input$AR_C, NA), 
-                                                                             MA_C = ifelse(isolate({input$modelClass}) %in% c("CARMA","COGARCH"), input$MA_C, NA)
-                                                                             )$upper
-          if (is.null(estimateSettings[[modName]][[symb]][["lower"]]) | input$modelClass!="Diffusion process")
-            estimateSettings[[modName]][[symb]][["lower"]] <<- defaultBounds(name = modName, 
-                                                                             jumps = switch(isolate({input$modelClass}), "Diffusion process" = NULL, "Compound Poisson" = input$jumps, "COGARCH" = NA, "CARMA" = NA),
-                                                                             AR_C = ifelse(isolate({input$modelClass}) %in% c("CARMA","COGARCH"), input$AR_C, NA), 
-                                                                             MA_C = ifelse(isolate({input$modelClass}) %in% c("CARMA","COGARCH"), input$MA_C, NA)
-                                                                             )$lower
-          if (is.null(estimateSettings[[modName]][[symb]][["method"]]))
-            estimateSettings[[modName]][[symb]][["method"]] <<- "L-BFGS-B"
-          if (is.null(estimateSettings[[modName]][[symb]][["trials"]]))
-            estimateSettings[[modName]][[symb]][["trials"]] <<- 1
-          if (is.null(estimateSettings[[modName]][[symb]][["seed"]]))
-            estimateSettings[[modName]][[symb]][["seed"]] <<- NA
-          if (is.null(estimateSettings[[modName]][[symb]][["joint"]]))
-            estimateSettings[[modName]][[symb]][["joint"]] <<- FALSE
-          if (is.null(estimateSettings[[modName]][[symb]][["aggregation"]]))
-            estimateSettings[[modName]][[symb]][["aggregation"]] <<- TRUE
-          if (is.null(estimateSettings[[modName]][[symb]][["threshold"]]))
-            estimateSettings[[modName]][[symb]][["threshold"]] <<- NA
-        }
->>>>>>> .r498
       }
     }
     prev_buttonDelta <<- input$advancedSettingsButtonApplyDelta
@@ -754,16 +658,8 @@ server <- function(input, output, session) {
   
   observe({
     valid <- TRUE
-<<<<<<< .mine
     if (nrow(seriesToEstimate$table)==0 | is.null(input$model)) valid <- FALSE
     else for(mod in input$model) if  (class(try(setModelByName(mod, jumps = jumps_shortcut(class = input$modelClass, jumps = input$jumps), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))))=="try-error")  valid <- FALSE
-||||||| .r460
-    if (is.null(input$database4_rows_all) | is.null(input$model)) valid <- FALSE
-    else if (input$modelClass!="Diffusion process") if (is.null(input$jumps)) valid <- FALSE
-=======
-    if (nrow(seriesToEstimate$table)==0 | is.null(input$model)) valid <- FALSE
-    else if  (class(try(setModelByName(input$model, jumps = switch(input$modelClass, "Diffusion process" = NA, "Compound Poisson" = input$jumps, "COGARCH"=NA, "CARMA" = NA), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))))=="try-error")  valid <- FALSE
->>>>>>> .r498
     shinyjs::toggle(id="advancedSettingsAll", condition = valid)
     shinyjs::toggle(id="advancedSettingsErrorMessage", condition = !valid)
   })
@@ -788,7 +684,6 @@ server <- function(input, output, session) {
   })
   output$advancedSettingsParameter <- renderUI({
     if (!is.null(input$model))
-<<<<<<< .mine
       if (!is.null(input$advancedSettingsModel)){
         parL <- try(setModelByName(input$advancedSettingsModel, jumps = jumps_shortcut(class = input$modelClass, jumps = input$jumps), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))@parameter)
         if (class(par)!="try-error")
@@ -797,19 +692,6 @@ server <- function(input, output, session) {
           if (input$modelClass=="CARMA") par <- parL@drift
           selectInput(inputId = "advancedSettingsParameter", label = "Parameter", choices = par)
       }
-||||||| .r460
-      if (!is.null(input$advancedSettingsModel))
-        selectInput(inputId = "advancedSettingsParameter", label = "Parameter", choices = setModelByName(input$advancedSettingsModel, jumps = switch(input$modelClass, "Diffusion process" = NULL, "Compound Poisson" = input$jumps))@parameter@all)
-=======
-      if (!is.null(input$advancedSettingsModel)){
-        parL <- try(setModelByName(input$advancedSettingsModel, jumps = switch(input$modelClass, "Diffusion process" = NULL, "Compound Poisson" = input$jumps, "COGARCH"=NA, "CARMA" = NA), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))@parameter)
-        if (class(par)!="try-error")
-          par <- parL@all
-          if (input$modelClass=="COGARCH") par <- unique(c(parL@drift, parL@xinit))
-          if (input$modelClass=="CARMA") par <- unique(c(parL@drift, parL@xinit[1]))
-          selectInput(inputId = "advancedSettingsParameter", label = "Parameter", choices = par)
-      }
->>>>>>> .r498
   })
   #REMOVE# output$advancedSettingsFixed <- renderUI({
   #REMOVE#  if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsParameter))
@@ -885,13 +767,7 @@ server <- function(input, output, session) {
       toLogSettings[[input$advancedSettingsSeries]] <<- input$advancedSettingsToLog
   })
   observeEvent(input$advancedSettingsButtonApplyAllDelta, {
-<<<<<<< .mine
     for (symb in rownames(seriesToEstimate$table)){
-||||||| .r460
-    for (symb in input$database4_rows_all)
-=======
-    for (symb in rownames(seriesToEstimate$table))
->>>>>>> .r498
       deltaSettings[[symb]] <<- input$advancedSettingsDelta
       if (input$advancedSettingsToLog==FALSE) toLogSettings[[symb]] <<- input$advancedSettingsToLog
       else if (all(getData(symb)>0)) toLogSettings[[symb]] <<- input$advancedSettingsToLog
@@ -967,18 +843,9 @@ server <- function(input, output, session) {
   observeEvent(input$EstimateModels,{
     closeAlert(session = session, alertId = "modelsErr")
     valid <- TRUE
-<<<<<<< .mine
     if(is.null(input$model) | nrow(seriesToEstimate$table)==0) valid <- FALSE
     else if (input$modelClass=="Compound Poisson" & is.null(input$jumps)) valid <- FALSE
     else for(mod in input$model) if (class(try(setModelByName(mod, jumps = jumps_shortcut(class = input$modelClass, jumps = input$jumps), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))))=="try-error")  valid <- FALSE
-||||||| .r460
-    if(is.null(input$model) | length(rownames(seriesToEstimate$table))==0 | is.null(rownames(seriesToEstimate$table))) valid <- FALSE
-    else if (input$modelClass!="Diffusion process" & is.null(input$jumps)) valid <- FALSE
-=======
-    if(is.null(input$model) | nrow(seriesToEstimate$table)==0) valid <- FALSE
-    else if (!(input$modelClass %in% c("Diffusion process", "COGARCH", "CARMA")) & is.null(input$jumps)) valid <- FALSE
-    else if  (class(try(setModelByName(input$model, jumps = switch(input$modelClass, "Diffusion process" = NA, "Compound Poisson" = input$jumps, "COGARCH"=NA, "CARMA"=NA), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))))=="try-error")  valid <- FALSE
->>>>>>> .r498
     if(!valid){
       createAlert(session = session, anchorId = "modelsAlert", alertId = "modelsAlert_err", content = "Select some series and (valid) models to estimate", style = "warning")
     }
@@ -999,17 +866,9 @@ server <- function(input, output, session) {
             addModel(
               modName = modName,
               modClass = input$modelClass,
-<<<<<<< .mine
               AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), 
               MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA),
               jumps = jumps_shortcut(class = input$modelClass, jumps = input$jumps),
-||||||| .r460
-              jumps = switch(input$modelClass, "Diffusion process" = NULL, "Compound Poisson" = input$jumps),
-=======
-              AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), 
-              MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA),
-              jumps = switch(input$modelClass, "Diffusion process" = NA, "Compound Poisson" = input$jumps, "COGARCH" = NA, "CARMA" = NA),
->>>>>>> .r498
               symbName = symb,
               data = data,
               delta = deltaSettings[[symb]],
@@ -1039,16 +898,8 @@ server <- function(input, output, session) {
 
   observe({
     valid <- TRUE
-<<<<<<< .mine
     if(is.null(input$model) | nrow(seriesToEstimate$table)==0) valid <- FALSE
     else if (input$modelClass=="Compound Poisson" & is.null(input$jumps)) valid <- FALSE
-||||||| .r460
-    if(is.null(input$model) | length(rownames(seriesToEstimate$table))==0 | is.null(rownames(seriesToEstimate$table))) valid <- FALSE
-    else if (input$modelClass!="Diffusion process" & is.null(input$jumps)) valid <- FALSE
-=======
-    if(is.null(input$model) | nrow(seriesToEstimate$table)==0) valid <- FALSE
-    else if (input$modelClass!="Diffusion process" & is.null(input$jumps)) valid <- FALSE
->>>>>>> .r498
     if(valid) closeAlert(session, alertId = "modelsAlert_err")
   })
 
@@ -1117,18 +968,8 @@ server <- function(input, output, session) {
     )
   })
 
-<<<<<<< .mine
   output$table_MoreInfo <- renderTable(digits=6, rownames = TRUE, {
     id <- unlist(strsplit(rownames(yuimaGUItable$model)[rowToPrint$id], split = " "))
-||||||| .r460
-  output$table_MoreInfo <- renderTable(digits=6,{
-    id <- unlist(strsplit(rowToPrint$id, split = " "))
-    coef <- as.data.frame(t(summary(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle)@coef))
-=======
-  output$table_MoreInfo <- renderTable(digits=6, rownames = TRUE, {
-    id <- unlist(strsplit(rownames(yuimaGUItable$model)[rowToPrint$id], split = " "))
-    coef <- as.data.frame(t(summary(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle)@coef))
->>>>>>> .r498
     info <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info
     if (info$class=="Fractional process") coef <- as.data.frame(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle)
     else coef <- as.data.frame(t(summary(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle)@coef))
@@ -1151,40 +992,14 @@ server <- function(input, output, session) {
   })
 
 
-  ###Function to manipulate digits
-  signifDigits <- function(value, sd){
-    if (is.na(sd) | sd=="NaN" | sd==0)
-      return (value)
-    else{
-      pow <- 10^(1-as.integer(log10(as.numeric(sd))))
-      return(round(as.numeric(value)*pow)/pow)
-    }
-  }
-
   ###Print estimates
   observe({
     if (!is.null(rowToPrint$id)){
-<<<<<<< .mine
       symb <- unlist(strsplit(rownames(yuimaGUItable$model)[rowToPrint$id], split = " "))[1]
       modN <- as.numeric(unlist(strsplit(rownames(yuimaGUItable$model)[rowToPrint$id], split = " "))[2])
       if (yuimaGUIdata$model[[symb]][[modN]]$info$class=="Fractional process") table <- yuimaGUIdata$model[[symb]][[modN]]$qmle
       else table <- t(summary(yuimaGUIdata$model[[symb]][[modN]]$qmle)@coef)
-||||||| .r460
-      symb <- unlist(strsplit(rowToPrint$id, split = " "))[1]
-      modN <- as.numeric(unlist(strsplit(rowToPrint$id, split = " "))[2])
-      table <- t(summary(yuimaGUIdata$model[[symb]][[modN]]$qmle)@coef)
-=======
-      symb <- unlist(strsplit(rownames(yuimaGUItable$model)[rowToPrint$id], split = " "))[1]
-      modN <- as.numeric(unlist(strsplit(rownames(yuimaGUItable$model)[rowToPrint$id], split = " "))[2])
-      table <- t(summary(yuimaGUIdata$model[[symb]][[modN]]$qmle)@coef)
->>>>>>> .r498
-      outputTable <- data.frame()
-      for (param in unique(colnames(table))){
-        temp <- changeBase(param = as.numeric(table["Estimate",param]), StdErr = as.numeric(table["Std. Error",param]), delta = yuimaGUIdata$model[[symb]][[modN]]$model@sampling@delta, original.data = yuimaGUIdata$model[[symb]][[modN]]$model@data@original.data, paramName = param, modelName = yuimaGUIdata$model[[symb]][[modN]]$info$modName, newBase = input$baseModels, session = session, choicesUI="baseModels", anchorId = "modelsAlert", alertId = "modelsAlert_conversion", allParam = table["Estimate",])
-        outputTable["Estimate",param] <- as.character(signifDigits(temp[["Estimate"]],temp[["Std. Error"]]))
-        outputTable["Std. Error",param] <- as.character(signifDigits(temp[["Std. Error"]],temp[["Std. Error"]]))
-      }
-      colnames(outputTable) <- unique(colnames(table))
+      outputTable <- changeBase(table = table, yuimaGUI = yuimaGUIdata$model[[symb]][[modN]], newBase = input$baseModels, session = session, choicesUI="baseModels", anchorId = "modelsAlert", alertId = "modelsAlert_conversion")
       output$estimatedModelsTable <- renderTable(rownames = TRUE, {
         if (!is.null(rowToPrint$id))
           return(outputTable)
@@ -1695,16 +1510,8 @@ server <- function(input, output, session) {
             if (yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class=="Fractional process") true.parameter <- as.list(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle["Estimate",])
             else true.parameter <- as.list(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle@coef)
             addSimulation(
-<<<<<<< .mine
               modelYuima = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model,
               true.parameter = true.parameter,
-||||||| .r460
-              model = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@model,
-              true.parameter = as.list(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle@coef),
-=======
-              modelYuima = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model,
-              true.parameter = as.list(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle@coef),
->>>>>>> .r498
               symbName = id[1],
               info = info,
               toLog = toLog,
