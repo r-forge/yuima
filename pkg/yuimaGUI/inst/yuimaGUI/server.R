@@ -6,12 +6,20 @@ server <- function(input, output, session) {
   ###Save all available data
   saveData <- function() {
     dataDownload_series <- reactive({
-      data <- data.frame()
-      for (symb in names(yuimaGUIdata$series))
-        data <- as.data.frame(rbind.fill(as.data.frame(data),as.data.frame(t(getData(symb)))))
-      data <- as.data.frame(t(data))
-      colnames(data) <- names(yuimaGUIdata$series)
-      return(data)
+      for (symb in names(yuimaGUIdata$series)){
+        data <- getData(symb)
+        if(class(index(data)[1])=="numeric") {
+          if (!exists("data_num", inherits = FALSE)) data_num <- data
+          else data_num <- merge(data_num, data)
+        }
+        else {
+          if (!exists("data_date", inherits = FALSE)) data_date <- data
+          else data_date <- merge(data_date, data)
+        }
+      }
+      if (exists("data_date") & !exists("data_num")) return(as.data.frame(data_date[order(index(data_date)), ]))
+      if (!exists("data_date") & exists("data_num")) return(as.data.frame(data_num[order(index(data_num)), ]))
+      if (exists("data_date") & exists("data_num")) return(rbind.fill(as.data.frame(data_num[order(index(data_num)), ]), as.data.frame(data_date[order(index(data_date)), ])))
     })
     downloadHandler(
       filename = "yuimaGUIdata.txt",
@@ -1819,7 +1827,8 @@ server <- function(input, output, session) {
       d <- switch(
         input$cluster_distance,
         "MOdist" = try(MOdist(na.omit(x))),
-        "MYdist" = try(MYdist(x)),
+        "MYdist_perc" = try(MYdist(x, percentage = TRUE)),
+        "MYdist_ass" = try(MYdist(x, percentage = FALSE)),
         "euclidean" = try(dist(t(as.data.frame(x)), method = "euclidean")),
         "maximum" = try(dist(t(as.data.frame(x)), method = "maximum")),
         "manhattan" = try(dist(t(as.data.frame(x)), method = "manhattan")),
