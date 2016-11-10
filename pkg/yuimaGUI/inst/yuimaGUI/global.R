@@ -893,8 +893,8 @@ addModel <- function(modName, modClass, AR_C, MA_C, jumps, symbName, data, toLog
 addCPoint <- function(modelName, symb, trials, frac = 0.2, delta = 0.01, session, anchorId, alertId = NULL){
   series <- getData(symb)
   mod <- setModelByName(name = modelName)
-  bounds <- defaultBounds(name = modelName)
-  startBounds <- defaultBounds(name = modelName, lower = -100, upper = 100)
+  bounds <- defaultBounds(name = modelName, delta = delta)
+  startBounds <- defaultBounds(name = modelName, delta = delta, lower = -100, upper = 100)
   yuima <- setYuima(data = setDataGUI(series, delta = delta), model = mod)
   start <- list()
   startMin <- startBounds$lower
@@ -1184,44 +1184,42 @@ delHedging <- function(n){
 
 
 
-MYdist <- function(object){
+MYdist <- function(object, percentage = TRUE){
   l <- length(colnames(object))
   d <- matrix(ncol = l, nrow = l)
   f <- function(x, dens){
     res <- c()
-    for(xi in x){
-      if(xi %in% dens$x)
-        res <- c(res,dens$y[which(dens$x==xi)])
-      else{
-        if (xi > max(dens$x) | xi < min(dens$x))
-          res <- c(res,0)
-        else{
+    getY <- function(xi){
+        i <- which(dens$x==xi)
+        if (length(i)!=0) return(dens$y[i])
+        else {
           i_x1 <- which.min(abs(dens$x-xi))
           i_x2 <- min(i_x1+1,length(dens$x))
-          res <- c(res, 0.5*(dens$y[i_x1]+dens$y[i_x2]))
+          return(0.5*(dens$y[i_x1]+dens$y[i_x2]))
         }
-      }
     }
+    res <- sapply(X = x, FUN = getY)
     return(res)
   }
   withProgress(message = 'Clustering: ', value = 0, {
     k <- 1
     for(i in 1:l){
-      delta_i <- as.numeric(abs(mean(diff(index(object)[!is.na(object[,i])]))))
-      data_i <- as.vector(Delt(na.omit(object[,i])))
+      delta_i <- as.numeric(abs(mean(diff(index(object)[!is.na(object[,i])]), na.rm = TRUE)))
+      if (percentage == TRUE) data_i <- as.vector(na.omit(Delt(object[,i])))
+      else data_i <- as.vector(na.omit(diff(object[,i])))
       data_i <- data_i[data_i!="Inf"]
       dens1 <-  density(data_i/sqrt(delta_i)+mean(data_i, na.rm = TRUE)*(1/delta_i-1/sqrt(delta_i)), na.rm = TRUE)
       for(j in i:l)
         if (i!=j){
           incProgress(2/(l*(l-1)), detail = paste(k,"(/", l*(l-1)/2 ,")"))
-          delta_j <- as.numeric(abs(mean(diff(index(object)[!is.na(object[,j])]))))
-          data_j <- as.vector(Delt(na.omit(object[,j])))
+          delta_j <- as.numeric(abs(mean(diff(index(object)[!is.na(object[,j])]), na.rm = TRUE)))
+          if (percentage == TRUE) data_j <- as.vector(na.omit(Delt(object[,j])))
+          else data_j <- as.vector(na.omit(diff(object[,j])))
           data_j <- data_j[data_j!="Inf"]
           dens2 <-  density(data_j/sqrt(delta_j)+mean(data_j, na.rm = TRUE)*(1/delta_j-1/sqrt(delta_j)), na.rm = TRUE)
-          f_dist <- function(x) {abs(f(x,dens1)-f(x,dens2))}
-          npoints <- 1000
-          dist <- (max(tail(dens1$x,1), tail(dens2$x,1))-min(dens1$x[1],dens2$x[1]))/npoints*0.5*sum(f_dist(seq(from=min(dens1$x[1], dens2$x[1]), to=max(tail(dens1$x,1), tail(dens2$x,1)), length.out = npoints)))
-          d[j,i] <- ifelse(dist > 1, 1, dist)
+          f_dist <- function(x) {0.5*abs(f(x,dens1)-f(x,dens2))}
+          dist <- try(integrate(f_dist, lower = min(dens1$x[1],dens2$x[1]), upper = max(last(dens1$x), last(dens2$x)), subdivisions = 100000, rel.tol = 0.01))
+          d[j,i] <- min(1, ifelse(class(dist)=="try-error", 1, dist$value))
           k <- k + 1
         }
     }
