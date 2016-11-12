@@ -546,6 +546,41 @@ signifDigits <- function(value, sd){
 
 changeBase <- function(table, yuimaGUI, newBase = input$baseModels, session = session, choicesUI="baseModels", anchorId = "modelsAlert", alertId = "modelsAlert_conversion"){
   closeAlert(session, alertId)
+<<<<<<< .mine
+  shinyjs::toggle(id = choicesUI, condition = (class(index(yuimaGUI$model@data@original.data))=="Date"))
+  outputTable <- data.frame()
+  for (param in unique(colnames(table))){
+    temp <- changeBaseP(param = as.numeric(table["Estimate",param]), StdErr = as.numeric(table["Std. Error",param]), delta = yuimaGUI$model@sampling@delta, original.data = yuimaGUI$model@data@original.data, paramName = param, modelName = yuimaGUI$info$modName, newBase = newBase, allParam = table["Estimate",])
+    outputTable["Estimate",param] <- as.character(signifDigits(temp[["Estimate"]],temp[["Std. Error"]]))
+    outputTable["Std. Error",param] <- as.character(signifDigits(temp[["Std. Error"]],temp[["Std. Error"]]))
+  }
+  colnames(outputTable) <- unique(colnames(table))
+  style <- "info"
+  msg <- NULL
+  if (any(outputTable["Std. Error",] %in% c(0, "NA", "NaN"))){
+    msg <- "The estimated model does not satisfy theoretical properties."
+    style <- "warning"
+  }
+  if (!is.null(temp$conversion)) if (temp$conversion==FALSE) shinyjs::hide(choicesUI)
+  if (yuimaGUI$info$class=="COGARCH") {
+    test <- try(Diagnostic.Cogarch(yuimaGUI$model, param = as.list(coef(yuimaGUI$qmle))))
+    if (class(test)=="try-error") createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste("The estimated model does not satisfy theoretical properties.", temp$msg), style = "warning")
+    else if(test$stationary==FALSE | test$positivity==FALSE) createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste("The estimated model does not satisfy theoretical properties.", temp$msg), style = "warning")
+    else createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste(msg, temp$msg), style = style)
+  } 
+  # else if (yuimaGUI$info$class=="CARMA") {
+  #   test <- try(Diagnostic.Carma(yuimaGUI$qmle))
+  #   if (class(test)=="try-error") createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste("The estimated model does not satisfy theoretical properties.", temp$msg), style = "warning")
+  #   else if(test==FALSE) createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste("The estimated model does not satisfy theoretical properties.", temp$msg), style = "warning")
+  #   else createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste(msg, temp$msg), style = style)
+  # } 
+  else if (!is.null(temp$msg) | !is.null(msg)) createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste(msg, temp$msg), style = style)
+  return(outputTable)
+||||||| .r483
+  createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste("No parameters conversion available for this model. Parameters have been obtained using delta = ", delta), style = "warning")
+  shinyjs::hide(choicesUI)
+  return(list("Estimate"= param, "Std. Error"=StdErr))
+=======
   shinyjs::toggle(id = choicesUI, condition = (class(index(yuimaGUI$model@data@original.data))=="Date"))
   outputTable <- data.frame()
   for (param in unique(colnames(table))){
@@ -569,6 +604,7 @@ changeBase <- function(table, yuimaGUI, newBase = input$baseModels, session = se
   } 
   else if (!is.null(temp$msg) | !is.null(msg)) createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste(msg, temp$msg), style = style)
   return(outputTable)
+>>>>>>> .r515
 }
 
 
@@ -1043,11 +1079,21 @@ addSimulation <- function(modelYuima, symbName, info, toLog = FALSE, xinit, true
         is.valid <- FALSE
         break()
       }
+<<<<<<< .mine
+      else if (any(is.na(as.numeric(simulation@data@zoo.data[[1]])) | !is.finite(as.numeric(simulation@data@zoo.data[[1]])) | (toLog==TRUE & !is.finite(exp(as.numeric(simulation@data@zoo.data[[1]])))))){
+        is.valid <- FALSE
+        break()
+      }
+      else {
+||||||| .r483
+      if(is.valid){
+=======
       else if (any(is.na(as.numeric(simulation@data@zoo.data[[1]])))){
         is.valid <- FALSE
         break()
       }
       else {
+>>>>>>> .r515
         if (saveTraj==TRUE)
           trajectory <- merge(trajectory, simulation@data@zoo.data[[1]])
         if (saveTraj==FALSE)
@@ -1240,29 +1286,32 @@ CPanalysis <- function(x, method = c("KSdiff", "KSperc"), pvalue = 0.01){
     x_incr <- switch (method,
                       "KSdiff" = na.omit(diff(x)),
                       "KSperc" =  na.omit(Delt(x)))
+    index_x_incr <- index(x_incr)
     x_incr_num <- as.numeric(x_incr)
-    tau <- c()
-    p.value<-c()	
-    nTot <-length(x_incr_num)
-    n0 <- 1
-    repeat{
-      ks<-c()
-      for (i in seq(from = n0, to=(nTot-1), by = as.integer(1+(nTot-n0)/100))){
-        ks[i]<- suppressWarnings(ks.test(x_incr_num[n0:i],x_incr_num[(i+1):nTot])$p.value)
+    tau <- NULL
+    p.value <- NULL
+    getCPoint <- function(n0, nTot){
+      if(abs(nTot-n0)<10) return()
+      grid <- seq(from = n0, to=(nTot-1), by = as.integer(1+(nTot-n0)/100))
+      ks<-matrix(nrow = length(grid), ncol = 2, dimnames = list(NULL, c("index", "pvalue")))
+      j <- 1
+      for (i in grid){
+        ks[j,"index"] <- i
+        ks[j, "pvalue"]<- suppressWarnings(ks.test(x_incr_num[n0:i],x_incr_num[(i+1):nTot])$p.value)
+        j <- j+1
       }
-      ifelse(
-        min(ks, na.rm=TRUE) > pvalue,
-        {
-          break
-        },
-        {
-          n0 <- which.min(ks)
-          tau <- c(index(x_incr)[n0], tau)
-          p.value <- c(ks[n0], p.value)
-        }
-      )
+      if(min(ks[,"pvalue"], na.rm=TRUE) > pvalue) return()
+      else {
+        new_n0 <- as.integer(ks[which.min(ks[,"pvalue"]), "index"])
+        env <- environment(getCPoint)
+        assign(x = "tau", value = append(x = get("tau", envir = env), values = index_x_incr[new_n0]), envir = env)
+        assign(x = "p.value", value = append(x = get("p.value", envir = env), values = as.numeric(ks[which(ks[,"index"]==new_n0), "pvalue"])), envir = env)
+        getCPoint(n0 = n0, nTot = new_n0)
+        getCPoint(n0 = new_n0+1, nTot = nTot)
+      }
     }
-    if (length(tau)==0){
+    getCPoint(n0 = 1, nTot = length(x_incr_num))
+    if (is.null(tau)){
       tau <- NA
       p.value <- NA
     }
