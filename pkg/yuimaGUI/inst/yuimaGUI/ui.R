@@ -39,8 +39,11 @@ body<-dashboardBody(
           h1("Welcome on yuimaGUI", style="color:#edeeed", align = "center"),
           h4("an amazingly powerful tool for your analysis", style="color:#edeeed; font-family: Times New Roman, Georgia, Serif;", align = "center"), 
           hr(class = "hrHeader"),
-          br(),
           h4("Get acquainted with yuimaGUI and learn how to best exploit it in a few simple steps:", style="color:#edeeed", align = "center"),
+          br()
+      )),
+      fluidRow(
+        column(8,
           h4("Step 1", style="color:#edeeed"),
           h4("Load data you wish to analyze (section 'Data I/O').", br(), 
              "An easy way to load economic data (i.e. GDP) or financial series (stocks and shares) directly from the Internet is provided. Otherwise you can load data from your own files.",br(),
@@ -51,6 +54,10 @@ body<-dashboardBody(
              "Now you are ready to use the estimated models for simulation purposes in section 'Simulate'.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           h4("Step 3", style="color:#edeeed"),
           h4("Read the short explanation at the beginning of every (sub)section.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;")
+        ),
+        column(4,
+          br(), br(),
+          uiOutput("video_intro", align = "center")
         )
       ),
       fluidRow(
@@ -612,7 +619,7 @@ body<-dashboardBody(
             ),
             column(4,br(),br(),br(),br(),
               div(align="center", selectInput("changepoint_method", "Method", choices = c("Percentage Increments Distribution"="KSperc", "Increments Distribution"="KSdiff"))),
-              div(align="center", shinyjs::hidden(sliderInput("changepoint_pvalue", label = "p-value (%)", value=1, min=0, max=10, step = 0.1)))
+              div(align="center", shinyjs::hidden(sliderInput("changepoint_pvalue", label = "p-value (%)", value=1, min=0, max=5, step = 0.01)))
             )
           )),
           br(),

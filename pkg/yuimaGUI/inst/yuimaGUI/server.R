@@ -33,6 +33,10 @@ server <- function(input, output, session) {
     switch(class, "Diffusion process" = NA, "Fractional process" = NA,"Compound Poisson" = jumps, "COGARCH"=NA, "CARMA" = NA)
   }
   
+  ### Home
+  output$video_intro <- renderUI({
+    HTML('<iframe width="90%" height="250px" src="//www.youtube.com/embed/XX_bmCrI_gc" frameborder="0" allowfullscreen></iframe>')
+  })
   
   
   ########################Load Economic and Financial Data
@@ -1087,10 +1091,11 @@ server <- function(input, output, session) {
 
   output$simulate_model_usr_selectModel <- renderUI({
     choices <- as.vector(defaultModels[names(defaultModels)==input$simulate_model_usr_selectClass])
+    sel <- choices[1]
     for(i in names(usr_models$model))
       if (usr_models$model[[i]]$class==input$simulate_model_usr_selectClass)
-        choices <- c(choices, i)
-    selectInput("simulate_model_usr_selectModel", label = "Model Name", choices = choices)
+        choices <- c(i, choices)
+    selectInput("simulate_model_usr_selectModel", label = "Model Name", choices = choices, selected = sel)
   })
 
   output$simulate_model_usr_selectJumps <- renderUI({
@@ -2008,7 +2013,7 @@ server <- function(input, output, session) {
         if ((input$changepoint_symb %in% rownames(yuimaGUItable$series))){
           par(bg="black")
           plot(window(getData(input$changepoint_symb), start = range_changePoint$x[1], end = range_changePoint$x[2]), main=input$changepoint_symb, xlab="Index", ylab=NA, log=switch(input$changepoint_scale,"Linear"="","Logarithmic (Y)"="y", "Logarithmic (X)"="x", "Logarithmic (XY)"="xy"), col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
-          abline(v=yuimaGUIdata$cp[[input$changepoint_symb]]$tau, col = "yellow")
+          abline(v=yuimaGUIdata$cp[[input$changepoint_symb]]$tau, col = "red")
           grid(col="grey")
         }
     })
@@ -2026,7 +2031,7 @@ server <- function(input, output, session) {
           x <- x[x[,1]!="Inf"]
           par(bg="black")
           plot(window(x, start = range_changePoint$x[1], end = range_changePoint$x[2]), main=paste(input$changepoint_symb, title), xlab="Index", ylab=NA, log=switch(input$changepoint_scale,"Linear"="","Logarithmic (Y)"="", "Logarithmic (X)"="x", "Logarithmic (XY)"="x"), col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
-          abline(v=yuimaGUIdata$cp[[input$changepoint_symb]]$tau, col = "yellow")
+          abline(v=yuimaGUIdata$cp[[input$changepoint_symb]]$tau, col = "red")
           grid(col="grey")
         }
     })
@@ -2048,7 +2053,8 @@ server <- function(input, output, session) {
   
   
   output$table_ChangePointInfo <- renderTable(digits = 2, {
-    data.frame(Time = as.character(yuimaGUIdata$cp[[input$changepoint_symb]]$tau), "p.value (%)" = yuimaGUIdata$cp[[input$changepoint_symb]]$pvalue*100, check.names = FALSE)
+    table <- data.frame(Time = as.character(yuimaGUIdata$cp[[input$changepoint_symb]]$tau), "p.value (%)" = yuimaGUIdata$cp[[input$changepoint_symb]]$pvalue*100, check.names = FALSE, row.names = yuimaGUIdata$cp[[input$changepoint_symb]]$tau)
+    return(table[order(rownames(table), decreasing = TRUE),])
   })
   
   
@@ -2155,7 +2161,7 @@ server <- function(input, output, session) {
         if ((input$parametric_changepoint_symb %in% rownames(yuimaGUItable$series))){
           par(bg="black")
           plot(window(getData(input$parametric_changepoint_symb), start = parametric_range_changePoint$x[1], end = parametric_range_changePoint$x[2]), main=input$parametric_changepoint_symb, xlab="Index", ylab=NA, log=switch(input$parametric_changepoint_scale,"Linear"="","Logarithmic (Y)"="y", "Logarithmic (X)"="x", "Logarithmic (XY)"="xy"), col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
-          abline(v=yuimaGUIdata$cpYuima[[input$parametric_changepoint_symb]]$tau, col = "yellow")
+          abline(v=yuimaGUIdata$cpYuima[[input$parametric_changepoint_symb]]$tau, col = "red")
           grid(col="grey")
         }
     })
