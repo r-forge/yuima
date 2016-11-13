@@ -1,5 +1,5 @@
 Package: yuimaGUI
-Type: Package
+Type: Package 
 Title: A Graphical User Interface for the Yuima Package
 Version: 0.7.9
 Author: YUIMA Project Team

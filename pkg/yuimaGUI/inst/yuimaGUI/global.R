@@ -546,7 +546,6 @@ signifDigits <- function(value, sd){
 
 changeBase <- function(table, yuimaGUI, newBase = input$baseModels, session = session, choicesUI="baseModels", anchorId = "modelsAlert", alertId = "modelsAlert_conversion"){
   closeAlert(session, alertId)
-<<<<<<< .mine
   shinyjs::toggle(id = choicesUI, condition = (class(index(yuimaGUI$model@data@original.data))=="Date"))
   outputTable <- data.frame()
   for (param in unique(colnames(table))){
@@ -576,35 +575,6 @@ changeBase <- function(table, yuimaGUI, newBase = input$baseModels, session = se
   # } 
   else if (!is.null(temp$msg) | !is.null(msg)) createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste(msg, temp$msg), style = style)
   return(outputTable)
-||||||| .r483
-  createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste("No parameters conversion available for this model. Parameters have been obtained using delta = ", delta), style = "warning")
-  shinyjs::hide(choicesUI)
-  return(list("Estimate"= param, "Std. Error"=StdErr))
-=======
-  shinyjs::toggle(id = choicesUI, condition = (class(index(yuimaGUI$model@data@original.data))=="Date"))
-  outputTable <- data.frame()
-  for (param in unique(colnames(table))){
-    temp <- changeBaseP(param = as.numeric(table["Estimate",param]), StdErr = as.numeric(table["Std. Error",param]), delta = yuimaGUI$model@sampling@delta, original.data = yuimaGUI$model@data@original.data, paramName = param, modelName = yuimaGUI$info$modName, newBase = newBase, allParam = table["Estimate",])
-    outputTable["Estimate",param] <- as.character(signifDigits(temp[["Estimate"]],temp[["Std. Error"]]))
-    outputTable["Std. Error",param] <- as.character(signifDigits(temp[["Std. Error"]],temp[["Std. Error"]]))
-  }
-  colnames(outputTable) <- unique(colnames(table))
-  style <- "info"
-  msg <- NULL
-  if (any(outputTable["Std. Error",] %in% c(0, "NA", "NaN"))){
-    msg <- "The estimated model does not satisfy theoretical properties."
-    style <- "warning"
-  }
-  if (!is.null(temp$conversion)) if (temp$conversion==FALSE) shinyjs::hide(choicesUI)
-  if (yuimaGUI$info$class=="COGARCH") {
-    test <- try(Diagnostic.Cogarch(yuimaGUI$model, param = as.list(coef(yuimaGUI$qmle))))
-    if (class(test)=="try-error") createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste("The estimated model does not satisfy theoretical properties.", temp$msg), style = "warning")
-    else if(test$stationary==FALSE | test$positivity==FALSE) createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste("The estimated model does not satisfy theoretical properties.", temp$msg), style = "warning")
-    else createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste(msg, temp$msg), style = style)
-  } 
-  else if (!is.null(temp$msg) | !is.null(msg)) createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste(msg, temp$msg), style = style)
-  return(outputTable)
->>>>>>> .r515
 }
 
 
@@ -1079,21 +1049,11 @@ addSimulation <- function(modelYuima, symbName, info, toLog = FALSE, xinit, true
         is.valid <- FALSE
         break()
       }
-<<<<<<< .mine
       else if (any(is.na(as.numeric(simulation@data@zoo.data[[1]])) | !is.finite(as.numeric(simulation@data@zoo.data[[1]])) | (toLog==TRUE & !is.finite(exp(as.numeric(simulation@data@zoo.data[[1]])))))){
         is.valid <- FALSE
         break()
       }
       else {
-||||||| .r483
-      if(is.valid){
-=======
-      else if (any(is.na(as.numeric(simulation@data@zoo.data[[1]])))){
-        is.valid <- FALSE
-        break()
-      }
-      else {
->>>>>>> .r515
         if (saveTraj==TRUE)
           trajectory <- merge(trajectory, simulation@data@zoo.data[[1]])
         if (saveTraj==FALSE)
