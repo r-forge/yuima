@@ -11,6 +11,14 @@
 .content-wrapper, .right-side {
                               background-color:  #282828;
                               }
+                              
+                    
+.thumbnail:hover {
+    width:250px;
+    height:auto;
+    margin-top: -100px;
+}
+
 tr{
   background-color: #dddcdc;
   color: black;

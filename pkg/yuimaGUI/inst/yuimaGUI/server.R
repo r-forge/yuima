@@ -38,6 +38,14 @@ server <- function(input, output, session) {
     HTML('<iframe width="90%" height="250px" src="//www.youtube.com/embed/XX_bmCrI_gc" frameborder="0" allowfullscreen></iframe>')
   })
   
+  output$certificates <- renderUI({
+    div(align = "center",
+      HTML('<a href="http://cmstatistics.org/RegistrationsV2/COMPSTAT2016/viewSubmission.php?in=503&token=35qqr5sq3n5850n698190opn67p36q05">
+              <img src="oviedo2016.png" class="thumbnail" height="100" width="100" />
+           </a>')
+    )
+  })
+  
   
   ########################Load Economic and Financial Data
   ########################

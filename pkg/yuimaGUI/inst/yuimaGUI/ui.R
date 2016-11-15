@@ -50,7 +50,7 @@ body<-dashboardBody(
              "Once data are loaded, you can go and use sections 'Explorative Data Analysis' and 'Modeling'.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           h4("Step 2", style="color:#edeeed"),
           h4("Model your data in section 'Modeling'.", br(),
-             "Here you can fit models to your data choosing between some default options but also defining and using your own model.", br(),
+             "Here you can fit models to your data choosing between some default options or defining and using your own model.", br(),
              "Now you are ready to use the estimated models for simulation purposes in section 'Simulate'.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           h4("Step 3", style="color:#edeeed"),
           h4("Read the short explanation at the beginning of every (sub)section.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;")
@@ -61,7 +61,9 @@ body<-dashboardBody(
         )
       ),
       fluidRow(
-        column(8),
+        column(8, br(),
+          uiOutput("certificates")       
+        ),
         column(4,
           h3(em("Developed by"), style="color:#edeeed", align = "center"),
           h4("Emanuele Guidotti", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;", align = "center"),
