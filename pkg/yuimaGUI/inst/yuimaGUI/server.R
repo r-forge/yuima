@@ -40,9 +40,8 @@ server <- function(input, output, session) {
   
   output$certificates <- renderUI({
     div(align = "center",
-      HTML('<a href="http://cmstatistics.org/RegistrationsV2/COMPSTAT2016/viewSubmission.php?in=503&token=35qqr5sq3n5850n698190opn67p36q05">
-              <img src="oviedo2016.png" class="thumbnail" height="100" width="100" />
-           </a>')
+      HTML('<div id="certificate1" style="display: inline-block;"><img src="seville2016.png" class="thumbnail" height="100" width="100" /></div>
+            <div style="display: inline-block;"><img src="oviedo2016.png" class="thumbnail" height="100" width="100" /></div>')
     )
   })
   
