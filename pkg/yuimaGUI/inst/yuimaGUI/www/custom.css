@@ -15,6 +15,7 @@
          
 .thumbnail {
   background-color:silver;
+  border-radius:50%;
 }           
 .thumbnail:hover {
     width:250px;
