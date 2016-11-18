@@ -6,7 +6,7 @@ require(sde)
 require(quantmod)
 require(shinydashboard)
 require(shinyBS)
-#require(corrplot)
+require(corrplot)
 
 options(warn=-1) 
 

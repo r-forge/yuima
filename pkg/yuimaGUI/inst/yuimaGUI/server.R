@@ -450,7 +450,8 @@ server <- function(input, output, session) {
 
   ###DeleteAll Button
   observeEvent(input$buttonDeleteAll_models_Univariate, priority = 1,{
-    seriesToEstimate$table <<- seriesToEstimate$table[-input$database4_rows_all,]
+    if (!is.null(input$database4_rows_all))
+      seriesToEstimate$table <<- seriesToEstimate$table[-input$database4_rows_all,]
   })
 
   ###Interactive range of selectRange chart
@@ -1819,7 +1820,8 @@ server <- function(input, output, session) {
   
   ###DeleteAll Button
   observeEvent(input$cluster_button_deleteAll, priority = 1,{
-    seriesToCluster$table <<- seriesToCluster$table[-input$cluster_table_selected_rows_all,]
+    if (!is.null(input$cluster_table_selected_rows_all))
+      seriesToCluster$table <<- seriesToCluster$table[-input$cluster_table_selected_rows_all,]
   })
   
   observe({
@@ -1830,7 +1832,7 @@ server <- function(input, output, session) {
     closeAlert(session, "cluster_alert_dist")
     if (length(rownames(seriesToCluster$table))<=2)
       createAlert(session, anchorId = "cluster_alert", alertId = "cluster_alert_dist", content = "Select at least 3 series", style = "error")
-    if (length(rownames(seriesToCluster$table))>2){
+    if (length(rownames(seriesToCluster$table))>2){ withProgress(value = 1, message = "Calculating...", {
       names_list <- rownames(seriesToCluster$table)
       x <- yuimaGUIdata$series[[names_list[1]]]
       for(i in names_list[-1])
@@ -1908,7 +1910,7 @@ server <- function(input, output, session) {
           plot(points, col=labelColors[g1], pch=16, cex=2, main = "Multidimensional scaling", col.main = "#FFF68F", xlab="", ylab="")
         })
       }
-    }
+    })}
   })
   
   
@@ -1966,7 +1968,8 @@ server <- function(input, output, session) {
   
   ###DeleteAll Button
   observeEvent(input$changepoint_button_deleteAll, priority = 1,{
-    seriesToChangePoint$table <<- seriesToChangePoint$table[-input$changepoint_table_selected_rows_all,]
+    if (!is.null(input$changepoint_table_selected_rows_all))
+      seriesToChangePoint$table <<- seriesToChangePoint$table[-input$changepoint_table_selected_rows_all,]
   })
   
   observe({
@@ -2120,7 +2123,8 @@ server <- function(input, output, session) {
   
   ###DeleteAll Button
   observeEvent(input$parametric_changepoint_button_deleteAll, priority = 1,{
-    parametric_seriesToChangePoint$table <<- parametric_seriesToChangePoint$table[-input$parametric_changepoint_table_selected_rows_all,]
+    if (!is.null(input$parametric_changepoint_table_selected_rows_all))
+      parametric_seriesToChangePoint$table <<- parametric_seriesToChangePoint$table[-input$parametric_changepoint_table_selected_rows_all,]
   })
   
   output$parametric_changepoint_model <- renderUI({
@@ -2210,12 +2214,36 @@ server <- function(input, output, session) {
   
   ###Select Button
   observeEvent(input$llag_button_select, priority = 1, {
-    seriesToLeadLag$table <<- rbind(seriesToLeadLag$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% rownames(yuimaGUItable$series)[input$llag_table_select_rows_selected]) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToLeadLag$table)),])
+    if (length(input$llag_table_select_rows_selected)!=0){
+      closeAlert(session, "llag_alert_select")
+      if (nrow(seriesToLeadLag$table)==0)
+        seriesToLeadLag$table <<- rbind(seriesToLeadLag$table, yuimaGUItable$series[rownames(yuimaGUItable$series)[input$llag_table_select_rows_selected[1]],])
+      for (symb in rownames(yuimaGUItable$series)[input$llag_table_select_rows_selected]){
+        if (class(index(yuimaGUIdata$series[[symb]]))==class(index(yuimaGUIdata$series[[rownames(seriesToLeadLag$table)[1]]]))){
+          if (!(symb %in% rownames(seriesToLeadLag$table)))
+            seriesToLeadLag$table <<- rbind(seriesToLeadLag$table, yuimaGUItable$series[symb,])
+        } else {
+          createAlert(session, anchorId = "llag_alert", alertId = "llag_alert_select", append = FALSE, content = "Cannot analyze Lead-Lag for series with different type of index (numeric/date)", style = "warning")
+        }
+      }
+    }
   })
   
   ###SelectAll Button
   observeEvent(input$llag_button_selectAll, priority = 1, {
-    seriesToLeadLag$table <<- rbind(seriesToLeadLag$table, yuimaGUItable$series[(rownames(yuimaGUItable$series) %in% rownames(yuimaGUItable$series)[input$llag_table_select_rows_all]) & !(rownames(yuimaGUItable$series) %in% rownames(seriesToLeadLag$table)),])
+    if (length(input$llag_table_select_rows_all)!=0){
+      closeAlert(session, "llag_alert_select")
+      if (nrow(seriesToLeadLag$table)==0)
+        seriesToLeadLag$table <<- rbind(seriesToLeadLag$table, yuimaGUItable$series[rownames(yuimaGUItable$series)[input$llag_table_select_rows_all[1]],])
+      for (symb in rownames(yuimaGUItable$series)[input$llag_table_select_rows_all]){
+        if (class(index(yuimaGUIdata$series[[symb]]))==class(index(yuimaGUIdata$series[[rownames(seriesToLeadLag$table)[1]]]))){
+          if (!(symb %in% rownames(seriesToLeadLag$table)))
+            seriesToLeadLag$table <<- rbind(seriesToLeadLag$table, yuimaGUItable$series[symb,])
+        } else {
+          createAlert(session, anchorId = "llag_alert", alertId = "llag_alert_select", append = FALSE, content = "Cannot analyze Lead-Lag for series with different type of index (numeric/date)", style = "warning")
+        }
+      }
+    }
   })
   
   ###Display Selected Data
@@ -2245,9 +2273,23 @@ server <- function(input, output, session) {
   
   ###DeleteAll Button
   observeEvent(input$llag_button_deleteAll, priority = 1,{
-    seriesToLeadLag$table <<- seriesToLeadLag$table[-input$llag_table_selected_rows_all,]
+    if (!is.null(input$llag_table_selected_rows_all))
+      seriesToLeadLag$table <<- seriesToLeadLag$table[-input$llag_table_selected_rows_all,]
   })
   
+  observe({
+    if (length(rownames(seriesToLeadLag$table))!=0){
+      type <- try(class(index(yuimaGUIdata$series[[rownames(seriesToLeadLag$table)[1]]])[1]))
+      if(type!="try-error"){
+        shinyjs::toggle(id = "llag_range_date", condition = type=="Date")
+        shinyjs::toggle(id = "llag_range_numeric", condition = type!="Date")
+      }
+    }
+    else {
+      shinyjs::hide(id = "llag_range_date")
+      shinyjs::hide(id = "llag_range_numeric")
+    }
+  })
   
   observeEvent(input$llag_button_startEstimation, {
     closeAlert(session, alertId = "llag_alert_select")
@@ -2258,21 +2300,55 @@ server <- function(input, output, session) {
       if (length(series)<=1)
         createAlert(session, anchorId = "llag_alert", alertId = "llag_alert_select", content = "Select at least two series", style = "warning")
       else {
-        data <- yuimaGUIdata$series[[series[1]]]
-        for (i in 2:length(series))
-          data <- merge(data, yuimaGUIdata$series[[series[i]]])
-        colnames(data) <- series
-        delta <- 0.01
-        res <- try(llag(setDataGUI(data, delta = delta), ci=TRUE, plot=FALSE, grid = seq(from = -input$llag_maxLag*delta, to = input$llag_maxLag*delta, by = delta/2)))
-        shinyjs::toggle("llag_results", condition = (class(res)!="try-error"))
-        if (class(res)=="try-error")
-          createAlert(session, anchorId = "llag_alert", alertId = "llag_alert_select", content = "Error in computing lead-lag", style = "error")
-        else {
-          output$llag_corrplot <- renderPlot({
-            cols <- colorRampPalette(c("#7F0000", "red", "#FF7F00", "yellow", "white", "cyan", "#007FFF", "blue", "#00007F"))
-            corrplot(res$lagcce, p.mat = res$p.values, is.corr = FALSE, method = "ellipse", cl.pos = "b", tl.pos = "d", tl.srt = 60, col=cols(100), outline=TRUE, bg = "white", order = "alphabet", tl.col = "black") 
-          })
-        }
+        withProgress(message = "Calculating...",  value = 1, {
+          data <- yuimaGUIdata$series[[series[1]]]
+          type <- class(index(data)[1])
+          for (i in 2:length(series))
+            data <- merge(data, yuimaGUIdata$series[[series[i]]])
+          colnames(data) <- series
+          if(type=="Date") {
+            data <- window(data, start = input$llag_range_date[1], end = input$llag_range_date[2])
+            delta <- 0.01
+          }
+          else {
+            data <- window(data, start = input$llag_range_numeric1, end = input$llag_range_numeric2)
+            delta <- NULL
+          }
+          if(is.regular(data)){
+            yuimaData <- setDataGUI(data, delta = delta)
+            res <- try(llag(yuimaData, ci=TRUE, plot=FALSE, grid = seq(from = -input$llag_maxLag*delta, to = input$llag_maxLag*delta, by = delta)))
+            if (class(res)=="try-error")
+              createAlert(session, anchorId = "llag_alert", alertId = "llag_alert_select", content = "Error in computing lead-lag", style = "error")
+            else {
+              LeadLag <- res$lagcce
+              if(type=="Date") {
+                mode <- function(x) {
+                  ux <- unique(x)
+                  ux[which.max(tabulate(match(x, ux)))]
+                }
+                LeadLag <- LeadLag/delta*mode(na.omit(diff(index(data))))
+              }
+              if(all(LeadLag==0)){
+                shinyjs::hide("llag_plot_body")
+                shinyjs::show("llag_plot_Text")
+              } else{
+                shinyjs::hide("llag_plot_Text")
+                shinyjs::show("llag_plot_body")
+                col1 <- colorRampPalette(c("#67001F", "#B2182B", "#D6604D", "#F4A582", "#FDDBC7","#FFFFFF", "#D1E5F0", "#92C5DE", "#4393C3", "#2166AC", "#053061"))
+                col2 <- colorRampPalette(c("#FFFFFF", "#D1E5F0", "#92C5DE", "#4393C3", "#2166AC", "#053061"))
+                col3 <- colorRampPalette(c("#67001F", "#B2182B", "#D6604D", "#F4A582", "#FDDBC7","#FFFFFF"))
+                output$llag_plot <- renderPlot({
+                  corrplot(LeadLag, p.mat = res$p.values, sig.level = input$llag_plot_confidence, is.corr = FALSE, method = input$llag_plot_type, type = "lower", cl.pos = "b", tl.pos = "ld", tl.srt = 60, col=get(input$llag_plot_cols)(100), outline=TRUE, bg = "grey10", order = "alphabet", tl.col = "black") 
+                })
+              }
+              shinyjs::show("llag_button_showResults")
+              toggleModal(session = session, modalId = "llag_modal_plot", toggle = "open")
+            }
+          }
+          else{
+            createAlert(session, anchorId = "llag_alert", alertId = "llag_alert_select", content = "Cannot compute Lead-Lag for non-regular grid of observations", style = "error")
+          }
+        })
       }
     }
   })
