@@ -11,19 +11,19 @@ sidebar<-dashboardSidebar(
              ),
     menuItem("Explorative Data Analysis", tabName = "eda_section", icon = icon("map"),
              menuSubItem("Change Point Estimation", tabName = "changepoint"),
-             menuSubItem("Clustering", tabName = "cluster")
-             #REMOVE# menuSubItem("Lead-Lag Analysis", tabName = "llag")
+             menuSubItem("Clustering", tabName = "cluster"),
+             menuSubItem("Lead-Lag Analysis", tabName = "llag")
              ),
     menuItem("Modeling", tabName = "models_section", icon = icon("sliders"),
              menuSubItem("Univariate", tabName = "models")
              ),
-    menuItem("Simulate", tabName = "simulate_section", icon = icon("area-chart"),
-             menuSubItem("Simulate", tabName = "simulate")
-             ),
-    hr(),
-    menuItem("Finance", tabName = "finance",
-             menuSubItem("P&L distribution", tabName = "hedging")
-            )
+    menuItem("Simulation", tabName = "simulate_section", icon = icon("area-chart"),
+             menuSubItem("Univariate", tabName = "simulate")
+             )#,
+    #hr(),
+    #menuItem("Finance", tabName = "finance",
+    #         menuSubItem("P&L distribution", tabName = "hedging")
+    #        )
   )
 )
 
@@ -700,6 +700,14 @@ body<-dashboardBody(
       )))
     ),
     tabItem(tabName = "llag",
+      fluidRow(
+        column(12,
+          h3("Here you can analyze Lead-Lag effects",style="color:#edeeed"),
+          h4("insert some description, pointing out that it is only valid for some processes (i.e. not volumes)",
+              style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
+          hr(class = "hrHeader")
+        )
+      ),
       fluidRow(column(12,bsAlert("llag_alert"))),
       fluidRow(column(12,
         column(4,
@@ -710,8 +718,17 @@ body<-dashboardBody(
           h4("Selected data", style="color:#CDCECD"),
           DT::dataTableOutput("llag_table_selected")
         ),
-        column(4,br(),br(),br(),br(),
-          div(align="center", numericInput("llag_maxLag", label = "Lag max", value = 20, min = 1, step = 1))
+        column(4,br(),br(),br(),
+          div(align="center", 
+            numericInput("llag_maxLag", label = "Max Lag", value = 20, min = 1, step = 1),
+            shinyjs::hidden(dateRangeInput("llag_range_date", label = "Range", start = Sys.Date()-365, end = Sys.Date())),
+            shinyjs::hidden(div(id="llag_range_numeric",
+              column(6,numericInput("llag_range_numeric1", label = "From", value = 0)),
+              column(6,numericInput("llag_range_numeric2", label = "To", value = 1))
+            )),
+            br(),
+            shinyjs::hidden(actionButton("llag_button_showResults",label = "Show Results", align = "center"))
+          )
         )
       )),
       br(),
@@ -727,10 +744,21 @@ body<-dashboardBody(
         column(4,actionButton("llag_button_startEstimation", label = "Start Analysis", align = "center"))
       )),
       br(),br(),
-      fluidRow(column(12,div(id="llag_results",
-        hr(class = "hrHeader"),
-        plotOutput("llag_corrplot")
-      )))
+      bsModal(id="llag_modal_plot", trigger = "llag_button_showResults", title = div(h4(em("Lead Lag Analysis")), align="center"), size = "large",
+        shinyjs::hidden(div(id="llag_plot_Text", align="center", HTML("<h3>No Lead-Lag effects found</h3>"))),
+        div(id = "llag_plot_body", align = "center",
+          box(width = 12,
+              fluidRow(
+                column(4,selectInput("llag_plot_type", choices = c("Color"="color", "Shade"="shade", "Circle"="circle", "Square"="square", "Ellipse"="ellipse", "Number"="number"), selected = "number", label = "Plot type")),
+                column(4,selectInput("llag_plot_cols", choices = c("Red & Blue"="col1", "Red" = "col3", "Blue" = "col2"), label = "Colors")),
+                column(4,numericInput("llag_plot_confidence", label = "Confidence Level", value = 0.001, min = 0, max = 1, step = 0.0001)),
+                bsTooltip(id = "llag_plot_confidence", title = "The evaluated p-values should carefully be interpreted because they are calculated based on pointwise confidence intervals rather than simultaneous confidence intervals (so there would be a multiple testing problem). Evaluation of p-values based on the latter will be implemented in the future extension of this function: Indeed, so far no theory has been developed for this. However, it is conjectured that the error distributions of the estimated cross-correlation functions are asymptotically independent if the grid is not dense too much, so p-values evaluated by this function will still be meaningful as long as sufficiently low significance levels are used.")
+              ),
+              plotOutput("llag_plot"), br(),
+              HTML("<b>How to read the plot:</b><br/>If the lead-lag is positive: 'row.name' anticipates 'col.name of 'X' periods<br/>If the lead-lag is negative: 'row.name' follows 'col.name' with 'X' delay periods<br/><br/><b>'X'</b> are the numbers in the plot above.<br/>They are expressed in days if you are using time series, or in the same unit of measure of time if you are using numerical time index.")
+          )
+        )
+      )
     ),
     ########################hedging
     tabItem(tabName = "hedging",
