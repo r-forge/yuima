@@ -126,12 +126,6 @@ observeEvent(yuimaGUIdata$hedging, priority = 10, {
   }
 })
 
-observe({
-  differ <- names(yuimaGUIdata$cp)[!(names(yuimaGUIdata$cp) %in% names(yuimaGUIdata$series))]
-  if (length(differ)!=0) for (i in differ) yuimaGUIdata$cp[[i]] <<- NULL
-  differ <- names(yuimaGUIdata$cpYuima)[!(names(yuimaGUIdata$cpYuima) %in% names(yuimaGUIdata$series))]
-  if (length(differ)!=0) for (i in differ) yuimaGUIdata$cpYuima[[i]] <<- NULL
-})
 
 setDataGUI <- function(original.data, delta){
   t <- index(original.data)
@@ -217,94 +211,127 @@ defaultModels <-  c("Diffusion process"="Geometric Brownian Motion",
 
 defaultJumps <- c("Gaussian", "Uniform")
 
-defaultBounds <- function(name, delta, jumps = NA, lower = NA, upper = NA, AR_C = NA, MA_C = NA, lastPrice = NA){
+defaultBounds <- function(name, delta, strict, jumps = NA, AR_C = NA, MA_C = NA, data){
+  lastPrice = last(data)
   if (name %in% names(isolate({usr_models$model}))){
     par <- setModelByName(name = name, jumps = jumps,  AR_C = AR_C, MA_C = MA_C)@parameter@all
-    startmin <- rep(lower, length(par))
-    startmax <- rep(upper, length(par))
-    names(startmin) <- par
-    names(startmax) <- par
+    if(strict==TRUE){
+      lower <- rep(NA, length(par))
+      upper <- rep(NA, length(par))
+    } else {
+      if (usr_models$model[[name]]$class=="Compound Poisson"){
+        lower <- rep(0, length(par))
+        upper <- rep(1, length(par))
+      } else {
+        lower <- rep(-100, length(par))
+        upper <- rep(100, length(par))
+      }
+      
+    }
+    names(lower) <- par
+    names(upper) <- par
     if (!is.na(jumps)){
-      boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
+      boundsJump <- jumpBounds(jumps = jumps, strict = strict, data = data)
       for (i in par[par %in% names(boundsJump$lower)]){
-        startmin[[i]] <- boundsJump$lower[[i]]
-        startmax[[i]] <- boundsJump$upper[[i]]
+        lower[[i]] <- boundsJump$lower[[i]]
+        upper[[i]] <- boundsJump$upper[[i]]
       }
     }
-    return(list(lower=as.list(startmin), upper=as.list(startmax)))
+    return(list(lower=as.list(lower), upper=as.list(upper)))
   }
   if (name %in% defaultModels[names(defaultModels) == "COGARCH"]){
     par <- setModelByName(name = name, jumps = jumps,  AR_C = AR_C, MA_C = MA_C)@parameter
     par <- unique(c(par@drift, par@xinit))
-    startmin <- rep(ifelse(is.na(lower),NA,0), length(par))
-    startmax <- rep(ifelse(is.na(upper),NA,1), length(par))
-    names(startmin) <- par
-    names(startmax) <- par
-    startmax["a0"] <- ifelse(is.na(upper),NA,10)
-#     if (!is.na(jumps)){
-#       boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
-#       for (i in par[par %in% names(boundsJump$lower)]){
-#         startmin[[i]] <- boundsJump$lower[[i]]
-#         startmax[[i]] <- boundsJump$upper[[i]]
-#       }
-#     }
-    return(list(lower=as.list(startmin), upper=as.list(startmax)))
+    if(strict==TRUE){
+      lower <- rep(NA, length(par))
+      upper <- rep(NA, length(par))
+    } else {
+      lower <- rep(0, length(par))
+      upper <- rep(10, length(par))
+    }
+    names(lower) <- par
+    names(upper) <- par
+    return(list(lower=as.list(lower), upper=as.list(upper)))
   }
   if (name %in% defaultModels[names(defaultModels) == "CARMA"]){
     par <- setModelByName(name = name, jumps = jumps,  AR_C = AR_C, MA_C = MA_C)@parameter
     par <- par@drift
-    startmin <- rep(ifelse(is.na(lower),NA,0), length(par))
-    startmax <- rep(ifelse(is.na(upper),NA,1), length(par))
-    names(startmin) <- par
-    names(startmax) <- par
-    startmin["MA0"] <- ifelse(is.na(lower),NA,lastPrice*0.5)
-    startmax["MA0"] <- ifelse(is.na(upper),NA,lastPrice*1.5)
-#     if (!is.na(jumps)){
-#       boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
-#       for (i in par[par %in% names(boundsJump$lower)]){
-#         startmin[[i]] <- boundsJump$lower[[i]]
-#         startmax[[i]] <- boundsJump$upper[[i]]
-#       }
-#     }
-    return(list(lower=as.list(startmin), upper=as.list(startmax)))
+    if(strict==TRUE){
+      lower <- rep(NA, length(par))
+      upper <- rep(NA, length(par))
+      names(lower) <- par
+      names(upper) <- par
+    } else {
+      lower <- rep(0, length(par))
+      upper <- rep(1, length(par))
+      names(lower) <- par
+      names(upper) <- par
+      lower["MA0"] <- min(lastPrice*0.5, lastPrice*1.5)
+      upper["MA0"] <- max(lastPrice*0.5, lastPrice*1.5)
+    }
+    return(list(lower=as.list(lower), upper=as.list(upper)))
   }
-  if (name == "Brownian Motion" | name == "Bm")
-    return (list(lower=list("sigma"=0, "mu"=lower*delta), upper=list("sigma"=upper*sqrt(delta), "mu"=upper*delta)))
-  if (name == "Geometric Brownian Motion" | name == "gBm")
-    return (list(lower=list("sigma"=0, "mu"=lower*delta), upper=list("sigma"=upper*sqrt(delta), "mu"=upper*delta)))
-  if (name == "Ornstein-Uhlenbeck (OU)" | name == "OU")
-    return(list(lower=list("theta"=0, "sigma"=0),upper=list("theta"=upper*delta, "sigma"=upper*sqrt(delta))))
-  if (name == "Vasicek model (VAS)" | name == "VAS")
-    return(list(lower=list("theta3"=0, "theta1"=lower*delta, "theta2"=lower*delta),upper=list("theta3"=upper*sqrt(delta), "theta1"=upper*delta, "theta2"=upper*delta)))
-  if (name == "Constant elasticity of variance (CEV)" | name == "CEV")
-    return(list(lower=list("mu"=lower*delta, "sigma"=0, "gamma"=0),upper=list("mu"=upper*delta, "sigma"=upper*sqrt(delta), "gamma"=ifelse(is.na(upper),NA,3))))
-  if (name == "Cox-Ingersoll-Ross (CIR)" | name == "CIR")
-    return(list(lower=list("theta1"=0,"theta2"=0,"theta3"=0),upper=list("theta1"=upper*delta,"theta2"=upper*delta,"theta3"=upper*sqrt(delta))))
-  if (name == "Chan-Karolyi-Longstaff-Sanders (CKLS)" | name == "CKLS")
-    return(list(lower=list("theta1"=lower*delta, "theta2"=lower*delta, "theta3"=0, "theta4"=0),upper=list("theta1"=upper*delta, "theta2"=upper*delta, "theta3"=upper*sqrt(delta), "theta4"=ifelse(is.na(upper),NA,3))))
-  if (name == "Hyperbolic (Barndorff-Nielsen)" | name == "hyp1")
-    return(list(lower=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=0, "mu"=0),upper=list("delta"=upper, "alpha"=ifelse(is.na(upper),NA,10), "beta"=ifelse(is.na(upper),NA,10), "sigma"=upper*sqrt(delta), "mu"=ifelse(is.na(upper),NA,lastPrice))))
-  if (name == "Hyperbolic (Bibby and Sorensen)" | name == "hyp2")
-    return(list(lower=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=0, "mu"=0),upper=list("delta"=upper, "alpha"=ifelse(is.na(upper),NA,10), "beta"=ifelse(is.na(upper),NA,10), "sigma"=upper*sqrt(delta), "mu"=ifelse(is.na(upper),NA,lastPrice))))
-  if (name == "Power Low Intensity"){
-    boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
-    return(list(lower=c(list("alpha"=0, "beta"=ifelse(is.na(lower),NA,-3)), boundsJump$lower),upper=c(list("alpha"=upper, "beta"=ifelse(is.na(upper),NA,3)), boundsJump$upper)))
+  if (name == "Brownian Motion" | name == "Bm"){
+    if (strict==TRUE) return (list(lower=list("sigma"=0, "mu"=NA), upper=list("sigma"=NA, "mu"=NA)))
+    else return (list(lower=list("sigma"=0, "mu"=-1/delta), upper=list("sigma"=1/sqrt(delta), "mu"=1/delta)))
+  }
+  if (name == "Geometric Brownian Motion" | name == "gBm") {
+    if (strict==TRUE) return (list(lower=list("sigma"=0, "mu"=NA), upper=list("sigma"=NA, "mu"=NA)))
+    else return (list(lower=list("sigma"=0, "mu"=-1/delta), upper=list("sigma"=1/sqrt(delta), "mu"=1/delta)))
+  }
+  if (name == "Ornstein-Uhlenbeck (OU)" | name == "OU"){
+    if (strict==TRUE) return(list(lower=list("theta"=0, "sigma"=0),upper=list("theta"=NA, "sigma"=NA)))
+    else return(list(lower=list("theta"=0, "sigma"=0),upper=list("theta"=1/delta, "sigma"=1/sqrt(delta))))
+  }
+  if (name == "Vasicek model (VAS)" | name == "VAS"){
+    if (strict==TRUE) return(list(lower=list("theta3"=0, "theta1"=NA, "theta2"=NA), upper=list("theta3"=NA, "theta1"=NA, "theta2"=NA)))
+    else return(list(lower=list("theta3"=0, "theta1"=-1/delta, "theta2"=-1/delta), upper=list("theta3"=1/sqrt(delta), "theta1"=1/delta, "theta2"=1/delta)))
+  }
+  if (name == "Constant elasticity of variance (CEV)" | name == "CEV"){
+    if (strict==TRUE) return(list(lower=list("mu"=NA, "sigma"=0, "gamma"=0), upper=list("mu"=NA, "sigma"=NA, "gamma"=NA)))
+    else return(list(lower=list("mu"=-1/delta, "sigma"=0, "gamma"=0), upper=list("mu"=1/delta, "sigma"=1/sqrt(delta), "gamma"=3)))
+  }
+  if (name == "Cox-Ingersoll-Ross (CIR)" | name == "CIR"){
+    if (strict==TRUE) return(list(lower=list("theta1"=0,"theta2"=0,"theta3"=0),upper=list("theta1"=NA,"theta2"=NA,"theta3"=NA)))
+    else return(list(lower=list("theta1"=0,"theta2"=0,"theta3"=0),upper=list("theta1"=1/delta,"theta2"=1/delta,"theta3"=1/sqrt(delta))))
+  }
+  if (name == "Chan-Karolyi-Longstaff-Sanders (CKLS)" | name == "CKLS"){
+    if (strict==TRUE) return(list(lower=list("theta1"=NA, "theta2"=NA, "theta3"=0, "theta4"=0), upper=list("theta1"=NA, "theta2"=NA, "theta3"=NA, "theta4"=NA)))
+    else return(list(lower=list("theta1"=-1/delta, "theta2"=-1/delta, "theta3"=0, "theta4"=0), upper=list("theta1"=1/delta, "theta2"=1/delta, "theta3"=1/sqrt(delta), "theta4"=3)))
+  }
+  if (name == "Hyperbolic (Barndorff-Nielsen)" | name == "hyp1"){
+    if (strict==TRUE) return(list(lower=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=0, "mu"=0), upper=list("delta"=NA, "alpha"=NA, "beta"=NA, "sigma"=NA, "mu"=NA)))
+    else return(list(lower=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=0, "mu"=0), upper=list("delta"=100, "alpha"=10, "beta"=10, "sigma"=1/sqrt(delta), "mu"=mean(as.numeric(data), na.rm = TRUE))))
+    
+  }
+  if (name == "Hyperbolic (Bibby and Sorensen)" | name == "hyp2"){
+    if (strict==TRUE) return(list(lower=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=0, "mu"=0), upper=list("delta"=NA, "alpha"=NA, "beta"=NA, "sigma"=NA, "mu"=NA)))
+    else return(list(lower=list("delta"=0, "alpha"=0, "beta"=0, "sigma"=0, "mu"=0),upper=list("delta"=10, "alpha"=1, "beta"=10, "sigma"=1/sqrt(delta), "mu"=mean(as.numeric(data), na.rm = TRUE))))
   }
   if (name == "Constant Intensity"){
-    boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
-    return(list(lower=c(list("lambda"=0), boundsJump$lower),upper=c(list("lambda"=upper*delta*100), boundsJump$upper)))
+    boundsJump <- jumpBounds(jumps = jumps, strict = strict, data = data)
+    if (strict==TRUE) return(list(lower=c(list("lambda"=0), boundsJump$lower),upper=c(list("lambda"=NA), boundsJump$upper)))
+    else return(list(lower=c(list("lambda"=0), boundsJump$lower),upper=c(list("lambda"=1/delta), boundsJump$upper)))
+  }
+  if (name == "Power Low Intensity"){
+    boundsJump <- jumpBounds(jumps = jumps, strict = strict, data = data)
+    if (strict==TRUE) return(list(lower=c(list("alpha"=0, "beta"=NA), boundsJump$lower),upper=c(list("alpha"=NA, "beta"=NA), boundsJump$upper)))
+    else return(list(lower=c(list("alpha"=0, "beta"=-3), boundsJump$lower),upper=c(list("alpha"=0.1/delta^(3/2), "beta"=3), boundsJump$upper)))
   }
   if (name == "Linear Intensity"){
-    boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
-    return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=upper*delta*100, "beta"=upper*delta^2), boundsJump$upper)))
+    boundsJump <- jumpBounds(jumps = jumps, strict = strict, data = data)
+    if (strict==TRUE) return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=NA, "beta"=NA), boundsJump$upper)))
+    else return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=1/delta, "beta"=0.1/delta^2), boundsJump$upper)))
   }
   if (name == "Exponentially Decaying Intensity"){
-    boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
-    return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=upper*delta*100, "beta"=upper*delta), boundsJump$upper)))
+    boundsJump <- jumpBounds(jumps = jumps, strict = strict, data = data)
+    if (strict==TRUE) return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=NA, "beta"=NA), boundsJump$upper)))
+    else return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=1/delta, "beta"=1/delta), boundsJump$upper)))
   }
   if (name == "Periodic Intensity"){
-    boundsJump <- jumpBounds(jumps = jumps, lower = lower, upper = upper)
-    return(list(lower=c(list("a"=0, "b"=0, "omega"=0, "phi"=0), boundsJump$lower),upper=c(list("a"=upper*delta*100, "b"=upper*delta*100, "omega"=upper*delta, "phi"=2*pi), boundsJump$upper)))
+    boundsJump <- jumpBounds(jumps = jumps, strict = strict, data = data)
+    if (strict==TRUE) return(list(lower=c(list("a"=0, "b"=0, "omega"=0, "phi"=0), boundsJump$lower),upper=c(list("a"=NA, "b"=NA, "omega"=NA, "phi"=2*pi), boundsJump$upper)))
+    else return(list(lower=c(list("a"=0, "b"=0, "omega"=0, "phi"=0), boundsJump$lower),upper=c(list("a"=1/delta, "b"=1/delta, "omega"=1/delta, "phi"=2*pi), boundsJump$upper)))
   }
 }
 
@@ -316,10 +343,24 @@ setJumps <- function(jumps){
   )
 }
 
-jumpBounds <- function(jumps, lower = NA, upper = NA){
+jumpBounds <- function(jumps, data, strict){
   switch(jumps,
-         "Gaussian" = list(lower=list("mu_jump"=lower, "sigma_jump"=0), upper=list("mu_jump"=upper, "sigma_jump"=upper)),
-         "Uniform" = list(lower=list("a_jump"=lower, "b_jump"=lower), upper=list("a_jump"=upper, "b_jump"=upper))
+         "Gaussian" = {
+           if(strict==TRUE) return(list(lower=list("mu_jump"=NA, "sigma_jump"=0), upper=list("mu_jump"=NA, "sigma_jump"=NA)))
+           else {
+             mu <- mean(diff(data))
+             s <- sd(diff(data))
+             return(list(lower=list("mu_jump"=mu, "sigma_jump"=s), upper=list("mu_jump"=mu, "sigma_jump"=s)))
+           }
+          },
+         "Uniform" = {
+            if(strict==TRUE) return(list(lower=list("a_jump"=NA, "b_jump"=NA), upper=list("a_jump"=NA, "b_jump"=NA)))
+            else {
+              a <- min(diff(data))
+              b <- max(diff(data))
+              return(list(lower=list("a_jump"=a, "b_jump"=b), upper=list("a_jump"=a, "b_jump"=b)))
+            }
+           }
   )
 }
 
@@ -332,17 +373,6 @@ latexJumps <- function(jumps){
   }
 }
 
-estimateJumps <- function(data, jumps, threshold = 0){
-  if (is.na(threshold)) threshold <- 0
-  data <- as.numeric(data)
-  x <- na.omit(diff(data))
-  x <- x[abs(x) > threshold]
-  param <- switch (jumps,
-    "Gaussian" = list("mu_jump"=mean(x), "sigma_jump"=sd(x)),
-    "Uniform" = list("a_jump"=min(x), "b_jump"=max(x))
-  )
-  return(param)
-}
 
 
 setModelByName <- function(name, jumps = NA, AR_C = NA, MA_C = NA, XinExpr = FALSE){
@@ -556,7 +586,7 @@ changeBase <- function(table, yuimaGUI, newBase = input$baseModels, session = se
   colnames(outputTable) <- unique(colnames(table))
   style <- "info"
   msg <- NULL
-  if (any(outputTable["Std. Error",] %in% c(0, "NA", "NaN"))){
+  if (any(outputTable["Std. Error",] %in% c(0, "NA", "NaN", "<NA>", NA, NaN))){
     msg <- "The estimated model does not satisfy theoretical properties."
     style <- "warning"
   }
@@ -768,8 +798,6 @@ addModel <- function(modName, modClass, AR_C, MA_C, jumps, symbName, data, toLog
     }
   }
   else if (modClass == "Compound Poisson") {
-    jumpParam <- estimateJumps(data = data, jumps = jumps, threshold = threshold)
-    for (i in names(jumpParam)) if (is.null(start[[i]])) start[[i]] <- jumpParam[[i]]
     if (all(parameters@all %in% c(names(start),names(fixed))))
       QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #REMOVE# joint = joint, aggregation = aggregation,
                         threshold = threshold))
@@ -896,26 +924,36 @@ addModel <- function(modName, modClass, AR_C, MA_C, jumps, symbName, data, toLog
 
 
 
-addCPoint <- function(modelName, symb, trials, frac = 0.2, delta = 0.01, session, anchorId, alertId = NULL){
+addCPoint <- function(modelName, symb, from, to, delta, toLog, start, startMin, startMax, method, trials, seed, lower, upper, fracL, fracR){
   series <- getData(symb)
+  if(class(index(series)[1])=="Date") series <- window(series, start = as.Date(from), end = as.Date(to))
+  else series <- window(series, start = as.numeric(from), end = as.numeric(to))
   mod <- setModelByName(name = modelName)
-  bounds <- defaultBounds(name = modelName, delta = delta)
-  startBounds <- defaultBounds(name = modelName, delta = delta, lower = -100, upper = 100)
+  if(!is.na(seed)) set.seed(seed)
+  if(is.na(seed)) set.seed(NULL)
+  start <- clearNA(start)
+  lower <- clearNA(lower)
+  upper <- clearNA(upper)
+  if(toLog==TRUE) series <- try(log(series))
+  if(class(series)=="try-error") stop()
+  info <- list(
+    symb = symb,
+    seed = seed,
+    model = modelName,
+    toLog = toLog,
+    trials = trials,
+    method = "L-BFGS-B"
+  )
   yuima <- setYuima(data = setDataGUI(series, delta = delta), model = mod)
-  start <- list()
-  startMin <- startBounds$lower
-  startMax <- startBounds$upper
-  lower <- clearNA(bounds$lower)
-  upper <- clearNA(bounds$upper)
-  miss <- mod@parameter@all
-  
+  t0 <- start(yuima@data@zoo.data[[1]])
+  miss <- mod@parameter@all[!(mod@parameter@all %in% names(start))]
   m2logL_prec <- NA
   na_prec <- NA
   for(iter in 1:trials){
     for(j in 1:3){
       for (i in miss)
         start[[i]] <- runif(1, min = max(lower[[i]],startMin[[i]], na.rm = TRUE), max = min(upper[[i]],startMax[[i]],na.rm = TRUE))
-      QMLEtempL <- try(qmleL(yuima = yuima, t = frac*length(series)*delta, start = start, method="L-BFGS-B", lower = lower, upper = upper, rcpp = TRUE))
+      QMLEtempL <- try(qmleL(yuima = yuima, t = t0 + fracL*length(series)*delta, start = start, method="L-BFGS-B", lower = lower, upper = upper, rcpp = TRUE))
       if (class(QMLEtempL)!="try-error") if (all(!is.na(summary(QMLEtempL)@coef[,"Estimate"])))
         break
     }
@@ -925,7 +963,7 @@ addCPoint <- function(modelName, symb, trials, frac = 0.2, delta = 0.01, session
         coefTable <- summary(QMLEtempL)@coef
         for (param in names(start))
           start[[param]] <- as.numeric(coefTable[param,"Estimate"])
-        QMLEtempL <- try(qmleL(yuima = yuima, t = frac*length(series)*delta, start = start, method="L-BFGS-B", lower = lower, upper = upper, rcpp = TRUE))
+        QMLEtempL <- try(qmleL(yuima = yuima, t = t0 + fracL*length(series)*delta, start = start, method="L-BFGS-B", lower = lower, upper = upper, rcpp = TRUE))
         if (class(QMLEtempL)=="try-error") break
         else if (summary(QMLEtempL)@m2logL>=m2logL*abs(sign(m2logL)-0.001)) break
       }
@@ -951,29 +989,40 @@ addCPoint <- function(modelName, symb, trials, frac = 0.2, delta = 0.01, session
       }
     }
   }
-  if (!exists("QMLEL")){
-    createAlert(session = session, anchorId = anchorId, alertId = alertId, content =  paste("Unable to estimate change points of ", symb, ". Try to increase the number of Trials", sep = ""), style = "error")
-    return()
-  }
+  if (!exists("QMLEL")) stop()
   
   tmpL <- QMLEL
-  tmpR <- try(qmleR(yuima = yuima, t = (1-frac)*length(series)*delta, start = as.list(coef(tmpL)), method="L-BFGS-B", lower = lower, upper = upper, rcpp = TRUE))
+  tmpR <- try(qmleR(yuima = yuima, t = t0 + fracR*length(series)*delta, start = as.list(coef(tmpL)), method="L-BFGS-B", lower = lower, upper = upper, rcpp = TRUE))
 
-  if (class(tmpR)=="try-error"){
-    createAlert(session = session, anchorId = anchorId, alertId = alertId, content =  paste("Unable to estimate change points of ", symb, ". Try to increase the number of Trials", sep = ""), style = "error")
-    return()
-  }
+  if (class(tmpR)=="try-error") stop()
   
-  cp_prec <- CPoint(yuima = yuima, param1=coef(tmpL), param2=coef(tmpR))
+  cp_prec <- try(CPoint(yuima = yuima, param1=coef(tmpL), param2=coef(tmpR)))
+  if(class(cp_prec)=="try-error") stop()
+  diff_prec <- delta*nrow(series)
   repeat{
-    tmpL <- qmleL(yuima, start=as.list(coef(tmpL)), t = cp_prec$tau, lower=lower, upper = upper, method="L-BFGS-B", rcpp = TRUE)
-    tmpR <- qmleR(yuima, start=as.list(coef(tmpR)), t = cp_prec$tau, lower=lower, upper = upper, method="L-BFGS-B", rcpp = TRUE)
-    cp <- CPoint(yuima = yuima, param1=coef(tmpL), param2=coef(tmpR))
+    tmpL <- try(qmleL(yuima, start=as.list(coef(tmpL)), t = cp_prec$tau, lower=lower, upper = upper, method="L-BFGS-B", rcpp = TRUE))
+    if(class(tmpL)=="try-error") stop()
+    tmpR <- try(qmleR(yuima, start=as.list(coef(tmpR)), t = cp_prec$tau, lower=lower, upper = upper, method="L-BFGS-B", rcpp = TRUE))
+    if(class(tmpR)=="try-error") stop()
+    cp <- try(CPoint(yuima = yuima, param1=coef(tmpL), param2=coef(tmpR)))
+    if(class(cp)=="try-error") stop()
     if (abs(cp$tau - cp_prec$tau)<delta) break
-    else cp_prec <- cp
+    else if (abs(cp$tau - cp_prec$tau)>=diff_prec) stop()
+    else {
+      cp_prec <- cp
+      diff_prec <- abs(cp$tau - cp_prec$tau)
+    }
   }
   
-  yuimaGUIdata$cpYuima[[symb]] <<- list(tau = index(series)[as.integer(cp$tau/delta)], model = modelName, trials = trials)
+  i <- 1
+  symb_id <- symb
+  repeat {
+    if(symb_id %in% names(yuimaGUIdata$cpYuima)){
+      symb_id <- paste(symb, i)
+      i <- i+1
+    } else break
+  }
+  yuimaGUIdata$cpYuima[[symb_id]] <<- list(tau = index(series)[as.integer((cp$tau-t0)/delta)], info = info, series = series, qmleR = tmpR, qmleL = tmpL)
   
 }
 
@@ -1237,7 +1286,7 @@ MYdist <- function(object, percentage = TRUE){
 
 
 
-CPanalysis <- function(x, method = c("KSdiff", "KSperc"), pvalue = 0.01){
+CPanalysis <- function(x, method = c("KSdiff", "KSperc"), pvalue = 0.01, symb){
   if (pvalue > 0.1){
     pvalue <- 0.1
     warning("pvalue re-defined: 0.1")
@@ -1275,8 +1324,24 @@ CPanalysis <- function(x, method = c("KSdiff", "KSperc"), pvalue = 0.01){
       tau <- NA
       p.value <- NA
     }
-    return (list(tau=tau,pvalue=p.value, method=method))
+    return (list(tau=tau,pvalue=p.value, method=method, series = x, symb = symb))
   }  
+}
+
+addCPoint_distribution <- function(symb, method = c("KSdiff", "KSperc"), pvalue = 0.01){
+  temp <- try(CPanalysis(x=getData(symb), method = method, pvalue = pvalue, symb = symb))
+  if (class(temp)!="try-error") {
+    i <- 1
+    symb_id <- symb
+    repeat {
+      if(symb_id %in% names(yuimaGUIdata$cp)){
+        symb_id <- paste(symb, i)
+        i <- i+1
+      } else break
+    }
+    yuimaGUIdata$cp[[symb_id]] <<- temp
+    return(list(error=NULL))
+  } else return(list(error=symb))
 }
 
 
