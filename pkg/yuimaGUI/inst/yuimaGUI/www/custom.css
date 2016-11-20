@@ -49,7 +49,7 @@ th{
 	background: linear-gradient(#606D60, #202220, #606D60);
 }
 
-#advancedSettingsButtonApplyDelta, #advancedSettingsButtonApplyAllDelta, #advancedSettingsButtonApplyModel, #advancedSettingsButtonApplyAllModel, #advancedSettingsButtonApplyGeneral, #advancedSettingsButtonApplyAllModelGeneral, #advancedSettingsButtonApplyAllGeneral, #buttonApplyRange, #buttonApplyAllRange, #simulate_button_apply_nsim, #simulate_button_applyAll_nsim, #simulate_button_apply_xinit, #simulate_button_applyAll_xinit, #simulate_button_apply_range, #simulate_button_applyAll_range, #simulate_button_apply_advancedSettings, #simulate_button_applyAll_advancedSettings, #simulate_showSimulation_button_saveTrajectory, #simulate_showSimulation_button_saveHist, #cluster_button_saveDendogram, #cluster_button_saveScaling2D {
+#advancedSettingsButtonApplyDelta, #advancedSettingsButtonApplyAllDelta, #advancedSettingsButtonApplyModel, #advancedSettingsButtonApplyAllModel, #advancedSettingsButtonApplyGeneral, #advancedSettingsButtonApplyAllModelGeneral, #advancedSettingsButtonApplyAllGeneral, #buttonApplyRange, #buttonApplyAllRange, #simulate_button_apply_nsim, #simulate_button_applyAll_nsim, #simulate_button_apply_xinit, #simulate_button_applyAll_xinit, #simulate_button_apply_range, #simulate_button_applyAll_range, #simulate_button_apply_advancedSettings, #simulate_button_applyAll_advancedSettings, #parametric_modal_button_applyDelta, #parametric_modal_button_applyAllDelta, #parametric_modal_button_applyGeneral, #parametric_modal_button_applyAllModelGeneral, #parametric_modal_button_applyModel, #parametric_modal_button_applyAllModel {
   width: 100%;
   color: #ffffff;
 	text-shadow: 1px 1px 1px #000;
@@ -69,7 +69,7 @@ th{
 	background: linear-gradient(#606D60, #202220, #606D60);
 }
 
-#finDataDelete, #finDataDeleteAll, #finDataSave, #yourFileDelete, #yourFileDeleteAll, #yourFileSave, #buttonSelect_models_Univariate, #buttonSelectAll_models_Univariate, #buttonDelete_models_Univariate, #buttonDeleteAll_models_Univariate, #databaseModelsDelete, #databaseModelsDeleteAll, #simulation_button_deleteModels, #simulation_button_deleteAllModels, #simulate_button_selectModels, #simulate_button_selectAllModels, #simulate_monitor_button_delete, #simulate_monitor_button_deleteAll, #simulate_model_usr_button_select, #simulate_model_usr_button_selectAll, #simulate_model_usr_button_delete, #simulate_model_usr_button_deleteAll, #cluster_button_select, #cluster_button_selectAll, #cluster_button_delete, #cluster_button_deleteAll, #changepoint_button_select, #changepoint_button_selectAll, #changepoint_button_delete, #changepoint_button_deleteAll, #hedging_button_delete, #hedging_button_deleteAll, #parametric_changepoint_button_select, #parametric_changepoint_button_selectAll, #parametric_changepoint_button_delete, #parametric_changepoint_button_deleteAll, #llag_button_select, #llag_button_selectAll, #llag_button_delete, #llag_button_deleteAll {
+#finDataDelete, #finDataDeleteAll, #yourFileDelete, #yourFileDeleteAll, #buttonSelect_models_Univariate, #buttonSelectAll_models_Univariate, #buttonDelete_models_Univariate, #buttonDeleteAll_models_Univariate, #databaseModelsDelete, #databaseModelsDeleteAll, #simulation_button_deleteModels, #simulation_button_deleteAllModels, #simulate_button_selectModels, #simulate_button_selectAllModels, #simulate_monitor_button_delete, #simulate_monitor_button_deleteAll, #simulate_model_usr_button_select, #simulate_model_usr_button_selectAll, #simulate_model_usr_button_delete, #simulate_model_usr_button_deleteAll, #cluster_button_select, #cluster_button_selectAll, #cluster_button_delete, #cluster_button_deleteAll, #changepoint_button_select, #changepoint_button_selectAll, #changepoint_button_delete, #changepoint_button_deleteAll, #hedging_button_delete, #hedging_button_deleteAll, #parametric_changepoint_button_select, #parametric_changepoint_button_selectAll, #parametric_changepoint_button_delete, #parametric_changepoint_button_deleteAll, #llag_button_select, #llag_button_selectAll, #llag_button_delete, #llag_button_deleteAll, #changepoint_button_delete_estimated, #changepoint_button_deleteAll_estimated, #parametric_changepoint_button_delete_estimated, #parametric_changepoint_button_deleteAll_estimated {
   font-size: 110%;
   width: 100%;  
   color: black;
@@ -79,6 +79,14 @@ th{
 	box-shadow: none;
 }
 
+#finDataSave, #yourFileSave, #simulate_showSimulation_button_saveTrajectory, #simulate_showSimulation_button_saveHist, #cluster_button_saveDendogram, #cluster_button_saveScaling2D {
+  color: #ffffff;
+	background: radial-gradient(#001a1a, #00b3b3, #001a1a);
+	font-size: 110%;
+  width: 100%;  
+}
+
+
 #DisplayPlotsRange, #simulate_button_setSimulation {
   width: 40%;
   height: 39px;
@@ -87,8 +95,8 @@ th{
 	background: linear-gradient(#202220, #159609, #202220);
 }
 
-#advancedSettingsButton, #simulate_button_advancedSettings, #hedging_button_commissionPlan {
-  width: 40%;
+#advancedSettingsButton, #simulate_button_advancedSettings, #hedging_button_commissionPlan, #parametric_button_settings {
+  width: 50%;
   height: 39px;
   color: #ffffff;
 	border-radius: 2em;
@@ -96,10 +104,10 @@ th{
 }
 
 #simulate_model_usr_button_save, #usr_model_button_save, #hedging_button_saveHedging {
-  width: 40%;
-  height: 39px;
   color: #ffffff;
-	background: radial-gradient(#061218, #184860, #061218);
+	background: radial-gradient(#001a00, #00b300, #001a00);
+	font-size: 110%;
+  width: 100%; 
 }
 
 #usr_model_button_delete {
@@ -209,21 +217,13 @@ a:hover {
     color: black;
 }
 
-#llag_maxLag {
-  border-radius:10px;
+#llag_maxLag, #changepoint_pvalue, #cluster_distance_minkowskiPower {
   width:50%;
 }
 
-#llag_button_showResults {
-  width: 40%;
-  height: 39px;
+#llag_button_showResults, #simulate_monitor_button_showSimulation {
   color: #ffffff;
-	background: radial-gradient(#001a1a, #00b3b3, #001a1a);
-}
-
-#simulate_monitor_button_showSimulation {
-  color: #ffffff;
-	background: radial-gradient(#001a1a, #00b3b3, #001a1a);
+	background: radial-gradient(#662900, #ff8533, #662900);
 	font-size: 110%;
   width: 100%;  
 }
@@ -236,4 +236,8 @@ a:hover {
   text-align: center;
 }
 
+#parametric_modal_rangeFraction .js-irs-0 .irs-single, .js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {
+  background: #878792;
+  border-color: #282828;
+}
 

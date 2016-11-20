@@ -190,9 +190,9 @@ body<-dashboardBody(
           hr(class = "hrHeader")
         )
       ),
-      fluidRow(column(12,bsAlert("modelsAlert"))),
       fluidRow(column(12,tabsetPanel(id = "panel_estimates", type = "tabs",
-        tabPanel(title = "Start estimation",
+        tabPanel(title = "Run estimation",
+          fluidRow(column(12,bsAlert("panel_run_estimation_alert"))),
           br(),
           fluidRow(
             column(4,div(align="center",
@@ -217,7 +217,7 @@ body<-dashboardBody(
                    DT::dataTableOutput("database4")
             ),
             column(4,
-                   br(),br(),br(),br(),
+                   br(),br(),br(),br(),br(),br(),
                    div(actionButton("DisplayPlotsRange", label = "Set Range"), align = "center"),
                    br(),
                    div(actionButton("advancedSettingsButton", label = "Advanced Settings", align = "center"), align = "center")
@@ -237,14 +237,19 @@ body<-dashboardBody(
           )
         ),
         tabPanel(title = "Set model",
+          fluidRow(column(12,bsAlert("panel_set_model_alert"))),
           br(),
           fluidRow(div(align="center",
             column(6,
-              selectInput("usr_modelClass",label = "Model Class", width = "50%", choices = c("Diffusion process", "Fractional process", "Compound Poisson"), selected = "Diffusion process"),
-              textInput("usr_model_name", label = "Model Name", width = "50%"),
-              uiOutput("usr_modelClass_latex"),
-              uiOutput("usr_model_coeff"),
-              column(12,br(),br(),actionButton("usr_model_button_save", label = "Save Model"))
+              fluidRow(selectInput("usr_modelClass",label = "Model Class", width = "50%", choices = c("Diffusion process", "Fractional process", "Compound Poisson"), selected = "Diffusion process")),
+              fluidRow(textInput("usr_model_name", label = "Model Name", width = "50%")),
+              fluidRow(uiOutput("usr_modelClass_latex")),
+              fluidRow(uiOutput("usr_model_coeff")),
+              br(),br(),
+              fluidRow(
+                column(4),
+                column(4,actionButton("usr_model_button_save", label = "Save Model"))
+              )
             ),
             column(6,div(id="usr_model_saved_div",align="center",
               uiOutput("usr_model_saved"),
@@ -255,14 +260,16 @@ body<-dashboardBody(
           ))
         ),
         tabPanel(title = "Estimates",
+          fluidRow(column(12,bsAlert("panel_estimates_alert"))),
           shinyjs::hidden(div(id="estimates_info", fluidRow(
             column(12,
               textOutput("SymbolName"),
               a(id = "linkMoreInfo", tags$u("More Info"), href = "", style="color:#FFF48B"),
-              bsModal(id = "MoreInfo", trigger = "linkMoreInfo", title = "Info",
-                fluidRow(
-                  column(12, uiOutput("text_MoreInfo")),
-                  column(12, div(tableOutput("table_MoreInfo"), align="center")),
+              bsModal(id = "MoreInfo", trigger = "linkMoreInfo", title = "Info", size = "large",
+                column(12,
+                  fluidRow(uiOutput("text_MoreInfo")),
+                  br(),
+                  fluidRow(div(tableOutput("table_MoreInfo"), align="center")),
                   bsTooltip(id = "table_MoreInfo" ,"Estimates and Std. Errors are coherent with delta that has been used. No conversion to other units of measure has been applied.")
                 )
               ),
@@ -289,7 +296,7 @@ body<-dashboardBody(
         )
       ))),
       bsModal(id="plotsRange", trigger = "DisplayPlotsRange", title = div(h4(em("Select range to use for models estimation")), align="center"), size = "large",
-        div(id="plotsRangeErrorMessage",h5("Select some series from table 'Available Data'")),
+        div(id="plotsRangeErrorMessage",align = "center",h3("Select some series from table 'Available Data'")),
         div(id="plotsRangeAll",
           fluidRow(
             column(8,
@@ -316,7 +323,7 @@ body<-dashboardBody(
         )
       ),
       bsModal(id="advancedSettings", title=div(h4(em(a("Advanced Settings", style="color:blue", href="http://www.rdocumentation.org/packages/yuima/functions/qmle", target = "_blank"))),align="center"), trigger = "advancedSettingsButton", size = "large",
-        div(id="advancedSettingsErrorMessage",h5("Select some models and series (from table 'Available Data')")),
+        div(id="advancedSettingsErrorMessage",align = "center",h3("Select some models and series (from table 'Available Data')")),
         div(id="advancedSettingsAll",
           fluidRow(
             column(6,
@@ -390,9 +397,9 @@ body<-dashboardBody(
           hr(class = "hrHeader")
         )
       ),
-      fluidRow(column(12,bsAlert("simulate_alert"))),
       fluidRow(column(12,tabsetPanel(id = "panel_simulations", type = "tabs",
         tabPanel(title = "Simulate model",
+          fluidRow(column(12,bsAlert("panel_simulate_model_alert"))),
           fluidRow(column(12, br(),
             h4("Available models", style="color:#CDCECD"),
             DT::dataTableOutput("simulate_databaseModels"),
@@ -407,18 +414,28 @@ body<-dashboardBody(
           )
         )),
         tabPanel(title = "Simulate equation",
+          fluidRow(column(12,bsAlert("panel_simulate_equation_alert"))),
           fluidRow(
             uiOutput("simulate_PrintModelLatex")       
           ),
           fluidRow(
             column(6, br(), div(align="center",
-              column(6,selectInput("simulate_model_usr_selectClass", label = "Class", choices = c("Diffusion process", "Fractional process", "Compound Poisson"))),
-              column(6,uiOutput("simulate_model_usr_selectModel")),
+              fluidRow(
+                column(1),
+                column(5,selectInput("simulate_model_usr_selectClass", label = "Class", choices = c("Diffusion process", "Fractional process", "Compound Poisson"))),
+                column(5,uiOutput("simulate_model_usr_selectModel"))
+              ),
               uiOutput("simulate_model_usr_ID"),
               uiOutput("simulate_model_usr_selectJumps"),
-              column(6,uiOutput("simulate_model_usr_selectParam")),
-              column(6,uiOutput("simulate_model_usr_param")),
-              column(12,actionButton("simulate_model_usr_button_save", label = "Save", align = "center"))
+              fluidRow(
+                column(1),
+                column(5,uiOutput("simulate_model_usr_selectParam")),
+                column(5,uiOutput("simulate_model_usr_param"))
+              ),
+              fluidRow(
+                column(4),
+                column(4,actionButton("simulate_model_usr_button_save", label = "Save", align = "center"))
+              )
             )),
             column(6,
               br(),
@@ -434,6 +451,7 @@ body<-dashboardBody(
           )
         ),
         tabPanel(title = "Simulations",
+          fluidRow(column(12,bsAlert("panel_simulations_alert"))),
           br(),
           fluidRow(column(12, DT::dataTableOutput("simulate_monitor_table"))),
           br(),
@@ -456,7 +474,7 @@ body<-dashboardBody(
             DT::dataTableOutput("simulate_selectedModels")
           ),
           column(4,
-            br(),br(),br(),br(),
+            br(),br(),br(),br(),br(),br(),
             div(actionButton("simulate_button_setSimulation", label = "Set Simulation"), align = "center"),
             br(),
             div(actionButton("simulate_button_advancedSettings", label = "Advanced Settings", align = "center"), align = "center")
@@ -504,7 +522,7 @@ body<-dashboardBody(
       ),
       bsModal(id="simulate_setSimulation", trigger = "simulate_button_setSimulation", title = div(h4(em("Set Simulation")), align="center"), size = "small",
         tags$style(type = "text/css", ".datepicker{z-index: 1100 !important;}"),
-        div(id="simulate_setSimulation_errorMessage",h5("Select some models first")),
+        div(id="simulate_setSimulation_errorMessage",align = "center", h3("Select some models first")),
         div(id="simulate_setSimulation_body", align = "center",
           uiOutput("simulate_modelID"),
           br(),
@@ -527,7 +545,7 @@ body<-dashboardBody(
         )
       ),
       bsModal(id="simulate_advancedSettings", trigger = "simulate_button_advancedSettings", title = div(h4(em("Advanced Settings")), align="center"), size = "small",
-        div(id="simulate_advancedSettings_errorMessage",h5("Select some models first")),
+        div(id="simulate_advancedSettings_errorMessage", align = "center", h3("Select some models first")),
         div(id="simulate_advancedSettings_body", align = "center",
           uiOutput("simulate_advancedSettings_modelID"),
           uiOutput("simulate_seed"),
@@ -563,7 +581,7 @@ body<-dashboardBody(
           div(align="center",
             selectInput("cluster_linkage", "Linkage", choices = c("Complete"="complete", "Single"="single", "Average"="average", "Ward"="ward.D", "Ward squared"="ward.D2", "McQuitty"="mcquitty", "Median"="median", "Centroid"="centroid")),
             selectInput("cluster_distance", "Distance", choices = c("Markov Operator"="MOdist", "Percentage Increments Distribution"="MYdist_perc", "Increments Distribution"="MYdist_ass", "Euclidean"="euclidean", "Maximum"="maximum", "Manhattan"="manhattan", "Canberra"="canberra", "Minkowski"="minkowski")),
-            shinyjs::hidden(numericInput("cluster_distance_minkowskiPower", label = "Power", value = 2, width = "30%")))
+            shinyjs::hidden(numericInput("cluster_distance_minkowskiPower", label = "Power", value = 2)))
         )
       )),
       br(),
@@ -588,10 +606,9 @@ body<-dashboardBody(
         )),
         br(),
         fluidRow(column(12,
-          column(2),
-          column(4, div(align="center", downloadButton("cluster_button_saveDendogram", label = "Save dendrogram"))),        
-          column(3),
-          column(2, div(align="center", downloadButton("cluster_button_saveScaling2D", label = "Save chart")))
+          column(3, div(align="left", downloadButton("cluster_button_saveDendogram", label = "Save dendrogram"))),        
+          column(7),
+          column(2, div(align="right", downloadButton("cluster_button_saveScaling2D", label = "Save chart")))
         ))
       ))
     ),
@@ -621,7 +638,7 @@ body<-dashboardBody(
             ),
             column(4,br(),br(),br(),br(),
               div(align="center", selectInput("changepoint_method", "Method", choices = c("Percentage Increments Distribution"="KSperc", "Increments Distribution"="KSdiff"))),
-              div(align="center", shinyjs::hidden(sliderInput("changepoint_pvalue", label = "p-value (%)", value=1, min=0, max=5, step = 0.01)))
+              div(align="center", numericInput("changepoint_pvalue", label = "p-value", value=0.01, min=0, max=1))
             )
           )),
           br(),
@@ -641,18 +658,26 @@ body<-dashboardBody(
             hr(class = "hrHeader"),
             uiOutput("changepoint_symb", align="center"),
             div(fluidRow(
-              column(10, selectInput("changepoint_scale", label = "Scale", choices=c("Linear","Logarithmic (Y)","Logarithmic (X)", "Logarithmic (XY)"), width = "150px")),
-              column(2, a(id = "linkChangePointInfo", tags$u(h4("Change Points Info")), href = "", style="color:#FFF48B"))
+              column(6, div(align = "left", selectInput("changepoint_scale", label = "Scale", choices=c("Linear","Logarithmic (Y)","Logarithmic (X)", "Logarithmic (XY)"), width = "150px"))),
+              column(6, div(align = "right", a(id = "linkChangePointInfo", tags$u(h4("Change Points Info")), href = "", style="color:#FFF48B")))
             )),
             bsModal(id = "ChangePointInfo", trigger = "linkChangePointInfo", title = "Change Points Info",
-                    fluidRow(
-                      column(12, uiOutput("text_ChangePointInfo")),
-                      column(12, div(tableOutput("table_ChangePointInfo"), align="center"))
+                    column(12,
+                      fluidRow(uiOutput("text_ChangePointInfo")),
+                      br(),
+                      fluidRow(div(tableOutput("table_ChangePointInfo"), align="center"))
                     )
             ),
             fluidRow(
               column(6,plotOutput("changepoint_plot_series", brush = brushOpts(id = "changePoint_brush", delayType = "debounce", delay = 10000, resetOnNew = TRUE), dblclick = "changePoint_dbclick")),
               column(6,plotOutput("changepoint_plot_incr", brush = brushOpts(id = "changePoint_brush", delayType = "debounce", delay = 10000, resetOnNew = TRUE), dblclick = "changePoint_dbclick"))
+            ),br(),
+            fluidRow(
+              column(8),
+              column(2,actionButton("changepoint_button_delete_estimated",label = "Delete", align = "center")),
+              bsTooltip("changepoint_button_delete_estimated", title = "Delete selected series", placement = "top"),
+              column(2,actionButton("changepoint_button_deleteAll_estimated",label = "Delete All", align = "center")),
+              bsTooltip("changepoint_button_deleteAll_estimated", title = "Delete all series", placement = "top")
             )
           ))))
         ),
@@ -667,10 +692,66 @@ body<-dashboardBody(
                                         h4("Selected data", style="color:#CDCECD"),
                                         DT::dataTableOutput("parametric_changepoint_table_selected")
                                  ),
-                                 column(4,br(),br(),br(),br(),
-                                        div(align="center", uiOutput("parametric_changepoint_model")),
-                                        div(align="center", numericInput("parametric_changepoint_trials", label = "Trials", value = 1, min = 1, step = 1))
-                                 )
+                                 column(4,br(),br(),div(align="center", 
+                                        uiOutput("parametric_changepoint_model"),
+                                        sliderInput("parametric_modal_rangeFraction", label = "Training set (%)",min = 0, max = 100, value = c(20,80), step = 1, ticks = F),
+                                        br(),
+                                        actionButton("parametric_button_settings", label = "Advanced Settings")
+                                )),
+                                bsModal(id="parametric_modal_id", title=div(h4(em(a("Settings", style="color:blue", href="http://www.rdocumentation.org/packages/yuima/functions/qmle", target = "_blank"))),align="center"), trigger = "parametric_button_settings", size = "large",
+                                        div(id="parametric_modal_errorMessage", align = "center", h3("Select some series (from table 'Available Data')")),
+                                        div(id="parametric_modal_body",
+                                            fluidRow(
+                                              column(6,
+                                                     box(width = 12,div(align="center",
+                                                                        h3("Series Settings"),
+                                                                        uiOutput("parametric_modal_series", align="center"),
+                                                                        fluidRow(
+                                                                          column(6,uiOutput("parametric_modal_delta", align="center")),
+                                                                          column(6,uiOutput("parametric_modal_toLog", align="center"))       
+                                                                        ),
+                                                                        fluidRow(uiOutput("parametric_modal_range")),
+                                                                        fluidRow(
+                                                                          column(6, tags$button(type="button", id="parametric_modal_button_applyDelta", class = "action-button", em("Apply"))),
+                                                                          column(6, tags$button(type="button", id="parametric_modal_button_applyAllDelta", class = "action-button", em("Apply to All series")))
+                                                                        )
+                                                     )),
+                                                     box(width = 12,div(align="center",
+                                                                        h3("General Settings"),
+                                                                        uiOutput("parametric_modal_method", align="center"),
+                                                                        fluidRow(
+                                                                          column(6,uiOutput("parametric_modal_trials", align="center")),
+                                                                          column(6,uiOutput("parametric_modal_seed", align="center"))
+                                                                        ),
+                                                                        fluidRow(
+                                                                          column(6, tags$button(type="button", id="parametric_modal_button_applyGeneral", class = "action-button", em("Apply"))),
+                                                                          column(6, tags$button(type="button", id="parametric_modal_button_applyAllModelGeneral", class = "action-button", em("Apply to All series")))
+                                                                        )
+                                                     ))
+                                              ),
+                                              column(6,
+                                                     box(width = 12,div(align="center",
+                                                                        h3("Model Settings"),
+                                                                        uiOutput("parametric_modal_model", align="center"),
+                                                                        uiOutput("parametric_modal_parameter", align="center"),
+                                                                        uiOutput("parametric_modal_start", align="center"),
+                                                                        fluidRow(
+                                                                          column(6,uiOutput("parametric_modal_startMin", align="center")),
+                                                                          column(6,uiOutput("parametric_modal_startMax", align="center"))
+                                                                        ),
+                                                                        fluidRow(
+                                                                          column(6,uiOutput("parametric_modal_lower", align="center")),
+                                                                          column(6,uiOutput("parametric_modal_upper", align="center"))
+                                                                        ),
+                                                                        fluidRow(
+                                                                          column(6, tags$button(type="button", id="parametric_modal_button_applyModel", class = "action-button", em("Apply"))),
+                                                                          column(6, tags$button(type="button", id="parametric_modal_button_applyAllModel", class = "action-button", em("Apply to All series")))
+                                                                        )
+                                                     ))
+                                              )
+                                            )
+                                        )
+                                )
                  )),
                  br(),
                  fluidRow(column(12,
@@ -693,7 +774,26 @@ body<-dashboardBody(
                                                         )),
                                                         fluidRow(
                                                           column(6,plotOutput("parametric_changepoint_plot_series", brush = brushOpts(id = "parametric_changePoint_brush", delayType = "debounce", delay = 10000, resetOnNew = TRUE), dblclick = "parametric_changePoint_dbclick")),
-                                                          column(6,div(uiOutput("parametric_changepoint_info"),align="center"))
+                                                          column(6,
+                                                                 div(uiOutput("parametric_changepoint_info"),
+                                                                     a(id = "parametric_linkChangePointInfo", tags$u(h4("Change Point Info")), href = "", style="color:#FFF48B"),
+                                                                     align="center"),br(),br(),br(),br(),br(),br(),br(),br(),br(),
+                                                                 fluidRow(
+                                                                   column(2),
+                                                                   column(4,actionButton("parametric_changepoint_button_delete_estimated",label = "Delete", align = "center")),
+                                                                   bsTooltip("parametric_changepoint_button_delete_estimated", title = "Delete selected series", placement = "top"),
+                                                                   column(4,actionButton("parametric_changepoint_button_deleteAll_estimated",label = "Delete All", align = "center")),
+                                                                   bsTooltip("parametric_changepoint_button_deleteAll_estimated", title = "Delete all series", placement = "top")
+                                                                 )
+                                                                 )
+                                                        ),
+                                                        bsModal(id = "parametric_changepoint_modal_info", title = "Change Point Info", trigger = "parametric_linkChangePointInfo",
+                                                                fluidRow(column(12, uiOutput("parametric_changepoint_modal_info_text"))), br(),
+                                                                fluidRow(
+                                                                  column(6, div(h5("Estimates before the Change Point"), tableOutput("parametric_changepoint_modal_info_tableL"), align="center")),
+                                                                  column(6, div(h5("Estimates after the Change Point"), tableOutput("parametric_changepoint_modal_info_tableR"), align="center"))
+                                                                )
+                                                                
                                                         )
                  ))))
         )
@@ -719,15 +819,18 @@ body<-dashboardBody(
           DT::dataTableOutput("llag_table_selected")
         ),
         column(4,br(),br(),br(),
-          div(align="center", 
+          div(align="center",
             numericInput("llag_maxLag", label = "Max Lag", value = 20, min = 1, step = 1),
-            shinyjs::hidden(dateRangeInput("llag_range_date", label = "Range", start = Sys.Date()-365, end = Sys.Date())),
+            dateRangeInput("llag_range_date", label = "Range", start = Sys.Date()-365, end = Sys.Date()),
             shinyjs::hidden(div(id="llag_range_numeric",
               column(6,numericInput("llag_range_numeric1", label = "From", value = 0)),
               column(6,numericInput("llag_range_numeric2", label = "To", value = 1))
             )),
             br(),
-            shinyjs::hidden(actionButton("llag_button_showResults",label = "Show Results", align = "center"))
+            fluidRow(
+              column(3),
+              column(6, shinyjs::hidden(actionButton("llag_button_showResults",label = "Show Results", align = "center")))
+            )
           )
         )
       )),

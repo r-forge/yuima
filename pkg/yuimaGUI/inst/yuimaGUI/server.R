@@ -317,7 +317,7 @@ server <- function(input, output, session) {
   })
   
   observe({
-    if (input$usr_modelClass=="Fractional process") createAlert(session = session, anchorId = "modelsAlert", alertId = "alert_fracinfo", style = "info", content = "Fractional process you set here will be available for simulation purposes, but not for estimation.")
+    if (input$usr_modelClass=="Fractional process") createAlert(session = session, anchorId = "panel_set_model_alert", alertId = "alert_fracinfo", style = "info", content = "Fractional process you set here will be available for simulation purposes, but not for estimation.")
     else closeAlert(session = session, alertId = "alert_fracinfo")
   })
 
@@ -372,8 +372,8 @@ server <- function(input, output, session) {
     if (entered){
       estimateSettings[[input$usr_model_name]] <<- list()
       closeAlert(session, "alert_savingModels")
-      if(class(mod)!="try-error") createAlert(session = session, anchorId = "modelsAlert", alertId = "alert_savingModels", style = "success", content = "Model saved successfully")
-      else createAlert(session = session, anchorId = "modelsAlert", alertId = "alert_savingModels", style = "error", content = "Model is not correctly specified")
+      if(class(mod)!="try-error") createAlert(session = session, anchorId = "panel_set_model_alert", alertId = "alert_savingModels", style = "success", content = "Model saved successfully")
+      else createAlert(session = session, anchorId = "panel_set_model_alert", alertId = "alert_savingModels", style = "error", content = "Model is not correctly specified")
     }
   })
 
@@ -609,8 +609,8 @@ server <- function(input, output, session) {
     for (symb in rownames(seriesToEstimate$table)){
       if (is.null(deltaSettings[[symb]])) deltaSettings[[symb]] <<- 0.01
       if (is.null(toLogSettings[[symb]])) toLogSettings[[symb]] <<- FALSE
-      lastPrice <- as.numeric(last(getData(symb)))
-      if (toLogSettings[[symb]]==TRUE) lastPrice <- log(lastPrice)
+      data <- na.omit(as.numeric(getData(symb)))
+      if (toLogSettings[[symb]]==TRUE) data <- log(data)
       for (modName in input$model){
         if (class(try(setModelByName(modName, jumps = jumps_shortcut(class = class, jumps = input$jumps), AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA))))!="try-error"){
           if (is.null(estimateSettings[[modName]]))
@@ -621,40 +621,30 @@ server <- function(input, output, session) {
             estimateSettings[[modName]][[symb]][["fixed"]] <<- list()
           if (is.null(estimateSettings[[modName]][[symb]][["start"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$advancedSettingsButtonApplyAllDelta)
             estimateSettings[[modName]][[symb]][["start"]] <<- list()
+          
+          startMinMax <- defaultBounds(name = modName, 
+                                       jumps = jumps_shortcut(class = class, jumps = input$jumps), 
+                                       AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), 
+                                       MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA), 
+                                       strict = FALSE,
+                                       data = data,
+                                       delta = deltaSettings[[symb]])
+          upperLower <- defaultBounds(name = modName, 
+                                      jumps = jumps_shortcut(class = class, jumps = input$jumps), 
+                                      AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), 
+                                      MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA),
+                                      strict = TRUE,
+                                      data = data,
+                                      delta = deltaSettings[[symb]])
+          
           if (is.null(estimateSettings[[modName]][[symb]][["startMin"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$advancedSettingsButtonApplyAllDelta)
-            estimateSettings[[modName]][[symb]][["startMin"]] <<- defaultBounds(name = modName, 
-                                                                                jumps = jumps_shortcut(class = class, jumps = input$jumps), 
-                                                                                AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), 
-                                                                                MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA), 
-                                                                                lower = -100, upper = 100,
-                                                                                lastPrice = lastPrice,
-                                                                                delta = deltaSettings[[symb]]
-                                                                                )$lower
+            estimateSettings[[modName]][[symb]][["startMin"]] <<- startMinMax$lower
           if (is.null(estimateSettings[[modName]][[symb]][["startMax"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$advancedSettingsButtonApplyAllDelta)
-            estimateSettings[[modName]][[symb]][["startMax"]] <<- defaultBounds(name = modName, 
-                                                                                jumps = jumps_shortcut(class = class, jumps = input$jumps), 
-                                                                                AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), 
-                                                                                MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA), 
-                                                                                lower = -100, upper = 100,
-                                                                                lastPrice = lastPrice,
-                                                                                delta = deltaSettings[[symb]]
-                                                                                )$upper
+            estimateSettings[[modName]][[symb]][["startMax"]] <<- startMinMax$upper
           if (is.null(estimateSettings[[modName]][[symb]][["upper"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$advancedSettingsButtonApplyAllDelta)
-            estimateSettings[[modName]][[symb]][["upper"]] <<- defaultBounds(name = modName, 
-                                                                             jumps = jumps_shortcut(class = class, jumps = input$jumps), 
-                                                                             AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), 
-                                                                             MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA),
-                                                                             lastPrice = lastPrice,
-                                                                             delta = deltaSettings[[symb]]
-                                                                             )$upper
+            estimateSettings[[modName]][[symb]][["upper"]] <<- upperLower$upper
           if (is.null(estimateSettings[[modName]][[symb]][["lower"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$advancedSettingsButtonApplyAllDelta)
-            estimateSettings[[modName]][[symb]][["lower"]] <<- defaultBounds(name = modName, 
-                                                                             jumps = jumps_shortcut(class = class, jumps = input$jumps), 
-                                                                             AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), 
-                                                                             MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA),
-                                                                             lastPrice = lastPrice,
-                                                                             delta = deltaSettings[[symb]]
-                                                                             )$lower
+            estimateSettings[[modName]][[symb]][["lower"]] <<- upperLower$lower
           if (is.null(estimateSettings[[modName]][[symb]][["method"]])){
             if(class=="COGARCH" | class=="CARMA") estimateSettings[[modName]][[symb]][["method"]] <<- "SANN"
             else estimateSettings[[modName]][[symb]][["method"]] <<- "L-BFGS-B"
@@ -705,12 +695,11 @@ server <- function(input, output, session) {
   output$advancedSettingsParameter <- renderUI({
     if (!is.null(input$model))
       if (!is.null(input$advancedSettingsModel)){
-        parL <- try(setModelByName(input$advancedSettingsModel, jumps = jumps_shortcut(class = input$modelClass, jumps = input$jumps), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))@parameter)
-        if (class(par)!="try-error")
-          par <- parL@all
-          if (input$modelClass=="COGARCH") par <- unique(c(parL@drift, parL@xinit))
-          if (input$modelClass=="CARMA") par <- parL@drift
-          selectInput(inputId = "advancedSettingsParameter", label = "Parameter", choices = par)
+        parL <- setModelByName(input$advancedSettingsModel, jumps = jumps_shortcut(class = input$modelClass, jumps = input$jumps), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))@parameter
+        par <- parL@all
+        if (input$modelClass=="COGARCH") par <- unique(c(parL@drift, parL@xinit))
+        if (input$modelClass=="CARMA") par <- parL@drift
+        selectInput(inputId = "advancedSettingsParameter", label = "Parameter", choices = par)
       }
   })
   #REMOVE# output$advancedSettingsFixed <- renderUI({
@@ -846,15 +835,15 @@ server <- function(input, output, session) {
     closeAlert(session = session, alertId = "CARMA_COGARCH_err")
     if(!is.null(input$modelClass)) if(input$modelClass=="CARMA" ) if(!is.null(input$AR_C)) if(!is.null(input$MA_C)) if(!is.na(input$AR_C) & !is.na(input$MA_C)) {
       if(input$AR_C<=input$MA_C)
-        createAlert(session = session, anchorId = "modelsAlert", alertId = "CARMA_COGARCH_err", style = "error", content = "AR degree (p) must be greater than MA degree (q)")
+        createAlert(session = session, anchorId = "panel_run_estimation_alert", alertId = "CARMA_COGARCH_err", style = "error", content = "AR degree (p) must be greater than MA degree (q)")
       if(input$AR_C== 0 | input$MA_C==0)
-        createAlert(session = session, anchorId = "modelsAlert", alertId = "CARMA_COGARCH_err", style = "error", content = "AR and MA degree (p,q) must be positive")
+        createAlert(session = session, anchorId = "panel_run_estimation_alert", alertId = "CARMA_COGARCH_err", style = "error", content = "AR and MA degree (p,q) must be positive")
     }
     if(!is.null(input$modelClass)) if(input$modelClass=="COGARCH" ) if(!is.null(input$AR_C)) if(!is.null(input$MA_C)) if(!is.na(input$AR_C) & !is.na(input$MA_C)) {
       if(input$AR_C<input$MA_C)
-        createAlert(session = session, anchorId = "modelsAlert", alertId = "CARMA_COGARCH_err", style = "error", content = "AR degree (p) must be greater than or equal to MA degree (q)")
+        createAlert(session = session, anchorId = "panel_run_estimation_alert", alertId = "CARMA_COGARCH_err", style = "error", content = "AR degree (p) must be greater than or equal to MA degree (q)")
       if(input$AR_C== 0 | input$MA_C==0)
-        createAlert(session = session, anchorId = "modelsAlert", alertId = "CARMA_COGARCH_err", style = "error", content = "AR and MA degree (p,q) must be positive")
+        createAlert(session = session, anchorId = "panel_run_estimation_alert", alertId = "CARMA_COGARCH_err", style = "error", content = "AR and MA degree (p,q) must be positive")
     }  
   })
 
@@ -867,7 +856,7 @@ server <- function(input, output, session) {
     else if (input$modelClass=="Compound Poisson" & is.null(input$jumps)) valid <- FALSE
     else for(mod in input$model) if (class(try(setModelByName(mod, jumps = jumps_shortcut(class = input$modelClass, jumps = input$jumps), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))))=="try-error")  valid <- FALSE
     if(!valid){
-      createAlert(session = session, anchorId = "modelsAlert", alertId = "modelsAlert_err", content = "Select some series and (valid) models to estimate", style = "warning")
+      createAlert(session = session, anchorId = "panel_run_estimation_alert", alertId = "modelsAlert_err", content = "Select some series and (valid) models to estimate", style = "warning")
     }
     if(valid){
       withProgress(message = 'Estimating: ',{
@@ -906,7 +895,7 @@ server <- function(input, output, session) {
               aggregation = estimateSettings[[modName]][[symb]][["aggregation"]],
               threshold = estimateSettings[[modName]][[symb]][["threshold"]],
               session = session,
-              anchorId = "modelsAlert",
+              anchorId = "panel_estimates_alert",
               alertId = NULL
             )
           }
@@ -988,7 +977,7 @@ server <- function(input, output, session) {
     )
   })
 
-  output$table_MoreInfo <- renderTable(digits=6, rownames = TRUE, {
+  output$table_MoreInfo <- renderTable(digits=5, rownames = TRUE, {
     id <- unlist(strsplit(rownames(yuimaGUItable$model)[rowToPrint$id], split = " "))
     info <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info
     if (info$class=="Fractional process") coef <- as.data.frame(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle)
@@ -1002,13 +991,15 @@ server <- function(input, output, session) {
     startMax <- data.frame(info$startMax)
     if(length(lower)==0) lower[1,params[1]] <- NA
     if(length(upper)==0) upper[1,params[1]] <- NA
-    if(length(fixed)==0) fixed[1,params[1]] <- NA
+    #if(length(fixed)==0) fixed[1,params[1]] <- NA
     if(length(start)==0) start[1,params[1]] <- NA
     if(length(startMin)==0) startMin[1,params[1]] <- NA
     if(length(startMax)==0) startMax[1,params[1]] <- NA
-    table <- rbind.fill(coef[,unique(colnames(coef))], fixed, start, startMin, startMax, lower, upper)
-    rownames(table) <- c("Estimate", "Std. Error", "fixed", "start", "startMin", "startMax", "lower", "upper")
-    return(table)
+    table <- rbind.fill(coef[,unique(colnames(coef))], #fixed, 
+                        start, startMin, startMax, lower, upper)
+    rownames(table) <- c("Estimate", "Std. Error", #"fixed", 
+                         "start", "startMin", "startMax", "lower", "upper")
+    return(t(table))
   })
 
 
@@ -1019,7 +1010,7 @@ server <- function(input, output, session) {
       modN <- as.numeric(unlist(strsplit(rownames(yuimaGUItable$model)[rowToPrint$id], split = " "))[2])
       if (yuimaGUIdata$model[[symb]][[modN]]$info$class=="Fractional process") table <- yuimaGUIdata$model[[symb]][[modN]]$qmle
       else table <- t(summary(yuimaGUIdata$model[[symb]][[modN]]$qmle)@coef)
-      outputTable <- changeBase(table = table, yuimaGUI = yuimaGUIdata$model[[symb]][[modN]], newBase = input$baseModels, session = session, choicesUI="baseModels", anchorId = "modelsAlert", alertId = "modelsAlert_conversion")
+      outputTable <- changeBase(table = table, yuimaGUI = yuimaGUIdata$model[[symb]][[modN]], newBase = input$baseModels, session = session, choicesUI="baseModels", anchorId = "panel_estimates_alert", alertId = "modelsAlert_conversion")
       output$estimatedModelsTable <- renderTable(rownames = TRUE, {
         if (!is.null(rowToPrint$id))
           return(outputTable)
@@ -1032,10 +1023,7 @@ server <- function(input, output, session) {
   })
 
   observe({
-    shinyjs::toggle("modelsAlert_err", condition = (input$panel_estimates=="Start estimation"))
-    shinyjs::toggle("modelsAlert_conversion", condition = (input$panel_estimates=="Estimates"))
     shinyjs::toggle("usr_model_saved_div", condition = length(names(usr_models$model))!=0)
-    shinyjs::toggle("alert_savingModels", condition = (input$panel_estimates=="Set model"))
   })
 
   ###Delete Model
@@ -1198,7 +1186,7 @@ server <- function(input, output, session) {
       table <- data.frame()
       for (i in names(usr_models$simulation)[input$simulate_model_usr_table_rows_selected]){
         if ("MISSING" %in% usr_models$simulation[[i]][["true.param"]]){
-          createAlert(session = session, anchorId = "simulate_alert", alertId = "simulate_alert_usr_button_select", content = "There are still missing values in selected models", style = "error")
+          createAlert(session = session, anchorId = "panel_simulate_equation_alert", alertId = "simulate_alert_usr_button_select", content = "There are still missing values in selected models", style = "error")
         }
         else {
           closeAlert(session, "simulate_alert_usr_button_select")
@@ -1218,7 +1206,7 @@ server <- function(input, output, session) {
       table <- data.frame()
       for (i in names(usr_models$simulation)[input$simulate_model_usr_table_rows_all]){
         if ("MISSING" %in% usr_models$simulation[[i]][["true.param"]]){
-          createAlert(session = session, anchorId = "simulate_alert", alertId = "simulate_alert_usr_button_select", content = "There are still missing values in selected models", style = "error")
+          createAlert(session = session, anchorId = "panel_simulate_equation_alert", alertId = "simulate_alert_usr_button_select", content = "There are still missing values in selected models", style = "error")
         }
         else {
           closeAlert(session, "simulate_alert_usr_button_select")
@@ -1461,13 +1449,23 @@ server <- function(input, output, session) {
       }
     }
   })
+  
+  observe({
+    if (!is.null(modelsToSimulate$table)) if (nrow(modelsToSimulate$table)!=0) {
+      closeAlert(session, alertId = "simulate_alert_buttonEstimate1")
+      closeAlert(session, alertId = "simulate_alert_buttonEstimate2")
+    }
+  })
 
   observeEvent(input$simulate_simulateModels, {
-    if (nrow(modelsToSimulate$table)==0){
-      createAlert(session = session, anchorId = "simulate_alert", alertId = "simulate_alert_buttonEstimate", content = "Table 'Selected Models' is empty", style = "warning")
+    if (is.null(modelsToSimulate$table)) {
+      if (input$panel_simulations=="Simulate model") createAlert(session = session, anchorId = "panel_simulate_model_alert", alertId = "simulate_alert_buttonEstimate1", content = "Table 'Selected Models' is empty", style = "warning")
+      if (input$panel_simulations=="Simulate equation") createAlert(session = session, anchorId = "panel_simulate_equation_alert", alertId = "simulate_alert_buttonEstimate2", content = "Table 'Selected Models' is empty", style = "warning")
+    } else if (nrow(modelsToSimulate$table)==0) {
+      if (input$panel_simulations=="Simulate model") createAlert(session = session, anchorId = "panel_simulate_model_alert", alertId = "simulate_alert_buttonEstimate1", content = "Table 'Selected Models' is empty", style = "warning")
+      if (input$panel_simulations=="Simulate equation") createAlert(session = session, anchorId = "panel_simulate_equation_alert", alertId = "simulate_alert_buttonEstimate2", content = "Table 'Selected Models' is empty", style = "warning")
     }
     else{
-      closeAlert(session, alertId = "simulate_alert_buttonEstimate")
       withProgress(message = 'Simulating: ', value = 0, {
         for (modID in rownames(modelsToSimulate$table)){
           if(modID %in% names(usr_models$simulation)){
@@ -1494,7 +1492,7 @@ server <- function(input, output, session) {
               saveTraj = simulateSettings[[modID]][["traj"]],
               seed = simulateSettings[[modID]][["seed"]],
               session = session,
-              anchorId = "simulate_alert"
+              anchorId = "panel_simulations_alert"
             )
           }
           else if(modID %in% rownames(yuimaGUItable$model)){
@@ -1542,7 +1540,7 @@ server <- function(input, output, session) {
               saveTraj = simulateSettings[[modID]][["traj"]],
               seed = simulateSettings[[modID]][["seed"]],
               session = session,
-              anchorId = "simulate_alert"
+              anchorId = "panel_simulations_alert"
             )
           }
         }
@@ -1553,8 +1551,6 @@ server <- function(input, output, session) {
 
   observe({
     shinyjs::toggle("div_simulations", condition = (input$panel_simulations!="Simulations"))
-    shinyjs::toggle("simulate_alert_buttonEstimate", condition = (input$panel_simulations!="Simulations"))
-    shinyjs::toggle("simulate_alert_usr_button_select", condition = (input$panel_simulations=="Simulate equation"))
   })
 
   ###Create simulations table
@@ -1973,10 +1969,6 @@ server <- function(input, output, session) {
   })
   
   observe({
-    shinyjs::toggle("changepoint_pvalue", condition = (input$changepoint_method %in% c("KSdiff", "KSperc")))
-  })
-  
-  observe({
     shinyjs::toggle("changepoint_charts", condition = (length(names(yuimaGUIdata$cp))!=0))
   })
   
@@ -1991,19 +1983,20 @@ server <- function(input, output, session) {
   observeEvent(input$changepoint_button_startEstimation, {
     if (length(rownames(seriesToChangePoint$table))!=0)
       withProgress(message = 'Analyzing: ', value = 0, {
+        errors <- c()
         for (i in rownames(seriesToChangePoint$table)){
           incProgress(1/length(rownames(seriesToChangePoint$table)), detail = i)
-          temp <- try(CPanalysis(x=getData(i), method = input$changepoint_method, pvalue = input$changepoint_pvalue/100))
-          if (class(temp)!="try-error") yuimaGUIdata$cp[[i]] <<- temp
-          else createAlert(session = session, anchorId = "nonparametric_changepoint_alert", content = paste("Unable to estimate change points of", i), dismiss = T, style = "error")
+          errors <- c(errors, addCPoint_distribution(symb = i, method = input$changepoint_method, pvalue = input$changepoint_pvalue)$error)
         }
+        if(!is.null(errors)) 
+          createAlert(session = session, anchorId = "nonparametric_changepoint_alert", content = paste("Unable to estimate change points of:", paste(errors, collapse = " ")), dismiss = T, style = "error")
       })
   })
   
   range_changePoint <- reactiveValues(x=NULL, y=NULL)
   observe({
     if (!is.null(input$changePoint_brush) & !is.null(input$changepoint_symb)){
-      data <- getData(input$changepoint_symb)
+      data <- yuimaGUIdata$cp[[input$changepoint_symb]]$series
       test <- (length(index(window(data, start = input$changePoint_brush$xmin, end = input$changePoint_brush$xmax))) > 3)
       if (test==TRUE){
         range_changePoint$x <- c(as.Date(input$changePoint_brush$xmin), as.Date(input$changePoint_brush$xmax))
@@ -2019,31 +2012,31 @@ server <- function(input, output, session) {
   observeEvent(input$changepoint_symb, {
     range_changePoint$x <- c(NULL, NULL)
     output$changepoint_plot_series <- renderPlot({
-      if(!is.null(input$changepoint_symb))
-        if ((input$changepoint_symb %in% rownames(yuimaGUItable$series))){
-          par(bg="black")
-          plot(window(getData(input$changepoint_symb), start = range_changePoint$x[1], end = range_changePoint$x[2]), main=input$changepoint_symb, xlab="Index", ylab=NA, log=switch(input$changepoint_scale,"Linear"="","Logarithmic (Y)"="y", "Logarithmic (X)"="x", "Logarithmic (XY)"="xy"), col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
-          abline(v=yuimaGUIdata$cp[[input$changepoint_symb]]$tau, col = "red")
-          grid(col="grey")
-        }
+      if(!is.null(input$changepoint_symb)) {
+        cp <- isolate({yuimaGUIdata$cp[[input$changepoint_symb]]})
+        par(bg="black")
+        plot(window(cp$series, start = range_changePoint$x[1], end = range_changePoint$x[2]), main=cp$symb, xlab="Index", ylab=NA, log=switch(input$changepoint_scale,"Linear"="","Logarithmic (Y)"="y", "Logarithmic (X)"="x", "Logarithmic (XY)"="xy"), col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
+        abline(v=cp$tau, col = "red")
+        grid(col="grey")
+      }
     })
     output$changepoint_plot_incr <- renderPlot({
-      if(!is.null(input$changepoint_symb))
-        if ((input$changepoint_symb %in% rownames(yuimaGUItable$series))){
-          if(yuimaGUIdata$cp[[input$changepoint_symb]]$method=="KSdiff") {
-            x <- diff(getData(input$changepoint_symb))
-            title <- " - Increments"
-          }
-          else {
-            x <- Delt(getData(input$changepoint_symb))
-            title <- " - Percentage Increments"
-          }
-          x <- x[x[,1]!="Inf"]
-          par(bg="black")
-          plot(window(x, start = range_changePoint$x[1], end = range_changePoint$x[2]), main=paste(input$changepoint_symb, title), xlab="Index", ylab=NA, log=switch(input$changepoint_scale,"Linear"="","Logarithmic (Y)"="", "Logarithmic (X)"="x", "Logarithmic (XY)"="x"), col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
-          abline(v=yuimaGUIdata$cp[[input$changepoint_symb]]$tau, col = "red")
-          grid(col="grey")
+      if(!is.null(input$changepoint_symb)) {
+        cp <- isolate({yuimaGUIdata$cp[[input$changepoint_symb]]})
+        if(cp$method=="KSdiff") {
+          x <- diff(cp$series)
+          title <- " - Increments"
         }
+        else {
+          x <- Delt(cp$series)
+          title <- " - Percentage Increments"
+        }
+        x <- x[x[,1]!="Inf"]
+        par(bg="black")
+        plot(window(x, start = range_changePoint$x[1], end = range_changePoint$x[2]), main=paste(cp$symb, title), xlab="Index", ylab=NA, log=switch(input$changepoint_scale,"Linear"="","Logarithmic (Y)"="", "Logarithmic (X)"="x", "Logarithmic (XY)"="x"), col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
+        abline(v=cp$tau, col = "red")
+        grid(col="grey")
+      }
     })
   })
   
@@ -2062,12 +2055,18 @@ server <- function(input, output, session) {
   })
   
   
-  output$table_ChangePointInfo <- renderTable(digits = 2, {
-    table <- data.frame(Time = as.character(yuimaGUIdata$cp[[input$changepoint_symb]]$tau), "p.value (%)" = yuimaGUIdata$cp[[input$changepoint_symb]]$pvalue*100, check.names = FALSE, row.names = yuimaGUIdata$cp[[input$changepoint_symb]]$tau)
+  output$table_ChangePointInfo <- renderTable(digits = 4, {
+    table <- data.frame(Time = as.character(yuimaGUIdata$cp[[input$changepoint_symb]]$tau), "p.value" = yuimaGUIdata$cp[[input$changepoint_symb]]$pvalue, check.names = FALSE, row.names = yuimaGUIdata$cp[[input$changepoint_symb]]$tau)
     return(table[order(rownames(table), decreasing = TRUE),])
   })
   
+  observeEvent(input$changepoint_button_delete_estimated, {
+    yuimaGUIdata$cp[[input$changepoint_symb]] <<- NULL
+  })
   
+  observeEvent(input$changepoint_button_deleteAll_estimated, {
+    yuimaGUIdata$cp <<- list()
+  })
   
   
   ########################Parametric Change Point
@@ -2129,19 +2128,258 @@ server <- function(input, output, session) {
   
   output$parametric_changepoint_model <- renderUI({
     choices <- as.vector(defaultModels[names(defaultModels)=="Diffusion process"])
+    sel <- choices[1]
     for(i in names(usr_models$model))
-      if (usr_models$model[[i]]$class=="Diffusion process") choices <- c(choices, i)
-    selectInput("parametric_changepoint_model", label = "Model", choices = choices, multiple = FALSE)
+      if (usr_models$model[[i]]$class=="Diffusion process") choices <- c(i, choices)
+    selectInput("parametric_changepoint_model", label = "Model", choices = choices, multiple = FALSE, selected = sel)
   })
   
   
+  
+  ### Estimation Settings
+  parametric_modal_prev_buttonDelta <- 0
+  parametric_modal_prev_buttonAllDelta <- 0
+  observe({
+    for (symb in rownames(parametric_seriesToChangePoint$table)){
+      if (is.null(deltaSettings[[symb]])) deltaSettings[[symb]] <<- 0.01
+      if (is.null(toLogSettings[[symb]])) toLogSettings[[symb]] <<- FALSE
+      data <- na.omit(as.numeric(getData(symb)))
+      if (toLogSettings[[symb]]==TRUE) data <- log(data)
+      for (modName in input$parametric_changepoint_model){
+        if (class(try(setModelByName(modName, jumps = NA, AR_C = NA, MA_C = NA)))!="try-error"){
+          if (is.null(estimateSettings[[modName]]))
+            estimateSettings[[modName]] <<- list()
+          if (is.null(estimateSettings[[modName]][[symb]]))
+            estimateSettings[[modName]][[symb]] <<- list()
+          if (is.null(estimateSettings[[modName]][[symb]][["fixed"]]) | parametric_modal_prev_buttonDelta!=input$parametric_modal_button_applyDelta | parametric_modal_prev_buttonAllDelta!=input$parametric_modal_button_applyAllDelta)
+            estimateSettings[[modName]][[symb]][["fixed"]] <<- list()
+          if (is.null(estimateSettings[[modName]][[symb]][["start"]]) | parametric_modal_prev_buttonDelta!=input$parametric_modal_button_applyDelta | parametric_modal_prev_buttonAllDelta!=input$parametric_modal_button_applyAllDelta)
+            estimateSettings[[modName]][[symb]][["start"]] <<- list()
+          
+          startMinMax <- defaultBounds(name = modName, 
+                                       jumps = NA, 
+                                       AR_C = NA, 
+                                       MA_C = NA, 
+                                       strict = FALSE,
+                                       data = data,
+                                       delta = deltaSettings[[symb]])
+          upperLower <- defaultBounds(name = modName, 
+                                      jumps = NA, 
+                                      AR_C = NA, 
+                                      MA_C = NA, 
+                                      strict = TRUE,
+                                      data = data,
+                                      delta = deltaSettings[[symb]])
+          
+          if (is.null(estimateSettings[[modName]][[symb]][["startMin"]]) | parametric_modal_prev_buttonDelta!=input$parametric_modal_button_applyDelta | parametric_modal_prev_buttonAllDelta!=input$parametric_modal_button_applyAllDelta)
+            estimateSettings[[modName]][[symb]][["startMin"]] <<- startMinMax$lower
+          if (is.null(estimateSettings[[modName]][[symb]][["startMax"]]) | parametric_modal_prev_buttonDelta!=input$parametric_modal_button_applyDelta | parametric_modal_prev_buttonAllDelta!=input$parametric_modal_button_applyAllDelta)
+            estimateSettings[[modName]][[symb]][["startMax"]] <<- startMinMax$upper
+          if (is.null(estimateSettings[[modName]][[symb]][["upper"]]) | parametric_modal_prev_buttonDelta!=input$parametric_modal_button_applyDelta | parametric_modal_prev_buttonAllDelta!=input$parametric_modal_button_applyAllDelta)
+            estimateSettings[[modName]][[symb]][["upper"]] <<- upperLower$upper
+          if (is.null(estimateSettings[[modName]][[symb]][["lower"]]) | parametric_modal_prev_buttonDelta!=input$parametric_modal_button_applyDelta | parametric_modal_prev_buttonAllDelta!=input$parametric_modal_button_applyAllDelta)
+            estimateSettings[[modName]][[symb]][["lower"]] <<- upperLower$lower
+          if (is.null(estimateSettings[[modName]][[symb]][["method"]])){
+            estimateSettings[[modName]][[symb]][["method"]] <<- "L-BFGS-B"
+          }
+          if (is.null(estimateSettings[[modName]][[symb]][["trials"]]))
+            estimateSettings[[modName]][[symb]][["trials"]] <<- 1
+          if (is.null(estimateSettings[[modName]][[symb]][["seed"]]))
+            estimateSettings[[modName]][[symb]][["seed"]] <<- NA
+          if (is.null(estimateSettings[[modName]][[symb]][["joint"]]))
+            estimateSettings[[modName]][[symb]][["joint"]] <<- FALSE
+          if (is.null(estimateSettings[[modName]][[symb]][["aggregation"]]))
+            estimateSettings[[modName]][[symb]][["aggregation"]] <<- TRUE
+          if (is.null(estimateSettings[[modName]][[symb]][["threshold"]]))
+            estimateSettings[[modName]][[symb]][["threshold"]] <<- NA
+        }
+      }
+    }
+    parametric_modal_prev_buttonDelta <<- input$advancedSettingsButtonApplyDelta
+    parametric_modal_prev_buttonAllDelta <<- input$advancedSettingsButtonApplyAllDelta
+  })
+  
+  observe({
+    shinyjs::toggle(id="parametric_modal_body", condition = nrow(parametric_seriesToChangePoint$table)!=0)
+    shinyjs::toggle(id="parametric_modal_errorMessage", condition = nrow(parametric_seriesToChangePoint$table)==0)
+  })
+  output$parametric_modal_series <- renderUI({
+    if (nrow(parametric_seriesToChangePoint$table)!=0)
+      selectInput(inputId = "parametric_modal_series", label = "Series", choices = rownames(parametric_seriesToChangePoint$table))
+  })
+  output$parametric_modal_delta <- renderUI({
+    if (!is.null(input$parametric_modal_series))
+      return (numericInput("parametric_modal_delta", label = paste("delta", input$parametric_modal_series), value = deltaSettings[[input$parametric_modal_series]]))
+  })
+  output$parametric_modal_toLog <- renderUI({
+    if (!is.null(input$parametric_modal_model) & !is.null(input$parametric_modal_series)){
+      choices <- FALSE
+      if (all(getData(input$parametric_modal_series)>0)) choices <- c(FALSE, TRUE)
+      return (selectInput("parametric_modal_toLog", label = "Convert to log", choices = choices, selected = toLogSettings[[input$parametric_modal_series]]))
+    }
+  })
+  output$parametric_modal_model <- renderUI({
+    if(!is.null(input$parametric_changepoint_model))
+      selectInput(inputId = "parametric_modal_model", label = "Model", choices = input$parametric_changepoint_model)
+  })
+  output$parametric_modal_parameter <- renderUI({
+    if (!is.null(input$parametric_modal_model)){
+      par <- setModelByName(input$parametric_modal_model, jumps = NA, AR_C = NA, MA_C = NA)@parameter@all
+      selectInput(inputId = "parametric_modal_parameter", label = "Parameter", choices = par)
+    }
+  })
+  output$parametric_modal_start <- renderUI({
+    if (!is.null(input$parametric_modal_model) & !is.null(input$parametric_modal_series) & !is.null(input$parametric_modal_parameter))
+      numericInput(inputId = "parametric_modal_start", label = "start", value = estimateSettings[[input$parametric_modal_model]][[input$parametric_modal_series]][["start"]][[input$parametric_modal_parameter]])
+  })
+  output$parametric_modal_startMin <- renderUI({
+    input$parametric_modal_button_applyDelta
+    input$parametric_modal_button_applyAllDelta
+    if (!is.null(input$parametric_modal_start) & !is.null(input$parametric_modal_model) & !is.null(input$parametric_modal_series) & !is.null(input$parametric_modal_parameter))
+      if (is.na(input$parametric_modal_start))
+        numericInput(inputId = "parametric_modal_startMin", label = "start: Min", value = estimateSettings[[input$parametric_modal_model]][[input$parametric_modal_series]][["startMin"]][[input$parametric_modal_parameter]])
+  })
+  output$parametric_modal_startMax <- renderUI({
+    input$parametric_modal_button_applyDelta
+    input$parametric_modal_button_applyAllDelta
+    if (!is.null(input$parametric_modal_start) & !is.null(input$parametric_modal_model) & !is.null(input$parametric_modal_series) & !is.null(input$parametric_modal_parameter))
+      if (is.na(input$parametric_modal_start))
+        numericInput(inputId = "parametric_modal_startMax", label = "start: Max", value = estimateSettings[[input$parametric_modal_model]][[input$parametric_modal_series]][["startMax"]][[input$parametric_modal_parameter]])
+  })
+  output$parametric_modal_lower <- renderUI({
+    if (!is.null(input$parametric_modal_model) & !is.null(input$parametric_modal_series) & !is.null(input$parametric_modal_parameter))
+      if (input$parametric_modal_method=="L-BFGS-B" | input$parametric_modal_method=="Brent")
+        numericInput("parametric_modal_lower", label = "lower", value = estimateSettings[[input$parametric_modal_model]][[input$parametric_modal_series]][["lower"]][[input$parametric_modal_parameter]])
+  })
+  output$parametric_modal_upper <- renderUI({
+    if (!is.null(input$parametric_modal_model) & !is.null(input$parametric_modal_series) & !is.null(input$parametric_modal_parameter))
+      if (input$parametric_modal_method=="L-BFGS-B" | input$parametric_modal_method=="Brent")
+        numericInput("parametric_modal_upper", label = "upper", value = estimateSettings[[input$parametric_modal_model]][[input$parametric_modal_series]][["upper"]][[input$parametric_modal_parameter]])
+  })
+  output$parametric_modal_method <- renderUI({
+    if (!is.null(input$parametric_modal_model) & !is.null(input$parametric_modal_series))
+      selectInput("parametric_modal_method", label = "method", choices = c("L-BFGS-B"
+                                                                           #, "Nelder-Mead", "BFGS", "CG", "SANN", "Brent"
+                                                                           ), selected = estimateSettings[[input$parametric_modal_model]][[input$parametric_modal_series]][["method"]])
+  })
+  output$parametric_modal_trials <- renderUI({
+    if (!is.null(input$parametric_modal_model) & !is.null(input$parametric_modal_series) & !is.null(input$parametric_modal_method))
+      numericInput("parametric_modal_trials", label = "trials", min = 1, value = ifelse(input$parametric_modal_method=="SANN" & estimateSettings[[input$parametric_modal_model]][[input$parametric_modal_series]][["method"]]!="SANN",1,estimateSettings[[input$parametric_modal_model]][[input$parametric_modal_series]][["trials"]]))
+  })
+  output$parametric_modal_seed <- renderUI({
+    if (!is.null(input$parametric_modal_model) & !is.null(input$parametric_modal_series))
+      numericInput("parametric_modal_seed", label = "seed", min = 1, value = estimateSettings[[input$parametric_modal_model]][[input$parametric_modal_series]][["seed"]])
+  })
+  output$parametric_modal_range <- renderUI({
+    if(!is.null(input$parametric_modal_series)){
+      series <- getData(input$parametric_modal_series)
+      type <- class(index(series)[1])
+      if(type=="Date") return(column(12,dateRangeInput("parametric_modal_range_date", label = "Range", start = start(series), end = end(series))))
+      else return(div(
+        column(6,numericInput("parametric_modal_range_numeric_t0", label = "From", value = start(series))),
+        column(6,numericInput("parametric_modal_range_numeric_t1", label = "To", value = end(series)))
+      ))      
+    }
+  })
+  
+  
+  
+  observeEvent(input$parametric_modal_button_applyDelta, {
+    deltaSettings[[input$parametric_modal_series]] <<- input$parametric_modal_delta
+    toLogSettings[[input$parametric_modal_series]] <<- input$parametric_modal_toLog
+    type <- class(index(getData(input$parametric_modal_series))[1])
+    if(type=="Date"){
+      from <- input$parametric_modal_range_date[1]
+      to <- input$parametric_modal_range_date[2]
+    } else {
+      from <- input$parametric_modal_range_numeric_t0
+      to <- input$parametric_modal_range_numeric_t1
+    }
+    levels(parametric_seriesToChangePoint$table[,"From"]) <- c(levels(parametric_seriesToChangePoint$table[,"From"]), as.character(from))
+    levels(parametric_seriesToChangePoint$table[,"To"]) <- c(levels(parametric_seriesToChangePoint$table[,"To"]), as.character(to))
+    parametric_seriesToChangePoint$table[input$parametric_modal_series,"From"] <<- as.character(from)
+    parametric_seriesToChangePoint$table[input$parametric_modal_series,"To"] <<- as.character(to)
+  })
+  observeEvent(input$parametric_modal_button_applyAllDelta, {
+    type <- class(index(getData(input$parametric_modal_series))[1])
+    if(type=="Date"){
+      from <- input$parametric_modal_range_date[1]
+      to <- input$parametric_modal_range_date[2]
+    } else {
+      from <- input$parametric_modal_range_numeric_t0
+      to <- input$parametric_modal_range_numeric_t1
+    }
+    levels(parametric_seriesToChangePoint$table[,"From"]) <- c(levels(parametric_seriesToChangePoint$table[,"From"]), as.character(from))
+    levels(parametric_seriesToChangePoint$table[,"To"]) <- c(levels(parametric_seriesToChangePoint$table[,"To"]), as.character(to))
+    for (symb in rownames(parametric_seriesToChangePoint$table)){
+      deltaSettings[[symb]] <<- input$parametric_modal_delta
+      if (input$parametric_modal_toLog==FALSE) toLogSettings[[symb]] <<- input$parametric_modal_toLog
+      else if (all(getData(symb)>0)) toLogSettings[[symb]] <<- input$parametric_modal_toLog
+      type_symb <- class(index(getData(symb))[1])
+      if(type_symb==type){
+        parametric_seriesToChangePoint$table[symb,"From"] <<- as.character(from)
+        parametric_seriesToChangePoint$table[symb,"To"] <<- as.character(to)
+      }
+    }
+  })
+  observeEvent(input$parametric_modal_button_applyModel,{
+    estimateSettings[[input$parametric_modal_model]][[input$parametric_modal_series]][["start"]][[input$parametric_modal_parameter]] <<- input$parametric_modal_start
+    estimateSettings[[input$parametric_modal_model]][[input$parametric_modal_series]][["startMin"]][[input$parametric_modal_parameter]] <<- input$parametric_modal_startMin
+    estimateSettings[[input$parametric_modal_model]][[input$parametric_modal_series]][["startMax"]][[input$parametric_modal_parameter]] <<- input$parametric_modal_startMax
+    estimateSettings[[input$parametric_modal_model]][[input$parametric_modal_series]][["lower"]][[input$parametric_modal_parameter]] <<- input$parametric_modal_lower
+    estimateSettings[[input$parametric_modal_model]][[input$parametric_modal_series]][["upper"]][[input$parametric_modal_parameter]] <<- input$parametric_modal_upper
+  })
+  observeEvent(input$parametric_modal_button_applyAllModel,{
+    for (symb in rownames(parametric_seriesToChangePoint$table)){
+      estimateSettings[[input$parametric_modal_model]][[symb]][["start"]][[input$parametric_modal_parameter]] <<- input$parametric_modal_start
+      estimateSettings[[input$parametric_modal_model]][[symb]][["startMin"]][[input$parametric_modal_parameter]] <<- input$parametric_modal_startMin
+      estimateSettings[[input$parametric_modal_model]][[symb]][["startMax"]][[input$parametric_modal_parameter]] <<- input$parametric_modal_startMax
+      estimateSettings[[input$parametric_modal_model]][[symb]][["lower"]][[input$parametric_modal_parameter]] <<- input$parametric_modal_lower
+      estimateSettings[[input$parametric_modal_model]][[symb]][["upper"]][[input$parametric_modal_parameter]] <<- input$parametric_modal_upper
+    }
+  })
+  observeEvent(input$parametric_modal_button_applyGeneral,{
+    estimateSettings[[input$parametric_modal_model]][[input$parametric_modal_series]][["method"]] <<- input$parametric_modal_method
+    estimateSettings[[input$parametric_modal_model]][[input$parametric_modal_series]][["trials"]] <<- input$parametric_modal_trials
+    estimateSettings[[input$parametric_modal_model]][[input$parametric_modal_series]][["seed"]] <<- input$parametric_modal_seed
+  })
+  observeEvent(input$parametric_modal_button_applyAllModelGeneral,{
+    for (symb in rownames(parametric_seriesToChangePoint$table)){
+      estimateSettings[[input$parametric_modal_model]][[symb]][["method"]] <<- input$parametric_modal_method
+      estimateSettings[[input$parametric_modal_model]][[symb]][["trials"]] <<- input$parametric_modal_trials
+      estimateSettings[[input$parametric_modal_model]][[symb]][["seed"]] <<- input$parametric_modal_seed
+    }
+  })
+
+  ### Start Estimation
   observeEvent(input$parametric_changepoint_button_startEstimation, {
     if (length(rownames(parametric_seriesToChangePoint$table))!=0)
+      closeAlert(session = session, alertId = "parametric_changepoint_alert_err")
       withProgress(message = 'Analyzing: ', value = 0, {
-        for (i in rownames(parametric_seriesToChangePoint$table)){
-          incProgress(1/length(rownames(parametric_seriesToChangePoint$table)), detail = i)
-          try(addCPoint(modelName = input$parametric_changepoint_model, symb = i, trials = input$parametric_changepoint_trials, session = session, anchorId = "parametric_changepoint_alert"))
+        errors <- c()
+        for (symb in rownames(parametric_seriesToChangePoint$table)){
+          incProgress(1/length(rownames(parametric_seriesToChangePoint$table)), detail = symb)
+          test <- try(addCPoint(modelName = input$parametric_changepoint_model, 
+                        symb = symb, 
+                        fracL = input$parametric_modal_rangeFraction[1]/100,
+                        fracR = input$parametric_modal_rangeFraction[2]/100,
+                        from = as.character(parametric_seriesToChangePoint$table[symb, "From"]),
+                        to = as.character(parametric_seriesToChangePoint$table[symb, "To"]),
+                        delta = deltaSettings[[symb]],
+                        toLog = toLogSettings[[symb]],
+                        start = estimateSettings[[input$parametric_changepoint_model]][[symb]][["start"]],
+                        startMin = estimateSettings[[input$parametric_changepoint_model]][[symb]][["startMin"]],
+                        startMax = estimateSettings[[input$parametric_changepoint_model]][[symb]][["startMax"]],
+                        method = estimateSettings[[input$parametric_changepoint_model]][[symb]][["method"]],
+                        trials = estimateSettings[[input$parametric_changepoint_model]][[symb]][["trials"]],
+                        seed = estimateSettings[[input$parametric_changepoint_model]][[symb]][["seed"]],
+                        lower = estimateSettings[[input$parametric_changepoint_model]][[symb]][["lower"]],
+                        upper = estimateSettings[[input$parametric_changepoint_model]][[symb]][["upper"]]))
+          if(class(test)=="try-error") 
+            errors <- c(errors, symb)
         }
+        if (!is.null(errors))
+          createAlert(session = session, anchorId = "parametric_changepoint_alert", alertId = "parametric_changepoint_alert_err", style = "error", dismiss = TRUE, content = paste("Unable to estimate Change Point of:", paste(errors, collapse = " ")))
       })
   })
 
@@ -2152,7 +2390,7 @@ server <- function(input, output, session) {
   parametric_range_changePoint <- reactiveValues(x=NULL, y=NULL)
   observe({
     if (!is.null(input$parametric_changePoint_brush) & !is.null(input$parametric_changepoint_symb)){
-      data <- getData(input$parametric_changepoint_symb)
+      data <- yuimaGUIdata$cpYuima[[input$parametric_changepoint_symb]]$series
       test <- (length(index(window(data, start = input$parametric_changePoint_brush$xmin, end = input$parametric_changePoint_brush$xmax))) > 3)
       if (test==TRUE){
         parametric_range_changePoint$x <- c(as.Date(input$parametric_changePoint_brush$xmin), as.Date(input$parametric_changePoint_brush$xmax))
@@ -2168,31 +2406,80 @@ server <- function(input, output, session) {
   observeEvent(input$parametric_changepoint_symb, {
     parametric_range_changePoint$x <- c(NULL, NULL)
     output$parametric_changepoint_plot_series <- renderPlot({
-      if(!is.null(input$parametric_changepoint_symb))
-        if ((input$parametric_changepoint_symb %in% rownames(yuimaGUItable$series))){
-          par(bg="black")
-          plot(window(getData(input$parametric_changepoint_symb), start = parametric_range_changePoint$x[1], end = parametric_range_changePoint$x[2]), main=input$parametric_changepoint_symb, xlab="Index", ylab=NA, log=switch(input$parametric_changepoint_scale,"Linear"="","Logarithmic (Y)"="y", "Logarithmic (X)"="x", "Logarithmic (XY)"="xy"), col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
-          abline(v=yuimaGUIdata$cpYuima[[input$parametric_changepoint_symb]]$tau, col = "red")
-          grid(col="grey")
-        }
+      if(!is.null(input$parametric_changepoint_symb)) {
+        cp <- isolate({yuimaGUIdata$cpYuima[[input$parametric_changepoint_symb]]})
+        data <- cp$series
+        toLog <- cp$info$toLog
+        symb <- cp$info$symb
+        par(bg="black")
+        plot(window(data, start = parametric_range_changePoint$x[1], end = parametric_range_changePoint$x[2]), main=ifelse(toLog==TRUE, paste("log(",symb,")", sep = ""), symb), xlab="Index", ylab=NA, log=switch(input$parametric_changepoint_scale,"Linear"="","Logarithmic (Y)"="y", "Logarithmic (X)"="x", "Logarithmic (XY)"="xy"), col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
+        abline(v=cp$tau, col = "red")
+        grid(col="grey")
+      }
     })
   })
   
   
   output$parametric_changepoint_info <- renderUI({
     if(!is.null(input$parametric_changepoint_symb)){
-      info <- yuimaGUIdata$cpYuima[[input$parametric_changepoint_symb]]
+      info <- isolate({yuimaGUIdata$cpYuima[[input$parametric_changepoint_symb]]$info})
       div(
         h3(info$model),
         withMathJax(printModelLatex(names = info$model, process = "Diffusion process")), br(),
         h4(
-          em(paste("Trials:", info$trials)), br(), br(),
-          em(paste("Change Point:", as.character(info$tau)))
+          em(paste("Change Point:", as.character(isolate({yuimaGUIdata$cpYuima[[input$parametric_changepoint_symb]]$tau}))))
         ),
         align="center", style="color:#CDCECD"
       )
     }
   })
+  
+  output$parametric_changepoint_modal_info_text <- renderUI({
+    info <- yuimaGUIdata$cpYuima[[input$parametric_changepoint_symb]]$info
+    div(
+      h3(input$parametric_changepoint_symb, " - " , info$model),
+      h4(
+        em("series to log:"), info$toLog, br(),
+        em("method:"), info$method, br(),
+        em("trials:"), info$trials, br(),
+        em("seed:"), info$seed, br()
+      ),
+      align="center")
+  })
+  
+  output$parametric_changepoint_modal_info_tableL <- renderTable(rownames = T, {
+    cp <- yuimaGUIdata$cpYuima[[input$parametric_changepoint_symb]]
+    tL <- summary(cp$qmleL)@coef
+    for (i in 1:nrow(tL)){
+      tL[i,"Estimate"] <- signifDigits(value = tL[i,"Estimate"], sd = tL[i,"Std. Error"])
+      tL[i,"Std. Error"] <- signifDigits(value = tL[i,"Std. Error"], sd = tL[i,"Std. Error"])
+    }
+    return(tL)
+  })
+  
+  output$parametric_changepoint_modal_info_tableR <- renderTable(rownames = T, {
+    cp <- yuimaGUIdata$cpYuima[[input$parametric_changepoint_symb]]
+    tR <- summary(cp$qmleR)@coef
+    for (i in 1:nrow(tR)){
+      tR[i,"Estimate"] <- signifDigits(value = tR[i,"Estimate"], sd = tR[i,"Std. Error"])
+      tR[i,"Std. Error"] <- signifDigits(value = tR[i,"Std. Error"], sd = tR[i,"Std. Error"])
+    }
+    return(tR)
+  })
+  
+  
+  
+  observeEvent(input$parametric_changepoint_button_delete_estimated, {
+    yuimaGUIdata$cpYuima[[input$parametric_changepoint_symb]] <<- NULL
+  })
+  
+  observeEvent(input$parametric_changepoint_button_deleteAll_estimated, {
+    yuimaGUIdata$cpYuima <<- list()
+  })
+
+  
+  
+  
   
   
   
@@ -2286,7 +2573,7 @@ server <- function(input, output, session) {
       }
     }
     else {
-      shinyjs::hide(id = "llag_range_date")
+      shinyjs::show(id = "llag_range_date")
       shinyjs::hide(id = "llag_range_numeric")
     }
   })
@@ -2306,14 +2593,9 @@ server <- function(input, output, session) {
           for (i in 2:length(series))
             data <- merge(data, yuimaGUIdata$series[[series[i]]])
           colnames(data) <- series
-          if(type=="Date") {
-            data <- window(data, start = input$llag_range_date[1], end = input$llag_range_date[2])
-            delta <- 0.01
-          }
-          else {
-            data <- window(data, start = input$llag_range_numeric1, end = input$llag_range_numeric2)
-            delta <- NULL
-          }
+          if(type=="Date") data <- window(data, start = input$llag_range_date[1], end = input$llag_range_date[2])
+          else data <- window(data, start = input$llag_range_numeric1, end = input$llag_range_numeric2)
+          delta <- 0.01
           if(is.regular(data)){
             yuimaData <- setDataGUI(data, delta = delta)
             res <- try(llag(yuimaData, ci=TRUE, plot=FALSE, grid = seq(from = -input$llag_maxLag*delta, to = input$llag_maxLag*delta, by = delta)))
@@ -2321,13 +2603,11 @@ server <- function(input, output, session) {
               createAlert(session, anchorId = "llag_alert", alertId = "llag_alert_select", content = "Error in computing lead-lag", style = "error")
             else {
               LeadLag <- res$lagcce
-              if(type=="Date") {
-                mode <- function(x) {
-                  ux <- unique(x)
-                  ux[which.max(tabulate(match(x, ux)))]
-                }
-                LeadLag <- LeadLag/delta*mode(na.omit(diff(index(data))))
+              mode <- function(x) {
+                ux <- unique(x)
+                ux[which.max(tabulate(match(x, ux)))]
               }
+              LeadLag <- LeadLag/delta*mode(na.omit(diff(index(data))))
               if(all(LeadLag==0)){
                 shinyjs::hide("llag_plot_body")
                 shinyjs::show("llag_plot_Text")
