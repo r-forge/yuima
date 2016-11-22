@@ -1845,70 +1845,128 @@ server <- function(input, output, session) {
         "canberra" = try(dist(t(as.data.frame(x)), method = "canberra")),
         "minkowski" = try(dist(t(as.data.frame(x)), method = "minkowski", p = input$cluster_distance_minkowskiPower))
       )
-      shinyjs::toggle("cluster_charts", condition = (class(d)!="try-error"))
       if (class(d)=="try-error")
         createAlert(session, anchorId = "cluster_alert", alertId = "cluster_alert_dist", content = "Error in clustering", style = "error")
       else{
         hc <- hclust(d, method = input$cluster_linkage)
-        labelColors <- c("#CDB380", "#FF0000", "#036564", "#FF00FF", "#EB6841", "#7FFFD4", "#EDC951","#FF8000", "#FFE4E1", "#A2CD5A", "#71C671", "#AAAAAA", "#555555", "#FFA07A", "#8B6508", "#FFC125", "#FFFACD", "#808000",   "#458B00", "#54FF9F", "#43CD80", "#008B8B", "#53868B", "#B0E2FF", "#0000FF", "#F8F8FF", "#551A8B", "#AB82FF", "#BF3EFF", "#FF83FA", "#8B1C62", "#CD6839", "#8E8E38", "#1E1E1E")
-        dendrClick <- reactiveValues(y = NULL)
-        output$cluster_dendogram <- renderPlot({
-          if(!is.null(input$cluster_dendrogram_click$y))
-            dendrClick$y <- input$cluster_dendrogram_click$y
-          if(!is.null(dendrClick$y)){
-            clusMember = cutree(hc, h = dendrClick$y)
-            colLab <- function(n) {
-              if (is.leaf(n)) {
-                a <- attributes(n)
-                labCol <- labelColors[clusMember[which(names(clusMember) == a$label)]]
-                attr(n, "nodePar") <- c(a$nodePar, lab.col = labCol)
-              }
-              n
-            }
-            hc <- dendrapply(as.dendrogram(hc), colLab)
-          }
-          if(is.null(dendrClick$y)){
-            colDefault <- function(n){  
-              if (is.leaf(n))
-                attr(n, "nodePar") <- c(attributes(n)$nodePar, lab.col = labelColors[1])
-              return(n)
-            }
-            hc <- dendrapply(as.dendrogram(hc), colDefault)
-          }
-          output$cluster_button_saveDendogram <- downloadHandler(
-            filename = "Dendrogram.png",
-            content = function(file) {
-              png(file, width = 960)
-              par(bg="black", xaxt = "n", mar= c(10, 4, 4, 2)+0.1)
-              plot(hc, ylab = "", xlab = "", main = "Dendrogram", edgePar=list(col="grey50"), col.main = "#FFF68F", col.axis="grey")
-              dev.off()
-            }
-          )
-          par(bg="black", xaxt = "n", mar= c(10, 4, 4, 2)+0.1)
-          plot(hc, ylab = "", xlab = "", main = "Dendrogram", edgePar=list(col="grey50"), col.main = "#FFF68F", col.axis="grey")
-        })
-        output$cluster_scaling2D <- renderPlot({
-          points <- cmdscale(d)
-          if(!is.null(dendrClick$y))
-            g1 <- cutree(hclust(d), h = dendrClick$y)
-          else
-            g1 <- 1
-          output$cluster_button_saveScaling2D <- downloadHandler(
-            filename = "Multidimensional scaling.png",
-            content = function(file) {
-              png(file)
-              par(bg="black", xaxt = "n", yaxt = "n", bty="n")
-              plot(points, col=labelColors[g1], pch=16, cex=2, main = "Multidimensional scaling", col.main = "#FFF68F", xlab="", ylab="")
-              dev.off()
-            }
-          )
-          par(bg="black", xaxt = "n", yaxt = "n", bty="n")
-          plot(points, col=labelColors[g1], pch=16, cex=2, main = "Multidimensional scaling", col.main = "#FFF68F", xlab="", ylab="")
-        })
+        i <- 1
+        id <- "Clustering"
+        repeat {
+          if(id %in% names(yuimaGUIdata$cluster)){
+            id <- paste("Clustering", i)
+            i <- i+1
+          } else break
+        }
+        yuimaGUIdata$cluster[[id]] <<- list(d = d, linkage = input$cluster_linkage, distance = input$cluster_distance, power = input$cluster_distance_minkowskiPower)
       }
     })}
   })
   
+  output$cluster_analysis_id <- renderUI({
+    n <- names(yuimaGUIdata$cluster)
+    if(length(n)!=0)
+      selectInput("cluster_analysis_id", label = "Clustering ID", choices = sort(n), selected = last(n))
+  })
+  
+  observeEvent(input$cluster_analysis_id, {
+    if(!is.null(input$cluster_analysis_id)) if (input$cluster_analysis_id %in% names(yuimaGUIdata$cluster)){
+      d <- yuimaGUIdata$cluster[[input$cluster_analysis_id]]$d
+      hc <- hclust(d, method = yuimaGUIdata$cluster[[input$cluster_analysis_id]]$linkage)
+      labelColors <- c("#CDB380", "#FF0000", "#036564", "#FF00FF", "#EB6841", "#7FFFD4", "#EDC951","#FF8000", "#FFE4E1", "#A2CD5A", "#71C671", "#AAAAAA", "#555555", "#FFA07A", "#8B6508", "#FFC125", "#FFFACD", "#808000",   "#458B00", "#54FF9F", "#43CD80", "#008B8B", "#53868B", "#B0E2FF", "#0000FF", "#F8F8FF", "#551A8B", "#AB82FF", "#BF3EFF", "#FF83FA", "#8B1C62", "#CD6839", "#8E8E38", "#1E1E1E")
+      dendrClick <- reactiveValues(y = NULL)
+      output$cluster_dendogram <- renderPlot({
+        if(!is.null(input$cluster_dendrogram_click$y))
+          dendrClick$y <- input$cluster_dendrogram_click$y
+        if(!is.null(dendrClick$y)){
+          clusMember = cutree(hc, h = dendrClick$y)
+          colLab <- function(n) {
+            if (is.leaf(n)) {
+              a <- attributes(n)
+              labCol <- labelColors[clusMember[which(names(clusMember) == a$label)]]
+              attr(n, "nodePar") <- c(a$nodePar, lab.col = labCol)
+            }
+            n
+          }
+          hc <- dendrapply(as.dendrogram(hc), colLab)
+        }
+        if(is.null(dendrClick$y)){
+          colDefault <- function(n){  
+            if (is.leaf(n))
+              attr(n, "nodePar") <- c(attributes(n)$nodePar, lab.col = labelColors[1])
+            return(n)
+          }
+          hc <- dendrapply(as.dendrogram(hc), colDefault)
+        }
+        output$cluster_button_saveDendogram <- downloadHandler(
+          filename = "Dendrogram.png",
+          content = function(file) {
+            png(file, width = 960)
+            par(bg="black", xaxt = "n", mar= c(10, 4, 4, 2)+0.1)
+            plot(hc, ylab = "", xlab = "", main = "Dendrogram", edgePar=list(col="grey50"), col.main = "#FFF68F", col.axis="grey")
+            dev.off()
+          }
+        )
+        par(bg="black", xaxt = "n", mar= c(10, 4, 4, 2)+0.1)
+        plot(hc, ylab = "", xlab = "", main = "Dendrogram", edgePar=list(col="grey50"), col.main = "#FFF68F", col.axis="grey")
+      })
+      output$cluster_scaling2D <- renderPlot({
+        points <- cmdscale(d)
+        if(!is.null(dendrClick$y))
+          g1 <- cutree(hclust(d), h = dendrClick$y)
+        else
+          g1 <- 1
+        output$cluster_button_saveScaling2D <- downloadHandler(
+          filename = "Multidimensional scaling.png",
+          content = function(file) {
+            png(file)
+            par(bg="black", xaxt = "n", yaxt = "n", bty="n")
+            plot(points, col=labelColors[g1], pch=16, cex=2, main = "Multidimensional scaling", col.main = "#FFF68F", xlab="", ylab="")
+            dev.off()
+          }
+        )
+        par(bg="black", xaxt = "n", yaxt = "n", bty="n")
+        plot(points, col=labelColors[g1], pch=16, cex=2, main = "Multidimensional scaling", col.main = "#FFF68F", xlab="", ylab="")
+      })  
+    }
+  })
+  
+  output$cluster_moreInfo <- renderUI({
+    if(!is.null(input$cluster_analysis_id)) if (input$cluster_analysis_id %in% names(isolate({yuimaGUIdata$cluster}))){
+      info <- isolate({yuimaGUIdata$cluster[[input$cluster_analysis_id]]})
+      dist <- switch(info$distance, 
+                     "MOdist"="Markov Operator", 
+                     "MYdist_perc"="Percentage Increments Distribution", 
+                     "MYdist_ass"="Increments Distribution", 
+                     "euclidean"="Euclidean", 
+                     "maximum"="Maximum", 
+                     "manhattan"="Manhattan", 
+                     "canberra"="Canberra", 
+                     "minkowski"="Minkowski")
+      linkage <- switch(info$linkage,
+                        "complete"="Complete", 
+                        "single"="Single", 
+                        "average"="Average", 
+                        "ward.D"="Ward", 
+                        "ward.D2"="Ward squared", 
+                        "mcquitty"="McQuitty", 
+                        "Median"="median", 
+                        "centroid"="Centroid")
+      if (dist=="Minkowski") dist <- paste(dist, " (", info$power,")", sep = "")
+      return(HTML(paste("<div style='color:#CDCECD;'><h4>&nbsp &nbsp Linkage:",linkage, " &nbsp &nbsp &nbsp &nbsp Distance:", dist, "</h4></div>")))
+    }
+  })
+  
+  observeEvent(input$cluster_button_delete_analysis, {
+    yuimaGUIdata$cluster[[input$cluster_analysis_id]] <<- NULL
+  })
+  
+  observeEvent(input$cluster_button_deleteAll_analysis, {
+    yuimaGUIdata$cluster <<- list()
+  })
+
+  observe({
+    shinyjs::toggle("cluster_charts", condition = length(names(yuimaGUIdata$cluster))!=0)
+  })
   
   
   ########################Nonparametric Change Point
@@ -1977,7 +2035,9 @@ server <- function(input, output, session) {
   })
   
   output$changepoint_symb <- renderUI({
-    selectInput("changepoint_symb", "Symbol", choices = sort(names(yuimaGUIdata$cp)))  
+    n <- names(yuimaGUIdata$cp)
+    if(length(n)!=0)
+      selectInput("changepoint_symb", "Symbol", choices = sort(n), selected = last(n))  
   })
   
   observeEvent(input$changepoint_button_startEstimation, {
@@ -2350,6 +2410,12 @@ server <- function(input, output, session) {
       estimateSettings[[input$parametric_modal_model]][[symb]][["seed"]] <<- input$parametric_modal_seed
     }
   })
+  
+  output$parametric_changepoint_symb <- renderUI({
+    n <- names(yuimaGUIdata$cpYuima)
+    if(length(n)!=0)
+      selectInput("parametric_changepoint_symb", "Symbol", choices = sort(n), selected = last(n))  
+  })
 
   ### Start Estimation
   observeEvent(input$parametric_changepoint_button_startEstimation, {
@@ -2381,10 +2447,6 @@ server <- function(input, output, session) {
         if (!is.null(errors))
           createAlert(session = session, anchorId = "parametric_changepoint_alert", alertId = "parametric_changepoint_alert_err", style = "error", dismiss = TRUE, content = paste("Unable to estimate Change Point of:", paste(errors, collapse = " ")))
       })
-  })
-
-  output$parametric_changepoint_symb <- renderUI({
-    selectInput("parametric_changepoint_symb", "Symbol", choices = sort(names(yuimaGUIdata$cpYuima)))  
   })
   
   parametric_range_changePoint <- reactiveValues(x=NULL, y=NULL)
@@ -2578,6 +2640,12 @@ server <- function(input, output, session) {
     }
   })
   
+  observe({
+    shinyjs::toggle("llag_maxLag", condition = input$llag_type=="llag")
+    shinyjs::toggle("llag_corr_method", condition = input$llag_type=="corr")
+  })
+  
+  
   observeEvent(input$llag_button_startEstimation, {
     closeAlert(session, alertId = "llag_alert_select")
     if (is.na(input$llag_maxLag) | input$llag_maxLag <= 0)
@@ -2593,50 +2661,146 @@ server <- function(input, output, session) {
           for (i in 2:length(series))
             data <- merge(data, yuimaGUIdata$series[[series[i]]])
           colnames(data) <- series
-          if(type=="Date") data <- window(data, start = input$llag_range_date[1], end = input$llag_range_date[2])
-          else data <- window(data, start = input$llag_range_numeric1, end = input$llag_range_numeric2)
-          delta <- 0.01
-          if(is.regular(data)){
-            yuimaData <- setDataGUI(data, delta = delta)
-            res <- try(llag(yuimaData, ci=TRUE, plot=FALSE, grid = seq(from = -input$llag_maxLag*delta, to = input$llag_maxLag*delta, by = delta)))
-            if (class(res)=="try-error")
-              createAlert(session, anchorId = "llag_alert", alertId = "llag_alert_select", content = "Error in computing lead-lag", style = "error")
-            else {
-              LeadLag <- res$lagcce
-              mode <- function(x) {
-                ux <- unique(x)
-                ux[which.max(tabulate(match(x, ux)))]
-              }
-              LeadLag <- LeadLag/delta*mode(na.omit(diff(index(data))))
-              if(all(LeadLag==0)){
-                shinyjs::hide("llag_plot_body")
-                shinyjs::show("llag_plot_Text")
-              } else{
-                shinyjs::hide("llag_plot_Text")
-                shinyjs::show("llag_plot_body")
-                col1 <- colorRampPalette(c("#67001F", "#B2182B", "#D6604D", "#F4A582", "#FDDBC7","#FFFFFF", "#D1E5F0", "#92C5DE", "#4393C3", "#2166AC", "#053061"))
-                col2 <- colorRampPalette(c("#FFFFFF", "#D1E5F0", "#92C5DE", "#4393C3", "#2166AC", "#053061"))
-                col3 <- colorRampPalette(c("#67001F", "#B2182B", "#D6604D", "#F4A582", "#FDDBC7","#FFFFFF"))
-                output$llag_plot <- renderPlot({
-                  corrplot(LeadLag, p.mat = res$p.values, sig.level = input$llag_plot_confidence, is.corr = FALSE, method = input$llag_plot_type, type = "lower", cl.pos = "b", tl.pos = "ld", tl.srt = 60, col=get(input$llag_plot_cols)(100), outline=TRUE, bg = "grey10", order = "alphabet", tl.col = "black") 
-                })
-              }
-              shinyjs::show("llag_button_showResults")
-              toggleModal(session = session, modalId = "llag_modal_plot", toggle = "open")
-            }
+          if(type=="Date") {
+            start <- input$llag_range_date[1]
+            end <- input$llag_range_date[2]
+          } else {
+            start <- input$llag_range_numeric1
+            end <- input$llag_range_numeric2
           }
-          else{
-            createAlert(session, anchorId = "llag_alert", alertId = "llag_alert_select", content = "Cannot compute Lead-Lag for non-regular grid of observations", style = "error")
+          data <- window(data, start = start, end = end)
+          if(is.regular(data)){
+            mode <- function(x) {
+              ux <- unique(x)
+              ux[which.max(tabulate(match(x, ux)))]
+            }
+            delta <- mode(na.omit(diff(index(data))))
+            yuimaData <- setDataGUI(data, delta = delta)
+            if(input$llag_type=="llag"){
+              res <- try(llag(yuimaData, ci=TRUE, plot=FALSE, grid = seq(from = -input$llag_maxLag, to = input$llag_maxLag, by = delta)))
+              if (class(res)=="try-error")
+                createAlert(session, anchorId = "llag_alert", alertId = "llag_alert_select", content = "Error in computing lead-lag", style = "error")
+              else {
+                i <- 1
+                id <- "Lead-Lag Analysis"
+                repeat {
+                  if(id %in% names(yuimaGUIdata$llag)){
+                    id <- paste("Lead-Lag Analysis", i)
+                    i <- i+1
+                  } else break
+                }
+                yuimaGUIdata$llag[[id]] <<- list(type = "llag", maxLag = input$llag_maxLag, delta = delta, llag = res$lagcce, p.values = res$p.values, start = start, end = end)
+              }
+            }
+            if(input$llag_type=="corr"){
+              res <- try(cce(x = yuimaData, method = input$llag_corr_method))
+              if (class(res)=="try-error")
+                createAlert(session, anchorId = "llag_alert", alertId = "llag_alert_select", content = "Error in computing the correlation matrix", style = "error")
+              else {
+                i <- 1
+                id <- "Correlation Analysis"
+                repeat {
+                  if(id %in% names(yuimaGUIdata$llag)){
+                    id <- paste("Correlation Analysis", i)
+                    i <- i+1
+                  } else break
+                }
+                yuimaGUIdata$llag[[id]] <<- list(type = "corr", covmat = res$covmat, cormat = res$cormat, method = input$llag_corr_method, start = start, end = end)
+              }
+            }
+          } else{
+            createAlert(session, anchorId = "llag_alert", alertId = "llag_alert_select", content = "Cannot analyze non-regular grid of observations", style = "error")
           }
         })
       }
     }
   })
   
+  observe({
+    shinyjs::toggle("llag_plot_body", condition = length(names(yuimaGUIdata$llag))!=0)
+  })
   
+  output$llag_analysis_id <- renderUI({
+    n <- names(yuimaGUIdata$llag)
+    if(length(n)!=0)
+      selectInput("llag_analysis_id", label = "Analysis ID", choices = sort(n), selected = last(n))
+  })
   
+  output$llag_plot_corr_method <- renderUI({
+    if(!is.null(input$llag_analysis_id)) if (input$llag_analysis_id %in% names(isolate({yuimaGUIdata$llag}))){
+      info <- isolate({yuimaGUIdata$llag})[[input$llag_analysis_id]]
+      if (info$type=="corr"){
+        method <- switch(info$method,
+                         "HY"="Hayashi-Yoshida", 
+                         "PHY"="Pre-averaged Hayashi-Yoshida", 
+                         "MRC"="Modulated Realized Covariance", 
+                         "TSCV"="Two Scales realized CoVariance", 
+                         "GME"="Generalized Multiscale Estimator", 
+                         "RK"="Realized Kernel", 
+                         "QMLE"="Quasi Maximum Likelihood Estimator", 
+                         "SIML"="Separating Information Maximum Likelihood", 
+                         "THY"="Truncated Hayashi-Yoshida", 
+                         "PTHY"="Pre-averaged Truncated Hayashi-Yoshida", 
+                         "SRC"="Subsampled Realized Covariance", 
+                         "SBPC"="Subsampled realized BiPower Covariation")
+        return(HTML(paste("<div style='color:#CDCECD;'><h4>&nbsp &nbsp Method:", method, "</h4></div>")))
+      }
+    }
+  })
   
+  observe({
+    if(!is.null(input$llag_analysis_id)) if (input$llag_analysis_id %in% isolate({names(yuimaGUIdata$llag)})) {
+      type <- isolate({yuimaGUIdata$llag})[[input$llag_analysis_id]]$type
+      shinyjs::toggle("llag_plot_confidence", condition = type=="llag")
+      shinyjs::toggle("llag_plot_corr_method", condition = type=="corr")   
+      shinyjs::toggle("llag_plot_howToRead", condition = type=="llag")
+    }
+  })
+
+  output$llag_plot <- renderPlot({
+    if(!is.null(input$llag_analysis_id) & !is.null(input$llag_plot_confidence)) if (input$llag_analysis_id %in% isolate({names(yuimaGUIdata$llag)})) {
+      info <- isolate({yuimaGUIdata$llag[[input$llag_analysis_id]]})
+      if(info$type=="llag"){
+        co <- ifelse(info$p.values > input$llag_plot_confidence | is.na(info$p.values), 0, info$llag)
+        co<-melt(t(co))
+        digits <- 1+as.integer(abs(log10(info$delta)))
+      }
+      if(info$type=="corr"){
+        co <- info$cormat
+        co<-melt(t(co))
+        digits <- 2
+      }
+      ggplot(co, aes(Var1, Var2)) + # x and y axes => Var1 and Var2
+        geom_tile(aes(fill = value)) + # background colours are mapped according to the value column
+        geom_text(aes(label = round(co$value, digits))) + # write the values
+        scale_fill_gradient2(low = "#ff9f80", 
+                             mid = "gray30", 
+                             high = "lightblue", 
+                             midpoint = 0) + # determine the colour
+        theme(panel.grid.major.x=element_blank(), #no gridlines
+              panel.grid.minor.x=element_blank(), 
+              panel.grid.major.y=element_blank(), 
+              panel.grid.minor.y=element_blank(),
+              panel.background=element_rect(fill="#282828"), # background=white
+              plot.background = element_rect(fill = "#282828", linetype = 0, color = "#282828"),
+              axis.text.x = element_text(angle=90,hjust = 1, size = 12,face = "bold", colour = "#CDCECD"),
+              plot.title = element_text(size=20,face="bold", colour = "#CDCECD", hjust = 0.5),
+              axis.text.y = element_text(size = 12,face = "bold",  colour = "#CDCECD")) + 
+        ggtitle(paste("Analyzed data from", info$start, "to", info$end)) + 
+        theme(legend.title=element_text(face="bold", size=14)) + 
+        scale_x_discrete(name="") +
+        scale_y_discrete(name="") +
+        labs(fill="")
+    }
+  })
   
+  observeEvent(input$llag_delete_analysis, {
+    yuimaGUIdata$llag[[input$llag_analysis_id]] <<- NULL
+  })
+  
+  observeEvent(input$llag_deleteAll_analysis, {
+    yuimaGUIdata$llag <<- list()
+  })
   
   
   ########################Hedging
