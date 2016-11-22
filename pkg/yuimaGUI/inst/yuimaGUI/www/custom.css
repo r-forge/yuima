@@ -69,7 +69,7 @@ th{
 	background: linear-gradient(#606D60, #202220, #606D60);
 }
 
-#finDataDelete, #finDataDeleteAll, #yourFileDelete, #yourFileDeleteAll, #buttonSelect_models_Univariate, #buttonSelectAll_models_Univariate, #buttonDelete_models_Univariate, #buttonDeleteAll_models_Univariate, #databaseModelsDelete, #databaseModelsDeleteAll, #simulation_button_deleteModels, #simulation_button_deleteAllModels, #simulate_button_selectModels, #simulate_button_selectAllModels, #simulate_monitor_button_delete, #simulate_monitor_button_deleteAll, #simulate_model_usr_button_select, #simulate_model_usr_button_selectAll, #simulate_model_usr_button_delete, #simulate_model_usr_button_deleteAll, #cluster_button_select, #cluster_button_selectAll, #cluster_button_delete, #cluster_button_deleteAll, #changepoint_button_select, #changepoint_button_selectAll, #changepoint_button_delete, #changepoint_button_deleteAll, #hedging_button_delete, #hedging_button_deleteAll, #parametric_changepoint_button_select, #parametric_changepoint_button_selectAll, #parametric_changepoint_button_delete, #parametric_changepoint_button_deleteAll, #llag_button_select, #llag_button_selectAll, #llag_button_delete, #llag_button_deleteAll, #changepoint_button_delete_estimated, #changepoint_button_deleteAll_estimated, #parametric_changepoint_button_delete_estimated, #parametric_changepoint_button_deleteAll_estimated {
+#finDataDelete, #finDataDeleteAll, #yourFileDelete, #yourFileDeleteAll, #buttonSelect_models_Univariate, #buttonSelectAll_models_Univariate, #buttonDelete_models_Univariate, #buttonDeleteAll_models_Univariate, #databaseModelsDelete, #databaseModelsDeleteAll, #simulation_button_deleteModels, #simulation_button_deleteAllModels, #simulate_button_selectModels, #simulate_button_selectAllModels, #simulate_monitor_button_delete, #simulate_monitor_button_deleteAll, #simulate_model_usr_button_select, #simulate_model_usr_button_selectAll, #simulate_model_usr_button_delete, #simulate_model_usr_button_deleteAll, #cluster_button_select, #cluster_button_selectAll, #cluster_button_delete, #cluster_button_deleteAll, #changepoint_button_select, #changepoint_button_selectAll, #changepoint_button_delete, #changepoint_button_deleteAll, #hedging_button_delete, #hedging_button_deleteAll, #parametric_changepoint_button_select, #parametric_changepoint_button_selectAll, #parametric_changepoint_button_delete, #parametric_changepoint_button_deleteAll, #llag_button_select, #llag_button_selectAll, #llag_button_delete, #llag_button_deleteAll, #changepoint_button_delete_estimated, #changepoint_button_deleteAll_estimated, #parametric_changepoint_button_delete_estimated, #parametric_changepoint_button_deleteAll_estimated, #llag_delete_analysis, #llag_deleteAll_analysis, #cluster_button_delete_analysis, #cluster_button_deleteAll_analysis {
   font-size: 110%;
   width: 100%;  
   color: black;
@@ -217,11 +217,13 @@ a:hover {
     color: black;
 }
 
+
 #llag_maxLag, #changepoint_pvalue, #cluster_distance_minkowskiPower {
   width:50%;
 }
 
-#llag_button_showResults, #simulate_monitor_button_showSimulation {
+
+#simulate_monitor_button_showSimulation {
   color: #ffffff;
 	background: radial-gradient(#662900, #ff8533, #662900);
 	font-size: 110%;

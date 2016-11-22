@@ -6,7 +6,8 @@ require(sde)
 require(quantmod)
 require(shinydashboard)
 require(shinyBS)
-require(corrplot)
+require(ggplot2)
+require(reshape2)
 
 options(warn=-1) 
 
@@ -14,7 +15,7 @@ if(!exists("yuimaGUItable"))
   yuimaGUItable <<- reactiveValues(series=data.frame(),  model=data.frame(), simulation=data.frame(), hedging=data.frame())
 
 if(!exists("yuimaGUIdata"))
-  yuimaGUIdata <<- reactiveValues(series=list(), cp=list(), cpYuima=list(), model=list(), simulation=list(), hedging = list())
+  yuimaGUIdata <<- reactiveValues(series=list(), cp=list(), cpYuima=list(), model=list(), simulation=list(), hedging = list(), llag = list(), cluster = list())
 
 if(!exists("estimateSettings"))
   estimateSettings <<- list()
