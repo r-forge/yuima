@@ -53,6 +53,11 @@ melt <- function(x){
   return(xx)
 }
 
+mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
 observeEvent(yuimaGUIdata$series, priority = 10, {
   yuimaGUItable$series <<- data.frame()
   for (symb in names(yuimaGUIdata$series)){
@@ -106,6 +111,12 @@ observeEvent(yuimaGUIdata$simulation, priority = 10, {
   }
 })
 
+observeEvent(yuimaGUIdata$series, priority = 10, {
+  n <- names(yuimaGUIdata$series)
+  for (i in names(estimateSettings)) if(!(i %in% n)) estimateSettings[[i]] <<- NULL
+  for (i in names(deltaSettings)) if(!(i %in% n)) deltaSettings[[i]] <<- NULL
+})
+
 observeEvent(yuimaGUIdata$hedging, priority = 10, {
   yuimaGUItable$hedging <<- data.frame()
   if (length(yuimaGUIdata$hedging)!=0){
@@ -145,7 +156,7 @@ setDataGUI <- function(original.data, delta){
 }
 
 
-addData <- function(x, typeIndex, session, anchorId, printSuccess = TRUE){
+addData <- function(x, typeIndex){
   x <- data.frame(x, check.names = TRUE)
   err <- c()
   alreadyIn <- c()
@@ -173,12 +184,7 @@ addData <- function(x, typeIndex, session, anchorId, printSuccess = TRUE){
       }
     }
   }
-  if (length(err)==0 & length(alreadyIn)==0 & printSuccess)
-    createAlert(session = session, anchorId = anchorId, content = paste("Data uploaded successfully"), style = "success")
-  if (length(err)!=0)
-    createAlert(session = session, anchorId = anchorId, content = paste("Unable to upload following symbols:",paste(err,collapse = " ")), style = "error")
-  if (length(alreadyIn)!=0)
-    createAlert(session = session, anchorId = anchorId, content = paste("Following data already uploaded:", paste(alreadyIn, collapse = " ")), style = "warning")
+  return(list(err = err, already_in = alreadyIn))
 }
 
 getDataNames <- function(){
@@ -213,12 +219,13 @@ defaultModels <-  c("Diffusion process"="Geometric Brownian Motion",
                     #"Fractional process"="Frac. Brownian Motion",
                     "Fractional process"="Frac. Ornstein-Uhlenbeck (OU)",
                     "CARMA" = "Carma(p,q)",
-                    "COGARCH" = "Cogarch(p,q)"
+                    "COGARCH" = "Cogarch(p,q)",
+                    "Levy process" = "Geometric Brownian Motion with Jumps"
                     )
 
 defaultJumps <- c("Gaussian", "Uniform")
 
-defaultBounds <- function(name, delta, strict, jumps = NA, AR_C = NA, MA_C = NA, data){
+defaultBounds <- function(name, delta, strict, jumps = NA, AR_C = NA, MA_C = NA, data, intensity = NULL, threshold = NULL){
   lastPrice = last(data)
   if (name %in% names(isolate({usr_models$model}))){
     par <- setModelByName(name = name, jumps = jumps,  AR_C = AR_C, MA_C = MA_C)@parameter@all
@@ -233,7 +240,6 @@ defaultBounds <- function(name, delta, strict, jumps = NA, AR_C = NA, MA_C = NA,
         lower <- rep(-100, length(par))
         upper <- rep(100, length(par))
       }
-      
     }
     names(lower) <- par
     names(upper) <- par
@@ -280,11 +286,21 @@ defaultBounds <- function(name, delta, strict, jumps = NA, AR_C = NA, MA_C = NA,
   }
   if (name == "Brownian Motion" | name == "Bm"){
     if (strict==TRUE) return (list(lower=list("sigma"=0, "mu"=NA), upper=list("sigma"=NA, "mu"=NA)))
-    else return (list(lower=list("sigma"=0, "mu"=-1/delta), upper=list("sigma"=1/sqrt(delta), "mu"=1/delta)))
+    else { 
+      x <- as.numeric(diff(data))
+      mu <- mean(x)
+      sigma <- sd(x)
+      return (list(lower=list("sigma"=sigma/sqrt(delta), "mu"=mu/delta), upper=list("sigma"=sigma/sqrt(delta), "mu"=mu/delta)))
+    }
   }
   if (name == "Geometric Brownian Motion" | name == "gBm") {
     if (strict==TRUE) return (list(lower=list("sigma"=0, "mu"=NA), upper=list("sigma"=NA, "mu"=NA)))
-    else return (list(lower=list("sigma"=0, "mu"=-1/delta), upper=list("sigma"=1/sqrt(delta), "mu"=1/delta)))
+    else {
+      x <- as.numeric(na.omit(Delt(data)))
+      mu <- mean(x)
+      sigma <- sd(x)
+      return (list(lower=list("sigma"=sigma/sqrt(delta), "mu"=mu/delta), upper=list("sigma"=sigma/sqrt(delta), "mu"=mu/delta)))
+    }
   }
   if (name == "Ornstein-Uhlenbeck (OU)" | name == "OU"){
     if (strict==TRUE) return(list(lower=list("theta"=0, "sigma"=0),upper=list("theta"=NA, "sigma"=NA)))
@@ -321,7 +337,12 @@ defaultBounds <- function(name, delta, strict, jumps = NA, AR_C = NA, MA_C = NA,
   if (name == "Constant Intensity"){
     boundsJump <- jumpBounds(jumps = jumps, strict = strict, data = data)
     if (strict==TRUE) return(list(lower=c(list("lambda"=0), boundsJump$lower),upper=c(list("lambda"=NA), boundsJump$upper)))
-    else return(list(lower=c(list("lambda"=0), boundsJump$lower),upper=c(list("lambda"=1/delta), boundsJump$upper)))
+    else {
+      x <- as.numeric(diff(data))
+      counts <- length(x[x!=0 & !is.na(x)])
+      lambda <- counts/(length(x)*delta)
+      return(list(lower=c(list("lambda"=lambda), boundsJump$lower),upper=c(list("lambda"=lambda), boundsJump$upper)))
+    }
   }
   if (name == "Power Low Intensity"){
     boundsJump <- jumpBounds(jumps = jumps, strict = strict, data = data)
@@ -343,31 +364,51 @@ defaultBounds <- function(name, delta, strict, jumps = NA, AR_C = NA, MA_C = NA,
     if (strict==TRUE) return(list(lower=c(list("a"=0, "b"=0, "omega"=0, "phi"=0), boundsJump$lower),upper=c(list("a"=NA, "b"=NA, "omega"=NA, "phi"=2*pi), boundsJump$upper)))
     else return(list(lower=c(list("a"=0, "b"=0, "omega"=0, "phi"=0), boundsJump$lower),upper=c(list("a"=1/delta, "b"=1/delta, "omega"=1/delta, "phi"=2*pi), boundsJump$upper)))
   }
+  if (name == "Geometric Brownian Motion with Jumps"){
+    boundsJump <- jumpBounds(jumps = jumps, strict = strict, data = data, threshold = threshold)
+    boundsIntensity <- intensityBounds(intensity = intensity, strict = strict, delta = delta)
+    if (strict==TRUE) return(list(lower=c(list("mu"=NA, "sigma"=0), boundsJump$lower, boundsIntensity$lower),upper=c(list("mu"=NA, "sigma"=NA), boundsJump$upper, boundsIntensity$upper)))
+    else return(list(lower=c(list("mu"=-1, "sigma"=0), boundsJump$lower, boundsIntensity$lower),upper=c(list("mu"=1, "sigma"=1), boundsJump$upper, boundsIntensity$upper)))
+  }
 }
 
 
+setThreshold <- function(class, data){
+  if(class!="Levy process") return(NA)
+  else {
+    return(0)
+  }
+}
+
 setJumps <- function(jumps){
-  switch (jumps,
-          "Gaussian" = list("dnorm(z, mean = mu_jump, sd = sigma_jump)"),
-          "Uniform" = list("dunif(z, min = a_jump, max = b_jump)")
+  if(is.na(jumps)) return("")
+  else switch (jumps,
+               "Gaussian" = list("dnorm(z, mean = mu_jump, sd = sigma_jump)"),
+               "Uniform" = list("dunif(z, min = a_jump, max = b_jump)")
   )
 }
 
-jumpBounds <- function(jumps, data, strict){
+jumpBounds <- function(jumps, data, strict, threshold = 0){
   switch(jumps,
          "Gaussian" = {
            if(strict==TRUE) return(list(lower=list("mu_jump"=NA, "sigma_jump"=0), upper=list("mu_jump"=NA, "sigma_jump"=NA)))
            else {
-             mu <- mean(diff(data))
-             s <- sd(diff(data))
+             x <- na.omit(diff(data))
+             x <- x[abs(x)>threshold]
+             x <- x-sign(x)*threshold
+             mu <- mean(x)
+             s <- sd(x)
              return(list(lower=list("mu_jump"=mu, "sigma_jump"=s), upper=list("mu_jump"=mu, "sigma_jump"=s)))
            }
           },
          "Uniform" = {
             if(strict==TRUE) return(list(lower=list("a_jump"=NA, "b_jump"=NA), upper=list("a_jump"=NA, "b_jump"=NA)))
             else {
-              a <- min(diff(data))
-              b <- max(diff(data))
+              x <- na.omit(diff(data))
+              x <- x[abs(x)>threshold]
+              x <- x-sign(x)*threshold
+              a <- min(x)
+              b <- max(x)
               return(list(lower=list("a_jump"=a, "b_jump"=b), upper=list("a_jump"=a, "b_jump"=b)))
             }
            }
@@ -383,9 +424,17 @@ latexJumps <- function(jumps){
   }
 }
 
+intensityBounds <- function(intensity, strict, delta){
+  switch(intensity,
+         "lambda" = {
+            if(strict==TRUE) return(list(lower=list("lambda"=0), upper=list("lambda"=NA)))
+            else return(list(lower=list("lambda"=0), upper=list("lambda"=1/delta)))
+         }
+  )  
+}
 
 
-setModelByName <- function(name, jumps = NA, AR_C = NA, MA_C = NA, XinExpr = FALSE){
+setModelByName <- function(name, jumps = NA, AR_C = NA, MA_C = NA, XinExpr = FALSE, intensity = NA){
   if (name %in% names(isolate({usr_models$model}))){
     if (isolate({usr_models$model[[name]]$class=="Diffusion process" | usr_models$model[[name]]$class=="Fractional process"}))
       return(isolate({usr_models$model[[name]]$object}))
@@ -411,6 +460,10 @@ setModelByName <- function(name, jumps = NA, AR_C = NA, MA_C = NA, XinExpr = FAL
   if (name == "Periodic Intensity") return(yuima::setPoisson(intensity="a/2*(1+cos(omega*t+phi))+b", df=setJumps(jumps = jumps), solve.variable = "x"))
   if (name == "Cogarch(p,q)") return(yuima::setCogarch(p = MA_C, q = AR_C, measure.type = "CP", measure = list(intensity = "lambda", df = setJumps(jumps = "Gaussian")), XinExpr = XinExpr, Cogarch.var="y", V.var="v", Latent.var="x", ma.par="MA", ar.par="AR")) 
   if (name == "Carma(p,q)") return(yuima::setCarma(p = AR_C, q = MA_C, ma.par="MA", ar.par="AR", XinExpr = XinExpr))
+  if (name == "Geometric Brownian Motion with Jumps") {
+    if(intensity=="None") return(yuima::setModel(drift="mu*x", diffusion="sigma*x", jump.coeff="x", measure.type = "code", measure = list(df = setJumps(jumps = jumps)), solve.variable = "x"))
+    else return(yuima::setModel(drift="mu*x", diffusion="sigma*x", jump.coeff="x", measure.type = "CP", measure = list(intensity = intensity, df = setJumps(jumps = jumps)), solve.variable = "x"))
+  }
 }
 
 printModelLatex <- function(names, process, jumps = NA){
@@ -488,6 +541,9 @@ printModelLatex <- function(names, process, jumps = NA){
   }
   if (process=="CARMA"){
     return(paste("$$","CARMA(p,q)","$$"))
+  }
+  if (process=="Levy process"){
+    return(paste("$$","dX_t = \\mu X_t \\; dt + \\sigma X_t \\; dW_t + X_t \\; dZ_t","$$"))
   }
 }
 
@@ -637,7 +693,7 @@ clearNA <- function(List){
     return (List)
 }
 
-addModel <- function(modName, modClass, AR_C, MA_C, jumps, symbName, data, toLog, delta, start, startMin, startMax, trials, seed, method="BFGS", fixed = list(), lower, upper, joint=FALSE, aggregation=TRUE, threshold=NULL, session, anchorId, alertId){
+addModel <- function(modName, intensity_levy, modClass, AR_C, MA_C, jumps, symbName, data, toLog, delta, start, startMin, startMax, trials, seed, method="BFGS", fixed = list(), lower, upper, joint=FALSE, aggregation=TRUE, threshold=NULL, session, anchorId, alertId){
   info <- list(
     class = modClass,
     modName = modName,
@@ -670,23 +726,10 @@ addModel <- function(modName, modClass, AR_C, MA_C, jumps, symbName, data, toLog
     createAlert(session = session, anchorId = anchorId, alertId = alertId, content =  paste("Cannot convert series ", symbName, "to log. Try to use 'Advanced Settings' and customize estimation.", sep = ""), style = "error")
     return()
   }
-  model <- setYuima(data = setDataGUI(data, delta = delta), model=setModelByName(name = modName, jumps = jumps, MA_C = MA_C, AR_C = AR_C))
+  model <- setYuima(data = setDataGUI(data, delta = delta), model=setModelByName(name = modName, intensity = intensity_levy, jumps = jumps, MA_C = MA_C, AR_C = AR_C))
   index(model@data@original.data) <- index(data)
   parameters <- model@model@parameter
-  if (modName == "Geometric Brownian Motion" | modName == "gBm"){
-    X <- as.numeric(na.omit(Delt(data, type = "log")))
-    alpha <- mean(X)/delta
-    sigma <- sqrt(var(X)/delta)
-    mu <- alpha +0.5*sigma^2
-    if (is.null(start$sigma)) start$sigma <- sigma
-    if (is.null(start$mu)) start$mu <- mu
-    QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, rcpp = TRUE))
-    if (class(QMLE)=="try-error"){
-      createAlert(session = session, anchorId = anchorId, alertId = alertId, content =  paste("Unable to estimate ", modName," on ", symbName, ". Try to use 'Advanced Settings' and customize estimation.", sep = ""), style = "danger")
-      return()
-    }
-  } 
-  else if (modClass == "Fractional process"){
+  if (modClass == "Fractional process"){
     QMLEtemp <- try(mmfrac(model))
     if(class(QMLEtemp)!="try-error") {
       estimates <- QMLEtemp[[1]]
@@ -811,6 +854,61 @@ addModel <- function(modName, modClass, AR_C, MA_C, jumps, symbName, data, toLog
     if (all(parameters@all %in% c(names(start),names(fixed))))
       QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #REMOVE# joint = joint, aggregation = aggregation,
                         threshold = threshold))
+    else {
+      miss <- parameters@all[!(parameters@all %in% c(names(start),names(fixed)))]
+      m2logL_prec <- NA
+      na_prec <- NA
+      withProgress(message = 'Step: ', value = 0, {
+        for(iter in 1:trials){
+          incProgress(1/trials, detail = paste(iter,"(/", trials ,")"))
+          for(j in 1:3){
+            for (i in miss)
+              start[[i]] <- runif(1, min = max(lower[[i]],startMin[[i]], na.rm = TRUE), max = min(upper[[i]],startMax[[i]],na.rm = TRUE))
+            QMLEtemp <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #joint = joint, aggregation = aggregation,
+                                 threshold = threshold))
+            if (class(QMLEtemp)!="try-error") if (all(!is.na(summary(QMLEtemp)@coef[,"Estimate"])))
+              break
+          }
+          if (class(QMLEtemp)!="try-error") if (all(!is.na(summary(QMLEtemp)@coef[,"Estimate"]))){
+            repeat{
+              m2logL <- summary(QMLEtemp)@m2logL
+              coefTable <- summary(QMLEtemp)@coef
+              for (param in names(start))
+                start[[param]] <- as.numeric(coefTable[param,"Estimate"])
+              QMLEtemp <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #joint = joint, aggregation = aggregation,
+                                   threshold = threshold))
+              if (class(QMLEtemp)=="try-error") break
+              else if (summary(QMLEtemp)@m2logL>=m2logL*abs(sign(m2logL)-0.001)) break
+            }
+            if(is.na(m2logL_prec) & class(QMLEtemp)!="try-error"){
+              QMLE <- QMLEtemp
+              m2logL_prec <- summary(QMLE)@m2logL
+              na_prec <- sum(is.na(coefTable))
+            }
+            else if (class(QMLEtemp)!="try-error"){
+              if (sum(is.na(coefTable)) < na_prec){
+                QMLE <- QMLEtemp
+                m2logL_prec <- summary(QMLE)@m2logL
+                na_prec <- sum(is.na(coefTable))
+              }
+              else {
+                test <- summary(QMLEtemp)@m2logL
+                if(test < m2logL_prec & sum(is.na(coefTable))==na_prec){
+                  QMLE <- QMLEtemp
+                  m2logL_prec <- test
+                  na_prec <- sum(is.na(coefTable))
+                }
+              }
+            }
+          }
+        }
+      })
+    }
+  }
+  else if (modClass == "Levy process") {
+    if (all(parameters@all %in% c(names(start),names(fixed))))
+      QMLE <- try(qmle(model, start = start, fixed = fixed, method = method, lower = lower, upper = upper, #REMOVE# joint = joint, aggregation = aggregation,
+                       threshold = threshold))
     else {
       miss <- parameters@all[!(parameters@all %in% c(names(start),names(fixed)))]
       m2logL_prec <- NA
