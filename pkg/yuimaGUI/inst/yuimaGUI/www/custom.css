@@ -223,7 +223,7 @@ a:hover {
 }
 
 
-#simulate_monitor_button_showSimulation {
+#simulate_monitor_button_showSimulation, #databaseModels_button_showResults {
   color: #ffffff;
 	background: radial-gradient(#662900, #ff8533, #662900);
 	font-size: 110%;
