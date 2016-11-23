@@ -7,7 +7,6 @@ require(quantmod)
 require(shinydashboard)
 require(shinyBS)
 require(ggplot2)
-require(reshape2)
 
 options(warn=-1) 
 
@@ -46,6 +45,13 @@ rbind.fill <- function(..., rep = NA){
   return (do.call("rbind", dots))
 }
 
+melt <- function(x){
+  V1 <- rep(rownames(x), ncol(x))
+  V2 <- sort(V1)
+  xx <- data.frame(Var1 = V1, Var2 = V2, value = NA)
+  for (i in 1:nrow(xx)) xx[i,"value"] <- x[as.character(xx[i,"Var1"]), as.character(xx[i,"Var2"])]
+  return(xx)
+}
 
 observeEvent(yuimaGUIdata$series, priority = 10, {
   yuimaGUItable$series <<- data.frame()
@@ -286,7 +292,10 @@ defaultBounds <- function(name, delta, strict, jumps = NA, AR_C = NA, MA_C = NA,
   }
   if (name == "Vasicek model (VAS)" | name == "VAS"){
     if (strict==TRUE) return(list(lower=list("theta3"=0, "theta1"=NA, "theta2"=NA), upper=list("theta3"=NA, "theta1"=NA, "theta2"=NA)))
-    else return(list(lower=list("theta3"=0, "theta1"=-1/delta, "theta2"=-1/delta), upper=list("theta3"=1/sqrt(delta), "theta1"=1/delta, "theta2"=1/delta)))
+    else {
+      mu <- abs(mean(as.numeric(data), na.rm = TRUE))
+      return(list(lower=list("theta3"=0, "theta1"=-0.1*mu/delta, "theta2"=-0.1/delta), upper=list("theta3"=1/sqrt(delta), "theta1"=0.1*mu/delta, "theta2"=0.1/delta)))
+    }
   }
   if (name == "Constant elasticity of variance (CEV)" | name == "CEV"){
     if (strict==TRUE) return(list(lower=list("mu"=NA, "sigma"=0, "gamma"=0), upper=list("mu"=NA, "sigma"=NA, "gamma"=NA)))

@@ -1025,6 +1025,151 @@ server <- function(input, output, session) {
   observe({
     shinyjs::toggle("usr_model_saved_div", condition = length(names(usr_models$model))!=0)
   })
+  
+  observe({
+    test <- FALSE
+    choices <- NULL
+    if(length(names(yuimaGUIdata$model))!=0) for (i in names(yuimaGUIdata$model)) for (j in 1:length(yuimaGUIdata$model[[i]])) 
+      if(yuimaGUIdata$model[[i]][[j]]$info$class %in% c("Diffusion process", "Compound Poisson")){
+        test <- TRUE
+        choices <- c(choices, paste(i,j))
+      }
+    shinyjs::toggle(id = "model_modal_fitting_body", condition = test)
+    shinyjs::toggle(id = "databaseModels_button_showResults", condition = test)
+    output$model_modal_model_id <- renderUI({
+      if (test==TRUE){
+        selectInput("model_modal_model_id", label = "Model ID", choices = choices)
+      }
+    })
+  })
+  
+  observe({
+    if(!is.null(input$model_modal_model_id)) {
+      id <- unlist(strsplit(input$model_modal_model_id, split = " " , fixed = FALSE))
+      type <- isolate({yuimaGUIdata$model})[[id[1]]][[as.numeric(id[2])]]$info$class
+      shinyjs::toggle(id = "model_modal_plot_intensity", condition = type=="Compound Poisson")
+      shinyjs::toggle(id = "model_modal_plot_distr", condition = type %in% c("Diffusion process","Compound Poisson"))
+    }
+  })
+  
+  observeEvent(input$model_modal_model_id,{
+    if(!is.null(input$model_modal_model_id)){
+      id <- unlist(strsplit(input$model_modal_model_id, split = " " , fixed = FALSE))
+      isolated_yuimaGUIdataModel <- isolate({yuimaGUIdata$model}) 
+      if(id[1] %in% names(isolated_yuimaGUIdataModel)) if (length(isolated_yuimaGUIdataModel[[id[1]]])>=as.integer(id[2])){
+        y <- isolated_yuimaGUIdataModel[[id[1]]][[as.numeric(id[2])]]
+        
+        if (y$info$class=="Diffusion process"){
+          
+          delta <- y$model@sampling@delta
+          x <- as.numeric(y$model@data@zoo.data[[1]])
+          x <- x[-length(x)]
+          dx <- diff(x)
+          for (i in names(y$qmle@coef)) assign(i, value = as.numeric(y$qmle@coef[i]))
+          z <- (dx-eval(y$model@model@drift)*delta)/(eval(y$model@model@diffusion[[1]])*sqrt(delta))
+          z <- data.frame("V1" = z)
+          output$model_modal_plot_distr <- renderPlot({
+            return(
+              ggplot(z, aes(x = V1)) + 
+                theme(
+                  plot.title = element_text(size=14, face= "bold", hjust = 0.5),
+                  axis.title=element_text(size=12),
+                  legend.position="none"
+                ) +
+                stat_function(fun = dnorm, args = list(mean = 0, sd = 1), fill = "blue",color = "blue", geom = 'area', alpha = 0.5) +
+                geom_density(alpha = 0.5, fill = "green", color = "green") +
+                xlim(-4, 4) + 
+                labs(fill="", title = "Estimated VS Theoretical Distribution", x = "Increments", y = "Density")
+            )
+          })
+          ksTest <- try(ks.test(x = as.numeric(z$V1), "pnorm"))
+          output$model_modal_plot_test <- renderUI({
+            if(class(ksTest)!="try-error")
+              HTML(paste("<div><h5>Kolmogorov-Smirnov p-value (the two distributions coincide): ", format(ksTest$p.value, scientific=T, digits = 2), "</h5></div>"))
+          })
+        }
+        
+        if (y$info$class=="Compound Poisson"){
+          
+          x <- as.numeric(y$model@data@zoo.data[[1]])
+          dx <- diff(x)
+          dx <- dx[dx!=0]
+          for (i in names(y$qmle@coef)) assign(i, value = as.numeric(y$qmle@coef[i]))
+          dx <- data.frame("V1" = dx)
+          if(y$info$jumps=="Gaussian"){
+            output$model_modal_plot_distr <- renderPlot({
+              return(
+                ggplot(dx, aes(x = V1)) + 
+                  theme(
+                    plot.title = element_text(size=14, face= "bold", hjust = 0.5),
+                    axis.title=element_text(size=12),
+                    legend.position="none"
+                  ) +
+                  stat_function(fun = dnorm, args = list(mean = mu_jump, sd = sigma_jump), fill = "blue",color = "blue", geom = 'area', alpha = 0.5) +
+                  geom_density(alpha = 0.5, fill = "green", color = "green") +
+                  xlim(-4, 4) + 
+                  labs(fill="", title = "Estimated VS Theoretical Distribution", x = "Increments", y = "Density")
+              )
+            })
+            ksTest <- try(ks.test(x = as.numeric(dx$V1), "pnorm", mean = mu_jump, sd = sigma_jump))
+            output$model_modal_plot_test <- renderUI({
+              if(class(ksTest)!="try-error")
+                HTML(paste("<div><h5>Kolmogorov-Smirnov p-value (the two distributions coincide): ", format(ksTest$p.value, scientific=T, digits = 2), "</h5></div>"))
+            })
+          }
+          if(y$info$jumps=="Uniform"){
+            output$model_modal_plot_distr <- renderPlot({
+              return(
+                ggplot(dx, aes(x = V1)) + 
+                  theme(
+                    plot.title = element_text(size=14, face= "bold", hjust = 0.5),
+                    axis.title=element_text(size=12),
+                    legend.position="none"
+                  ) +
+                  stat_function(fun = dunif, args = list(min = a_jump, max = b_jump), fill = "blue",color = "blue", geom = 'area', alpha = 0.5) +
+                  geom_density(alpha = 0.5, fill = "green", color = "green") +
+                  xlim(min(dx$V1),max(dx$V1)) + 
+                  labs(fill="", title = "Estimated VS Theoretical Distribution", x = "Increments", y = "Density")
+              )
+            })
+            ksTest <- try(ks.test(x = as.numeric(dx$V1), "punif", min = a_jump, max = b_jump))
+            output$model_modal_plot_test <- renderUI({
+              if(class(ksTest)!="try-error")
+                HTML(paste("<div><h5>Kolmogorov-Smirnov p-value (the two distributions coincide): ", format(ksTest$p.value, scientific=T, digits = 2), "</h5></div>"))
+            })
+          }
+          
+          delta <- y$model@sampling@delta
+          jumps <- ifelse(diff(x)==0,0,1)
+          jumps[is.na(jumps)] <- 0
+          empirical_Lambda <- cumsum(jumps)
+          t <- y$model@sampling@grid[[1]][-1]
+          theory_Lambda <- cumsum(eval(y$model@model@measure$intensity)*rep(delta, length(t)))
+          Lambda <- data.frame(empirical = empirical_Lambda, theory = theory_Lambda, time = index(y$model@data@original.data)[-1]) 
+          output$model_modal_plot_intensity <- renderPlot({
+            return(
+              ggplot(Lambda, aes(x = time)) +
+                geom_line(aes(y = empirical), size = 1, color = "green") +
+                geom_line(aes(y = theory), size = 1, color = "blue") +
+                scale_color_manual(values=c("green", "blue")) +
+                theme(
+                  plot.title = element_text(size=14, face= "bold", hjust = 0.5),
+                  axis.title=element_text(size=12),
+                  legend.position="none"
+                ) +
+                labs(fill="", title = "Estimated VS Theoretical Intensity", x = "", y = "Number of Jumps")
+            )
+
+          })
+        
+        }
+      }
+    }
+  })
+  
+  
+  
+  
 
   ###Delete Model
   observeEvent(input$databaseModelsDelete, priority = 1, {

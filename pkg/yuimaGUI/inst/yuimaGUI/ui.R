@@ -287,11 +287,28 @@ body<-dashboardBody(
           ),
           br(),
           fluidRow(
-            column(8),
+            column(2,actionButton(inputId = "databaseModels_button_showResults", label = "Show Fitting")),
+            bsTooltip("databaseModels_button_showResults", title = "Available for: Diffusive Processes", placement = "top"),
+            column(6),
             column(2,actionButton(inputId = "databaseModelsDelete", label = "Delete")),
             bsTooltip("databaseModelsDelete", title = "Delete selected model", placement = "top"),
             column(2,actionButton(inputId = "databaseModelsDeleteAll", label = "Delete All")),
             bsTooltip("databaseModelsDeleteAll", title = "Delete all models that are displayed", placement = "top")
+          ),
+          bsModal(id = "model_modal_fitting", title = "Fitting", trigger = "databaseModels_button_showResults", size = "Large",
+                  div(id = "model_modal_fitting_body",
+                    fluidRow(
+                      column(2),
+                      column(8, uiOutput("model_modal_model_id", align = "center"))
+                    ),
+                    fluidRow(
+                      column(12, 
+                             plotOutput("model_modal_plot_intensity"),
+                             plotOutput("model_modal_plot_distr"),
+                             uiOutput("model_modal_plot_test", align = "center")
+                      )
+                    )
+                  )
           )
         )
       ))),
