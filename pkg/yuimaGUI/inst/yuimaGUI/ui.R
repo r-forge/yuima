@@ -196,14 +196,14 @@ body<-dashboardBody(
           br(),
           fluidRow(
             column(4,div(align="center",
-              selectInput("modelClass",label = "Model Class", choices = c("Diffusion process", "Fractional process", "Compound Poisson", "CARMA", "COGARCH"), selected = "Diffusion process"),
+              selectInput("modelClass",label = "Model Class", choices = c("Diffusion process", "Fractional process", "Compound Poisson", "Levy process", "CARMA", "COGARCH"), selected = "Diffusion process"),
               uiOutput("model"),
               uiOutput("jumps"),
               uiOutput("pq_C")
             )),
             column(5,
-              shinyjs::hidden(h4(id="titlePrintModelLatex","Models to estimate:", style="color:#CDCECD;font-size: 2em; font-family: Goudy Old Style, Serif")),
-              uiOutput("PrintModelLatex")
+              fluidRow(shinyjs::hidden(h4(id="titlePrintModelLatex","Models to estimate:", style="color:#CDCECD;font-size: 2em; font-family: Goudy Old Style, Serif"))),
+              fluidRow(uiOutput("PrintModelLatex"))
             )
           ),
           br(),
@@ -359,13 +359,13 @@ body<-dashboardBody(
               box(width = 12,div(align="center",
                 h3("General Settings"),
                 uiOutput("advancedSettingsMethod", align="center"),
+                uiOutput("advancedSettingsThreshold", align="center"),
                 fluidRow(
                   column(6,uiOutput("advancedSettingsTrials", align="center")),
                   column(6,uiOutput("advancedSettingsSeed", align="center"))
                 ),
                 uiOutput("advancedSettingsJoint", align="center"),
                 uiOutput("advancedSettingsAggregation", align="center"),
-                uiOutput("advancedSettingsThreshold", align="center"),
                 fluidRow(
                   column(6, tags$button(type="button", id="advancedSettingsButtonApplyGeneral", class = "action-button", em("Apply"))),
                   column(6, tags$button(type="button", id="advancedSettingsButtonApplyAllModelGeneral", class = "action-button", em("Apply to All series")))

@@ -30,7 +30,7 @@ server <- function(input, output, session) {
   }
   
   jumps_shortcut <- function(class, jumps){
-    switch(class, "Diffusion process" = NA, "Fractional process" = NA,"Compound Poisson" = jumps, "COGARCH"=NA, "CARMA" = NA)
+    switch(class, "Diffusion process" = NA, "Fractional process" = NA,"Compound Poisson" = jumps, "COGARCH"=NA, "CARMA" = NA, "Levy process" = jumps)
   }
   
   ### Home
@@ -55,23 +55,30 @@ server <- function(input, output, session) {
   observeEvent(input$finDataGo, priority = 1, {
     if (input$symb!=""){
       closeAlert(session, "finDataAlert_err")
+      closeAlert(session, "finDataAlert_warn")
       closeAlert(session, "finDataAlert_succ")
       symb <- unlist(strsplit(input$symb, split = "[, ]+" , fixed = FALSE))
       err <- c()
+      already_in <- c()
       withProgress(message = 'Loading: ', value = 0, {
         for (i in symb){
           incProgress(1/length(symb), detail = i)
           x <- try(getSymbols(i, src = input$sources ,auto.assign = FALSE, from = input$dR[1], to = input$dR[2]))
           if (class(x)[1]=="try-error")
             err <- cbind(err,i)
-          else
-            addData(x, typeIndex = "%Y-%m-%d", session = session, anchorId = "finDataAlert", printSuccess = FALSE)
+          else {
+            info <- addData(x, typeIndex = "%Y-%m-%d")
+            err <- c(err, info$err)
+            already_in <- c(already_in, info$already_in)
+          }
         }
       })
       if(!is.null(err))
-        createAlert(session = session, anchorId = "finDataAlert", alertId = "finDataAlert_err", content = paste("WARNING! Unable to download following symbols:", paste(err,collapse = " ")), style = "danger")
-      if(is.null(err))
-        createAlert(session = session, anchorId = "finDataAlert", alertId = "finDataAlert_succ", content = paste("All symbols downloaded successfully"), style = "success")
+        createAlert(session = session, anchorId = "finDataAlert", alertId = "finDataAlert_err", content = paste("Unable to load following symbols:", paste(err,collapse = " ")), style = "error")
+      if(!is.null(already_in))
+        createAlert(session = session, anchorId = "finDataAlert", alertId = "finDataAlert_warn", content = paste("WARNING! Following symbols already loaded:", paste(already_in,collapse = " ")), style = "warning")
+      if(is.null(err) & is.null(already_in))
+        createAlert(session = session, anchorId = "finDataAlert", alertId = "finDataAlert_succ", content = paste("All symbols loaded successfully"), style = "success")
     }
   })
 
@@ -234,7 +241,16 @@ server <- function(input, output, session) {
 
   ###Upload file
   observeEvent(input$yourFileGo, priority = 1, {
-    addData(fileUp(), typeIndex = input$yourFileFUN, session = session, anchorId = "yourDataAlert")
+    closeAlert(session, "yourDataAlert_err")
+    closeAlert(session, "yourDataAlert_warn")
+    closeAlert(session, "yourDataAlert_succ")
+    info <- addData(fileUp(), typeIndex = input$yourFileFUN)
+    if(!is.null(info$err))
+      createAlert(session = session, anchorId = "yourDataAlert", alertId = "yourDataAlert_err", content = paste("Unable to load following symbols:", paste(info$err,collapse = " ")), style = "error")
+    if(!is.null(info$already_in))
+      createAlert(session = session, anchorId = "yourDataAlert", alertId = "yourDataAlert_warn", content = paste("WARNING! Following symbols already loaded:", paste(info$already_in,collapse = " ")), style = "warning")
+    if(is.null(info$err) & is.null(info$already_in))
+      createAlert(session = session, anchorId = "yourDataAlert", alertId = "yourDataAlert_succ", content = paste("All symbols loaded successfully"), style = "success")
   })
 
   ###Display data available
@@ -282,6 +298,19 @@ server <- function(input, output, session) {
   output$jumps <- renderUI({
     if (input$modelClass=="Compound Poisson")
       return(selectInput("jumps",label = "Jumps", choices = defaultJumps))
+    if (input$modelClass=="Levy process"){
+      jump_choices <- defaultJumps
+      jump_sel <- NULL
+      if(!is.null(input$model)){
+        if(input$model=="Geometric Brownian Motion with Jumps") jump_sel <- "Gaussian"
+      }
+      return(div(
+        column(6,selectInput("model_levy_intensity", label = "Intensity", choices = c(#"None",
+                                                                             "Constant"="lambda"))),
+        column(6,selectInput("jumps",label = "Jumps", choices = jump_choices, selected = jump_sel)))
+      )
+    }
+    
   })
   
   output$pq_C <- renderUI({
@@ -314,6 +343,8 @@ server <- function(input, output, session) {
       return(withMathJax("$$dX=a(t,X,\\theta)\\;dt\\;+\\;b(t,X,\\theta)\\;dW^H$$"))
     if (input$usr_modelClass=="Compound Poisson")
       return(withMathJax("$$X_t = X_0+\\sum_{i=0}^{N_t} Y_i \\; : \\;\\;\\;  N_t \\sim Poi\\Bigl(\\int_0^t \\lambda(t)dt\\Bigl)$$"))
+    if (input$usr_modelClass=="Levy process")
+      return(withMathJax("$$dX_t = \\mu X_t \\; dt + \\sigma X_t \\; dW_t + X_t \\; dZ_t$$"))
   })
   
   observe({
@@ -342,6 +373,16 @@ server <- function(input, output, session) {
            textInput("usr_model_coeff_intensity", width = "45%", label = withMathJax("$$\\lambda(t)$$"))
         )
       )
+    if (input$usr_modelClass=="Levy process")
+      return(
+        div(align="center",
+            fluidRow(column(12,textInput("usr_model_coeff_intensity", width = "45%", label = withMathJax("$$\\lambda(t)$$")))),
+            fluidRow(
+              column(6, textInput("usr_model_coeff_drift", width = "70%", label = withMathJax("$$a(t,X,\\theta)$$"))),
+              column(6, textInput("usr_model_coeff_diff", width = "70%", label = withMathJax("$$b(t,X,\\theta)$$")))
+            )
+        )
+      )
   })
 
   observeEvent(input$usr_model_button_save, {
@@ -365,6 +406,13 @@ server <- function(input, output, session) {
              if (input$usr_model_name!="" & (input$usr_model_coeff_intensity!="")){
                mod <- try(setPoisson(intensity = tolower(input$usr_model_coeff_intensity), df = "", solve.variable = "x"))
                if(class(mod)!="try-error") usr_models$model[[input$usr_model_name]] <<- list(intensity=tolower(input$usr_model_coeff_intensity), class=input$usr_modelClass)
+               entered <- TRUE
+             }
+           },
+           "Levy process" = {
+             if (input$usr_model_name!=""){
+               mod <- try(setModel(drift=input$usr_model_coeff_drift, diffusion=input$usr_model_coeff_diff, measure.type = ifelse(is.na(input$usr_model_coeff_intensity), "code", "CP"), measure = list(intensity = input$usr_model_coeff_intensity, df = ""), solve.variable = "x"))
+               if(class(mod)!="try-error") usr_models$model[[input$usr_model_name]] <<- list(intensity=tolower(input$usr_model_coeff_intensity), drift = input$usr_model_coeff_drift, diffusion = input$usr_model_coeff_diff, class=input$usr_modelClass)
                entered <- TRUE
              }
            } 
@@ -607,12 +655,16 @@ server <- function(input, output, session) {
   observe({
     class <- isolate({input$modelClass})
     for (symb in rownames(seriesToEstimate$table)){
-      if (is.null(deltaSettings[[symb]])) deltaSettings[[symb]] <<- 0.01
+      if (is.null(deltaSettings[[symb]])) {
+        i <- index(getData(symb))
+        if(is.numeric(i)) deltaSettings[[symb]] <<- mode(diff(i))
+        else deltaSettings[[symb]] <<- 0.01
+      }
       if (is.null(toLogSettings[[symb]])) toLogSettings[[symb]] <<- FALSE
       data <- na.omit(as.numeric(getData(symb)))
       if (toLogSettings[[symb]]==TRUE) data <- log(data)
       for (modName in input$model){
-        if (class(try(setModelByName(modName, jumps = jumps_shortcut(class = class, jumps = input$jumps), AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA))))!="try-error"){
+        if (class(try(setModelByName(modName, intensity = input$model_levy_intensity, jumps = jumps_shortcut(class = class, jumps = input$jumps), AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA))))!="try-error"){
           if (is.null(estimateSettings[[modName]]))
             estimateSettings[[modName]] <<- list()
           if (is.null(estimateSettings[[modName]][[symb]]))
@@ -621,9 +673,13 @@ server <- function(input, output, session) {
             estimateSettings[[modName]][[symb]][["fixed"]] <<- list()
           if (is.null(estimateSettings[[modName]][[symb]][["start"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$advancedSettingsButtonApplyAllDelta)
             estimateSettings[[modName]][[symb]][["start"]] <<- list()
+          if (is.null(estimateSettings[[modName]][[symb]][["threshold"]]))
+            estimateSettings[[modName]][[symb]][["threshold"]] <<- setThreshold(class = class, data = data)
           
           startMinMax <- defaultBounds(name = modName, 
                                        jumps = jumps_shortcut(class = class, jumps = input$jumps), 
+                                       intensity = input$model_levy_intensity,
+                                       threshold = estimateSettings[[modName]][[symb]][["threshold"]],
                                        AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), 
                                        MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA), 
                                        strict = FALSE,
@@ -631,6 +687,8 @@ server <- function(input, output, session) {
                                        delta = deltaSettings[[symb]])
           upperLower <- defaultBounds(name = modName, 
                                       jumps = jumps_shortcut(class = class, jumps = input$jumps), 
+                                      intensity = input$model_levy_intensity,
+                                      threshold = estimateSettings[[modName]][[symb]][["threshold"]],
                                       AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), 
                                       MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA),
                                       strict = TRUE,
@@ -657,8 +715,6 @@ server <- function(input, output, session) {
             estimateSettings[[modName]][[symb]][["joint"]] <<- FALSE
           if (is.null(estimateSettings[[modName]][[symb]][["aggregation"]]))
             estimateSettings[[modName]][[symb]][["aggregation"]] <<- TRUE
-          if (is.null(estimateSettings[[modName]][[symb]][["threshold"]]))
-            estimateSettings[[modName]][[symb]][["threshold"]] <<- NA
         }
       }
     }
@@ -669,7 +725,7 @@ server <- function(input, output, session) {
   observe({
     valid <- TRUE
     if (nrow(seriesToEstimate$table)==0 | is.null(input$model)) valid <- FALSE
-    else for(mod in input$model) if  (class(try(setModelByName(mod, jumps = jumps_shortcut(class = input$modelClass, jumps = input$jumps), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))))=="try-error")  valid <- FALSE
+    else for(mod in input$model) if  (class(try(setModelByName(mod, intensity = input$model_levy_intensity, jumps = jumps_shortcut(class = input$modelClass, jumps = input$jumps), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))))=="try-error")  valid <- FALSE
     shinyjs::toggle(id="advancedSettingsAll", condition = valid)
     shinyjs::toggle(id="advancedSettingsErrorMessage", condition = !valid)
   })
@@ -695,7 +751,7 @@ server <- function(input, output, session) {
   output$advancedSettingsParameter <- renderUI({
     if (!is.null(input$model))
       if (!is.null(input$advancedSettingsModel)){
-        parL <- setModelByName(input$advancedSettingsModel, jumps = jumps_shortcut(class = input$modelClass, jumps = input$jumps), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))@parameter
+        parL <- setModelByName(input$advancedSettingsModel, intensity = input$model_levy_intensity, jumps = jumps_shortcut(class = input$modelClass, jumps = input$jumps), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))@parameter
         par <- parL@all
         if (input$modelClass=="COGARCH") par <- unique(c(parL@drift, parL@xinit))
         if (input$modelClass=="CARMA") par <- parL@drift
@@ -756,10 +812,10 @@ server <- function(input, output, session) {
   #REMOVE#   if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries))
   #REMOVE#     selectInput("advancedSettingsAggregation", label = "aggregation", choices = c(TRUE, FALSE), selected = estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["aggregation"]])
   #REMOVE# })
-  #REMOVE# output$advancedSettingsThreshold <- renderUI({
-  #REMOVE#   if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries))
-  #REMOVE#     numericInput("advancedSettingsThreshold", label = "threshold", value = estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["threshold"]])
-  #REMOVE# })
+  output$advancedSettingsThreshold <- renderUI({
+     if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries)) if(isolate({input$modelClass})=="Levy process")
+       numericInput("advancedSettingsThreshold", label = "threshold", value = estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["threshold"]])
+  })
   output$advancedSettingsTrials <- renderUI({
     if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries) & !is.null(input$advancedSettingsMethod))
       numericInput("advancedSettingsTrials", label = "trials", min = 1, value = ifelse(input$advancedSettingsMethod=="SANN" & estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["method"]]!="SANN",1,estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["trials"]]))
@@ -806,7 +862,7 @@ server <- function(input, output, session) {
     estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["seed"]] <<- input$advancedSettingsSeed
     #REMOVE# estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["joint"]] <<- input$advancedSettingsJoint
     #REMOVE# estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["aggregation"]] <<- input$advancedSettingsAggregation
-    #REMOVE# estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["threshold"]] <<- input$advancedSettingsThreshold
+    estimateSettings[[input$advancedSettingsModel]][[input$advancedSettingsSeries]][["threshold"]] <<- input$advancedSettingsThreshold
   })
   observeEvent(input$advancedSettingsButtonApplyAllModelGeneral,{
     for (symb in rownames(seriesToEstimate$table)){
@@ -815,7 +871,7 @@ server <- function(input, output, session) {
       estimateSettings[[input$advancedSettingsModel]][[symb]][["seed"]] <<- input$advancedSettingsSeed
       #REMOVE# estimateSettings[[input$advancedSettingsModel]][[symb]][["joint"]] <<- input$advancedSettingsJoint
       #REMOVE# estimateSettings[[input$advancedSettingsModel]][[symb]][["aggregation"]] <<- input$advancedSettingsAggregation
-      #REMOVE# estimateSettings[[input$advancedSettingsModel]][[symb]][["threshold"]] <<- input$advancedSettingsThreshold
+      estimateSettings[[input$advancedSettingsModel]][[symb]][["threshold"]] <<- input$advancedSettingsThreshold
     }
   })
   observeEvent(input$advancedSettingsButtonApplyAllGeneral,{
@@ -826,7 +882,7 @@ server <- function(input, output, session) {
         estimateSettings[[mod]][[symb]][["seed"]] <<- input$advancedSettingsSeed
         #REMOVE# estimateSettings[[mod]][[symb]][["joint"]] <<- input$advancedSettingsJoint
         #REMOVE# estimateSettings[[mod]][[symb]][["aggregation"]] <<- input$advancedSettingsAggregation
-        #REMOVE# estimateSettings[[mod]][[symb]][["threshold"]] <<- input$advancedSettingsThreshold
+        estimateSettings[[mod]][[symb]][["threshold"]] <<- input$advancedSettingsThreshold
       }
     }
   })
@@ -854,7 +910,7 @@ server <- function(input, output, session) {
     valid <- TRUE
     if(is.null(input$model) | nrow(seriesToEstimate$table)==0) valid <- FALSE
     else if (input$modelClass=="Compound Poisson" & is.null(input$jumps)) valid <- FALSE
-    else for(mod in input$model) if (class(try(setModelByName(mod, jumps = jumps_shortcut(class = input$modelClass, jumps = input$jumps), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))))=="try-error")  valid <- FALSE
+    else for(mod in input$model) if (class(try(setModelByName(mod, intensity = input$model_levy_intensity, jumps = jumps_shortcut(class = input$modelClass, jumps = input$jumps), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))))=="try-error")  valid <- FALSE
     if(!valid){
       createAlert(session = session, anchorId = "panel_run_estimation_alert", alertId = "modelsAlert_err", content = "Select some series and (valid) models to estimate", style = "warning")
     }
@@ -875,6 +931,7 @@ server <- function(input, output, session) {
             addModel(
               modName = modName,
               modClass = input$modelClass,
+              intensity_levy = input$model_levy_intensity,
               AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), 
               MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA),
               jumps = jumps_shortcut(class = input$modelClass, jumps = input$jumps),
@@ -967,6 +1024,7 @@ server <- function(input, output, session) {
         em("delta:"), info$delta, br(),
         em("series to log:"), info$toLog, br(),
         em("method:"), info$method, br(),
+        em("threshold:"), info$threshold, br(),
         em("trials:"), info$trials, br(),
         em("seed:"), info$seed, br()
         #REMOVE# em("joint:"), info$joint, br(),
@@ -1030,7 +1088,7 @@ server <- function(input, output, session) {
     test <- FALSE
     choices <- NULL
     if(length(names(yuimaGUIdata$model))!=0) for (i in names(yuimaGUIdata$model)) for (j in 1:length(yuimaGUIdata$model[[i]])) 
-      if(yuimaGUIdata$model[[i]][[j]]$info$class %in% c("Diffusion process", "Compound Poisson")){
+      if(yuimaGUIdata$model[[i]][[j]]$info$class %in% c("Diffusion process", "Compound Poisson", "Levy process")){
         test <- TRUE
         choices <- c(choices, paste(i,j))
       }
@@ -1047,8 +1105,8 @@ server <- function(input, output, session) {
     if(!is.null(input$model_modal_model_id)) {
       id <- unlist(strsplit(input$model_modal_model_id, split = " " , fixed = FALSE))
       type <- isolate({yuimaGUIdata$model})[[id[1]]][[as.numeric(id[2])]]$info$class
-      shinyjs::toggle(id = "model_modal_plot_intensity", condition = type=="Compound Poisson")
-      shinyjs::toggle(id = "model_modal_plot_distr", condition = type %in% c("Diffusion process","Compound Poisson"))
+      shinyjs::toggle(id = "model_modal_plot_intensity", condition = type %in% c("Compound Poisson", "Levy process"))
+      shinyjs::toggle(id = "model_modal_plot_distr", condition = type %in% c("Diffusion process","Compound Poisson", "Levy process"))
     }
   })
   
@@ -1062,6 +1120,7 @@ server <- function(input, output, session) {
         if (y$info$class=="Diffusion process"){
           
           delta <- y$model@sampling@delta
+          t <- y$model@sampling@grid[[1]][-length(y$model@sampling@grid[[1]])]
           x <- as.numeric(y$model@data@zoo.data[[1]])
           x <- x[-length(x)]
           dx <- diff(x)
@@ -1089,11 +1148,12 @@ server <- function(input, output, session) {
           })
         }
         
-        if (y$info$class=="Compound Poisson"){
-          
+        if (y$info$class=="Compound Poisson" | y$info$class=="Levy process"){
+          threshold <- ifelse(is.na(y$info$threshold), 0, y$info$threshold)          
           x <- as.numeric(y$model@data@zoo.data[[1]])
           dx <- diff(x)
-          dx <- dx[dx!=0]
+          dx <- dx[abs(dx)>threshold]
+          dx <- dx-sign(dx)*threshold
           for (i in names(y$qmle@coef)) assign(i, value = as.numeric(y$qmle@coef[i]))
           dx <- data.frame("V1" = dx)
           if(y$info$jumps=="Gaussian"){
@@ -1139,8 +1199,9 @@ server <- function(input, output, session) {
             })
           }
           
+          
           delta <- y$model@sampling@delta
-          jumps <- ifelse(diff(x)==0,0,1)
+          jumps <- ifelse(abs(diff(x))>threshold,1,0)
           jumps[is.na(jumps)] <- 0
           empirical_Lambda <- cumsum(jumps)
           t <- y$model@sampling@grid[[1]][-1]
@@ -1240,7 +1301,7 @@ server <- function(input, output, session) {
   })
 
   output$simulate_model_usr_selectJumps <- renderUI({
-    if(input$simulate_model_usr_selectClass=="Compound Poisson")
+    if(input$simulate_model_usr_selectClass %in% c("Compound Poisson", "Levy process"))
       return(selectInput("simulate_model_usr_selectJumps",label = "Jumps", choices = defaultJumps))
   })
   
@@ -1298,7 +1359,7 @@ server <- function(input, output, session) {
         valid <- TRUE
         if(usr_models$simulation[[id]][["Model"]]!=input$simulate_model_usr_selectModel | input$simulate_model_usr_selectParam=="") 
           valid <- FALSE
-        else if (usr_models$simulation[[id]][["Class"]]=="Compound Poisson") if (usr_models$simulation[[id]][["Jumps"]]!=input$simulate_model_usr_selectJumps)  
+        else if (usr_models$simulation[[id]][["Class"]] %in% c("Compound Poisson", "Levy process")) if (usr_models$simulation[[id]][["Jumps"]]!=input$simulate_model_usr_selectJumps)  
           valid <- FALSE
         if (valid)
           usr_models$simulation[[id]][["true.param"]][[input$simulate_model_usr_selectParam]] <- ifelse(is.na(input$simulate_model_usr_param),"MISSING",input$simulate_model_usr_param)
@@ -1500,8 +1561,11 @@ server <- function(input, output, session) {
   })
 
   output$simulate_nstep <- renderUI({
-    if(!is.null(input$simulate_modelID))
-      numericInput("simulate_nstep", label = "Number of steps per simulation", value = simulateSettings[[input$simulate_modelID]][["nstep"]], min = 1, step = 1)
+    if(!is.null(input$simulate_modelID)){
+      id <- unlist(strsplit(input$simulate_modelID, split = " "))
+      if (!(isolate({yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class}) %in% c("COGARCH", "CARMA")))
+        numericInput("simulate_nstep", label = "Number of steps per simulation", value = simulateSettings[[input$simulate_modelID]][["nstep"]], min = 1, step = 1)
+    }
   })
 
   output$simulate_xinit <- renderUI({
@@ -1654,9 +1718,8 @@ server <- function(input, output, session) {
                 "estimate.to" = as.Date(end(data)),
                 "simulate.from" = simulateSettings[[modID]][["t0"]],
                 "simulate.to" = simulateSettings[[modID]][["t1"]])
-              Initial <- as.numeric(simulateSettings[[modID]][["t0"]]-start(data))/as.numeric(end(data)-start(data))*(length(data)-1)*yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
-              Terminal <- as.numeric(simulateSettings[[modID]][["t1"]]-start(data))/as.numeric(end(data)-start(data))*(length(data)-1)*yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
-              n <- ifelse(is.na(simulateSettings[[modID]][["nstep"]]),as.numeric(simulateSettings[[modID]][["t1"]]-simulateSettings[[modID]][["t0"]])/as.numeric(end(data)-start(data))*(length(data)-1),simulateSettings[[modID]][["nstep"]])
+              Initial <- round(digits = 0, as.numeric(simulateSettings[[modID]][["t0"]]-start(data))/as.numeric(mean(diff(index(data)))))*yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
+              Terminal <- round(digits = 0, as.numeric(simulateSettings[[modID]][["t1"]]-start(data))/as.numeric(mean(diff(index(data)))))*yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
             }
             if(is.numeric(index(data))){
               info <- list(
@@ -1667,9 +1730,15 @@ server <- function(input, output, session) {
                 "estimate.to" = as.numeric(end(data)),
                 "simulate.from" = as.numeric(simulateSettings[[modID]][["t0"]]),
                 "simulate.to" = as.numeric(simulateSettings[[modID]][["t1"]]))
-              Initial <- simulateSettings[[modID]][["t0"]]/(as.numeric(end(data))-as.numeric(start(data)))*(length(data)-1)*yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
-              Terminal <- simulateSettings[[modID]][["t1"]]/(as.numeric(end(data))-as.numeric(start(data)))*(length(data)-1)*yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
-              n <- ifelse(is.na(simulateSettings[[modID]][["nstep"]]),as.numeric(simulateSettings[[modID]][["t1"]]-simulateSettings[[modID]][["t0"]])/(as.numeric(end(data))-as.numeric(start(data)))*(length(data)-1),simulateSettings[[modID]][["nstep"]])
+              Initial <- round(digits = 0, simulateSettings[[modID]][["t0"]]/as.numeric(mean(diff(index(data)))))*yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
+              Terminal <- round(digits = 0, simulateSettings[[modID]][["t1"]]/as.numeric(mean(diff(index(data)))))*yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
+            }
+            if (yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class %in% c("COGARCH", "CARMA") | is.na(simulateSettings[[modID]][["nstep"]])){
+              n <- NULL
+              delta <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
+            } else {
+              n <- simulateSettings[[modID]][["nstep"]]
+              delta <- NA
             }
             if (yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class=="Fractional process") true.parameter <- as.list(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle["Estimate",])
             else true.parameter <- as.list(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle@coef)
@@ -1681,7 +1750,7 @@ server <- function(input, output, session) {
               toLog = toLog,
               xinit = simulateSettings[[modID]][["xinit"]],
               nsim = simulateSettings[[modID]][["nsim"]],
-              sampling = setSampling(Initial = Initial, Terminal = Terminal, n=n, delta = NA),
+              sampling = setSampling(Initial = Initial, Terminal = Terminal, n=n, delta = delta),
               saveTraj = simulateSettings[[modID]][["traj"]],
               seed = simulateSettings[[modID]][["seed"]],
               session = session,
@@ -2815,10 +2884,6 @@ server <- function(input, output, session) {
           }
           data <- window(data, start = start, end = end)
           if(is.regular(data)){
-            mode <- function(x) {
-              ux <- unique(x)
-              ux[which.max(tabulate(match(x, ux)))]
-            }
             delta <- mode(na.omit(diff(index(data))))
             yuimaData <- setDataGUI(data, delta = delta)
             if(input$llag_type=="llag"){
