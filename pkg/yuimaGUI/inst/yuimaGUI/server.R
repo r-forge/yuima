@@ -1153,7 +1153,7 @@ server <- function(input, output, session) {
         else if (y$info$class=="COGARCH"){
           
           dx <- diff(y$model@data@original.data[,1])
-          v <- cogarchNoise(y$model, param = as.list(coef(y$qmle)))$Cogarch@original.data[,"v"]
+          v <- sqrt(cogarchNoise(y$model, param = as.list(coef(y$qmle)))$Cogarch@original.data[,"v"])
           v <- v/mean(v)*sd(dx)
           z <- data.frame("dx" = dx, "vplus" = v[-1], "vminus" = -v[-1], "time" = index(dx))
           output$model_modal_plot_variance <- renderPlot({
