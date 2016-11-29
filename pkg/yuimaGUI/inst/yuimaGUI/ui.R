@@ -61,8 +61,9 @@ body<-dashboardBody(
         )
       ),
       fluidRow(
-        column(8, br(),
-          uiOutput("certificates")       
+        column(8#, 
+          #br(),
+          #uiOutput("certificates")       
         ),
         column(4,
           h3(em("Developed by"), style="color:#edeeed", align = "center"),
@@ -303,6 +304,7 @@ body<-dashboardBody(
                     ),
                     fluidRow(
                       column(12, 
+                             plotOutput("model_modal_plot_variance"),
                              plotOutput("model_modal_plot_intensity"),
                              plotOutput("model_modal_plot_distr"),
                              uiOutput("model_modal_plot_test", align = "center")
@@ -845,7 +847,7 @@ body<-dashboardBody(
           div(align="center",
             selectInput("llag_type", label = "Type of analysis", choices = c("Lead-Lag"="llag", "Correlation"="corr"), selected = "llag"),
             numericInput("llag_maxLag", label = "Max Lag", value = 20, min = 1, step = 1),
-            shinyjs::hidden(selectInput("llag_corr_method", label = "Method", choices = c("Hayashi-Yoshida"="HY", "Pre-averaged Hayashi-Yoshida"="PHY", "Modulated Realized Covariance"="MRC", "Two Scales realized CoVariance"="TSCV", "Generalized Multiscale Estimator"="GME", "Realized Kernel"="RK", "Quasi Maximum Likelihood Estimator"="QMLE", "Separating Information Maximum Likelihood"="SIML", "Truncated Hayashi-Yoshida"="THY", "Pre-averaged Truncated Hayashi-Yoshida"="PTHY", "Subsampled Realized Covariance"="SRC", "Subsampled realized BiPower Covariation"="SBPC"))),
+            shinyjs::hidden(selectInput("llag_corr_method", label = "Method", choices = c("Pearson"="pearson", "Kendall"="kendall", "Spearman"="spearman", "Hayashi-Yoshida"="HY", "Pre-averaged Hayashi-Yoshida"="PHY", "Modulated Realized Covariance"="MRC", "Two Scales realized CoVariance"="TSCV", "Generalized Multiscale Estimator"="GME", "Realized Kernel"="RK", "Quasi Maximum Likelihood Estimator"="QMLE", "Separating Information Maximum Likelihood"="SIML", "Truncated Hayashi-Yoshida"="THY", "Pre-averaged Truncated Hayashi-Yoshida"="PTHY", "Subsampled Realized Covariance"="SRC", "Subsampled realized BiPower Covariation"="SBPC"), selected = "HY")),
             dateRangeInput("llag_range_date", label = "Range", start = Sys.Date()-365, end = Sys.Date()),
             shinyjs::hidden(div(id="llag_range_numeric",
                                 column(6,numericInput("llag_range_numeric1", label = "From", value = 0)),
