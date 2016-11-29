@@ -38,12 +38,12 @@ server <- function(input, output, session) {
     HTML('<iframe width="90%" height="250px" src="https://www.youtube.com/embed/XX_bmCrI_gc?rel=0" frameborder="0" allowfullscreen></iframe>')
   })
   
-  output$certificates <- renderUI({
-    div(align = "center",
-      HTML('<div id="certificate1" style="display: inline-block;"><img src="seville2016.png" class="thumbnail" height="100" width="100" /></div>
-            <div style="display: inline-block;"><img src="oviedo2016.png" class="thumbnail" height="100" width="100" /></div>')
-    )
-  })
+  # output$certificates <- renderUI({
+  #   div(align = "center",
+  #     HTML('<div id="certificate1" style="display: inline-block;"><img src="seville2016.png" class="thumbnail" height="100" width="100" /></div>
+  #           <div style="display: inline-block;"><img src="oviedo2016.png" class="thumbnail" height="100" width="100" /></div>')
+  #   )
+  # })
   
   
   ########################Load Economic and Financial Data
@@ -1088,7 +1088,7 @@ server <- function(input, output, session) {
     test <- FALSE
     choices <- NULL
     if(length(names(yuimaGUIdata$model))!=0) for (i in names(yuimaGUIdata$model)) for (j in 1:length(yuimaGUIdata$model[[i]])) 
-      if(yuimaGUIdata$model[[i]][[j]]$info$class %in% c("Diffusion process", "Compound Poisson", "Levy process")){
+      if(yuimaGUIdata$model[[i]][[j]]$info$class %in% c("Diffusion process", "Compound Poisson", "Levy process", "COGARCH")){
         test <- TRUE
         choices <- c(choices, paste(i,j))
       }
@@ -1106,7 +1106,9 @@ server <- function(input, output, session) {
       id <- unlist(strsplit(input$model_modal_model_id, split = " " , fixed = FALSE))
       type <- isolate({yuimaGUIdata$model})[[id[1]]][[as.numeric(id[2])]]$info$class
       shinyjs::toggle(id = "model_modal_plot_intensity", condition = type %in% c("Compound Poisson", "Levy process"))
+      shinyjs::toggle(id = "model_modal_plot_variance", condition = type %in% c("COGARCH"))
       shinyjs::toggle(id = "model_modal_plot_distr", condition = type %in% c("Diffusion process","Compound Poisson", "Levy process"))
+      shinyjs::toggle(id = "model_modal_plot_test", condition = type %in% c("Diffusion process","Compound Poisson", "Levy process"))
     }
   })
   
@@ -1122,8 +1124,8 @@ server <- function(input, output, session) {
           delta <- y$model@sampling@delta
           t <- y$model@sampling@grid[[1]][-length(y$model@sampling@grid[[1]])]
           x <- as.numeric(y$model@data@zoo.data[[1]])
-          x <- x[-length(x)]
           dx <- diff(x)
+          x <- x[-length(x)]
           for (i in names(y$qmle@coef)) assign(i, value = as.numeric(y$qmle@coef[i]))
           z <- (dx-eval(y$model@model@drift)*delta)/(eval(y$model@model@diffusion[[1]])*sqrt(delta))
           z <- data.frame("V1" = z)
@@ -1148,12 +1150,35 @@ server <- function(input, output, session) {
           })
         }
         
-        if (y$info$class=="Compound Poisson" | y$info$class=="Levy process"){
+        else if (y$info$class=="COGARCH"){
+          
+          dx <- diff(y$model@data@original.data[,1])
+          v <- cogarchNoise(y$model, param = as.list(coef(y$qmle)))$Cogarch@original.data[,"v"]
+          v <- v/mean(v)*sd(dx)
+          z <- data.frame("dx" = dx, "vplus" = v[-1], "vminus" = -v[-1], "time" = index(dx))
+          output$model_modal_plot_variance <- renderPlot({
+            return(
+              ggplot(z, aes(x = time)) + 
+                geom_line(aes(y = dx), size = 1, color = "black") +
+                geom_line(aes(y = vplus), size = 1, color = "green") +
+                geom_line(aes(y = vminus), size = 1, color = "green") +
+                scale_color_manual(values=c("black", "green", "green")) +
+                theme(
+                  plot.title = element_text(size=14, face= "bold", hjust = 0.5),
+                  axis.title=element_text(size=12),
+                  legend.position="none"
+                ) +
+                labs(fill="", title = "Estimated VS Sample Volatility", x = "Time", y = "Increments")
+            )
+          })
+        }
+        
+        else if (y$info$class=="Compound Poisson" | y$info$class=="Levy process"){
           threshold <- ifelse(is.na(y$info$threshold), 0, y$info$threshold)          
           x <- as.numeric(y$model@data@zoo.data[[1]])
           dx <- diff(x)
           dx <- dx[abs(dx)>threshold]
-          dx <- dx-sign(dx)*threshold
+          #dx <- dx-sign(dx)*threshold
           for (i in names(y$qmle@coef)) assign(i, value = as.numeric(y$qmle@coef[i]))
           dx <- data.frame("V1" = dx)
           if(y$info$jumps=="Gaussian"){
@@ -1563,7 +1588,9 @@ server <- function(input, output, session) {
   output$simulate_nstep <- renderUI({
     if(!is.null(input$simulate_modelID)){
       id <- unlist(strsplit(input$simulate_modelID, split = " "))
-      if (!(isolate({yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class}) %in% c("COGARCH", "CARMA")))
+      if (input$simulate_modelID %in% names(usr_models$simulation))
+        numericInput("simulate_nstep", label = "Number of steps per simulation", value = simulateSettings[[input$simulate_modelID]][["nstep"]], min = 1, step = 1)
+      else if (!(isolate({yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class}) %in% c("COGARCH", "CARMA")))
         numericInput("simulate_nstep", label = "Number of steps per simulation", value = simulateSettings[[input$simulate_modelID]][["nstep"]], min = 1, step = 1)
     }
   })
@@ -1689,7 +1716,7 @@ server <- function(input, output, session) {
               "simulate.to" = as.numeric(simulateSettings[[modID]][["t1"]]))
             Initial <- simulateSettings[[modID]][["t0"]]
             Terminal <- simulateSettings[[modID]][["t1"]]
-            n <- ifelse(is.na(simulateSettings[[modID]][["nstep"]]),(Terminal-Initial)/0.01,simulateSettings[[modID]][["nstep"]])
+            n <- ifelse(is.na(simulateSettings[[modID]][["nstep"]]),1000,simulateSettings[[modID]][["nstep"]])
             addSimulation(
               modelYuima = setYuima(model = setModelByName(name = info$model, jumps = info$jumps)),
               true.parameter = usr_models$simulation[[modID]][["true.param"]],
@@ -2903,7 +2930,12 @@ server <- function(input, output, session) {
               }
             }
             if(input$llag_type=="corr"){
-              res <- try(cce(x = yuimaData, method = input$llag_corr_method))
+              if(input$llag_corr_method %in% c("pearson", "kendall", "spearman")){
+                x <- as.matrix(yuimaData@original.data)
+                res <- try(cor(x, method = input$llag_corr_method, use = "pairwise.complete.obs"))
+              } 
+              else 
+                res <- try(cce(x = yuimaData, method = input$llag_corr_method)$cormat)
               if (class(res)=="try-error")
                 createAlert(session, anchorId = "llag_alert", alertId = "llag_alert_select", content = "Error in computing the correlation matrix", style = "error")
               else {
@@ -2915,7 +2947,7 @@ server <- function(input, output, session) {
                     i <- i+1
                   } else break
                 }
-                yuimaGUIdata$llag[[id]] <<- list(type = "corr", covmat = res$covmat, cormat = res$cormat, method = input$llag_corr_method, start = start, end = end)
+                yuimaGUIdata$llag[[id]] <<- list(type = "corr", cormat = res, method = input$llag_corr_method, start = start, end = end)
               }
             }
           } else{
