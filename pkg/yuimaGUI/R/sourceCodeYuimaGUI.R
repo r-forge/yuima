@@ -1,8 +1,8 @@
 yuimaGUI <- function() {
-  shiny::runApp(
+  invisible(shiny::runApp(
     system.file(
       "yuimaGUI",
       package = "yuimaGUI"
     )
-  )
+  ))
 }
