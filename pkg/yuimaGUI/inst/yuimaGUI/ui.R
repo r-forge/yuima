@@ -36,7 +36,7 @@ body<-dashboardBody(
     tabItem(tabName = "home",
       fluidRow(
         column(12,
-          h1("Welcome on yuimaGUI", style="color:#edeeed", align = "center"),
+          h1("Welcome to yuimaGUI", style="color:#edeeed", align = "center"),
           h4("an amazingly powerful tool for your analysis", style="color:#edeeed; font-family: Times New Roman, Georgia, Serif;", align = "center"), 
           hr(class = "hrHeader"),
           h4("Get acquainted with yuimaGUI and learn how to best exploit it in a few simple steps:", style="color:#edeeed", align = "center"),
@@ -45,15 +45,15 @@ body<-dashboardBody(
       fluidRow(
         column(8,
           h4("Step 1", style="color:#edeeed"),
-          h4("Load data you wish to analyze (section 'Data I/O').", br(), 
-             "An easy way to load economic data (i.e. GDP) or financial series (stocks and shares) directly from the Internet is provided. Otherwise you can load data from your own files.",br(),
+          h4("Load the data you wish to analyze in section 'Data I/O'.", br(), 
+             "An easy way to load economic data (i.e. GDP) or financial series (stocks and shares) from the Internet is provided. Otherwise you can load data from your own files.",br(),
              "Once data are loaded, you can go and use sections 'Explorative Data Analysis' and 'Modeling'.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           h4("Step 2", style="color:#edeeed"),
-          h4("Model your data in section 'Modeling'.", br(),
-             "Here you can fit models to your data choosing between some default options or defining and using your own model.", br(),
-             "Now you are ready to use the estimated models for simulation purposes in section 'Simulate'.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
+          h4("Model data in section 'Modeling'.", br(),
+             "Here you can fit models choosing between some default options or defining your own model.", br(),
+             "Now you are ready to go to section 'Simulate'.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           h4("Step 3", style="color:#edeeed"),
-          h4("Read the short explanation at the beginning of every (sub)section.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;")
+          h4("Read the short explanation at the beginning of every section for further information. Enjoy!", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;")
         ),
         column(4,
           br(), br(),
@@ -61,7 +61,10 @@ body<-dashboardBody(
         )
       ),
       fluidRow(
-        column(8#, 
+        column(8,h4(),br(),br(),br(),
+          h4("Tips", style="color:#edeeed"),
+          h4("Press F11 to go to full screen.", br(),
+             "Press CTRL+ or CTRL- to zoom in and out.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;")#, 
           #br(),
           #uiOutput("certificates")       
         ),
@@ -77,17 +80,17 @@ body<-dashboardBody(
     tabItem(tabName="finData",
       fluidRow(
         column(12,
-          h3("Here you can load financial and economic data.",style="color:#edeeed"),
-          h4("For stock data choose Yahoo source using symbols you can find ",
+          h3("Load Financial and Economic data",style="color:#edeeed"),
+          h4("For Stocks and Shares select Yahoo source using symbols you can find ",
              a("here", href="http://finance.yahoo.com/lookup", target = "_blank"), ".",
              br(),
-             "For currencies and metals select Oanda source and type the two symbols divided by '/' (i.e. EUR/USD or XAU/USD ).",
+             "For currencies and metals select Oanda source and type the two symbols divided by '/' (e.g. EUR/USD or XAU/USD ).",
              "Symbols are available ", a("here",href="http://www.oanda.com/help/currency-iso-code", target = "_blank"), ".",
              br(),
              "Economic series are available on ",a("Federal Reserve Bank of St. Louis", href="https://research.stlouisfed.org/fred2/", target = "_blank"), ".",
-             "Find symbols as shown in this ", a("example",href="example.jpg", target = "_blank"), ".",
+             "Follow this ", a("example",href="example.jpg", target = "_blank"), " to find symbols.",
              br(),
-             "Multiple symbols are allowed if divided by empty space and/or commas (i.e. AAPL FB CSCO or AAPL,FB,CSCO).",
+             "Multiple symbols are allowed if divided by empty space and/or commas (e.g. AAPL FB CSCO or AAPL,FB,CSCO).",
              style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           hr(class = "hrHeader")
         )
@@ -127,14 +130,14 @@ body<-dashboardBody(
     tabItem("yourData",
       fluidRow(
         column(12,
-          h3("Here you can load data from your own files.",style="color:#edeeed"),
-          h4("Please upload your file and specify its structure. A preview will be shown below.",
+          h3("Load data from Your Own Files",style="color:#edeeed"),
+          h4("Upload your file and specify its structure. A preview will be shown below.",
              br(),
-             "First, declare if the file contains raw and/or column headers and specify what kind of field separator has to be used to read data.",
+             "Declare if the file contains raw and/or column headers and specify what kind of field separator has to be used to read the data.",
              br(),
              "Each column will be uploaded as a different series. So you might want to switch columns with rows if your file is organized differently.",
              br(),
-             "Finally specify what column to use to index series and its format.",
+             "Specify the format and the column to use as index.",
               style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           hr(class = "hrHeader")
         )
@@ -179,14 +182,12 @@ body<-dashboardBody(
     tabItem(tabName="models", fluidRow(column(12,
       fluidRow(
         column(12,
-          h3("Here you can estimate models and/or define new ones.",style="color:#edeeed"),
-          h4("To estimate models simply click those you are interested in and select data you wish to model.",
+          h3("Univariate Model Estimation",style="color:#edeeed"),
+          h4("Select the data and the model you wish to estimate. Every model will be fitted to every selected series.",
              br(),
-             " You can customize the estimation process by clicking on buttons 'Set Range' and 'Advanced Settings'.",
+             "Click on buttons 'Set Range' and 'Advanced Settings' to customize the estimation process.",
              br(),
              "Some default models are available but you can set your own model (tab 'Set model') and use it for estimation and/or simulation purposes.",
-             br(),
-             "Estimated models are shown in tab 'Estimates'.",
              style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           hr(class = "hrHeader")
         )
@@ -197,7 +198,8 @@ body<-dashboardBody(
           br(),
           fluidRow(
             column(4,div(align="center",
-              selectInput("modelClass",label = "Model Class", choices = c("Diffusion process", "Fractional process", "Compound Poisson", "Levy process", "CARMA", "COGARCH"), selected = "Diffusion process"),
+              selectInput("modelClass",label = "Model Class", choices = c("Diffusion process", "Fractional process", "Compound Poisson", #"Levy process", 
+                                                                          "CARMA", "COGARCH"), selected = "Diffusion process"),
               uiOutput("model"),
               uiOutput("jumps"),
               uiOutput("pq_C")
@@ -404,14 +406,12 @@ body<-dashboardBody(
     tabItem(tabName = "simulate",
       fluidRow(
         column(12,
-          h3("Here you can perform simulations.",style="color:#edeeed"),
-          h4("To simulate models that have been estimated on data simply select those you are interested in from table 'Available Models'.",
+          h3("Univariate Simulation",style="color:#edeeed"),
+          h4("Select the estimated models you wish to simulate.",
              br(),
-             "If you want to simulate a model that has not been estimated you can specify its parameters values in tab 'Simuate equation' and select it.",
+             "If you want to simulate a model that has not been estimated you can use tab 'Simuate equation'.",
              br(),
-             "You can customize the simulation process by clicking on buttons 'Set Simulation' and 'Advanced Settings'.",
-             br(),
-             "Simulations are shown in tab 'Simulations'",
+             "Click on buttons 'Set Simulation' and 'Advanced Settings' to customize the simulation process.",
              style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           hr(class = "hrHeader")
         )
@@ -578,9 +578,9 @@ body<-dashboardBody(
     tabItem(tabName = "cluster",
       fluidRow(
         column(12,
-          h3("Here you can perform clustering.",style="color:#edeeed"),
-          h4("Select data you want to cluster from table 'Available Data'.", br(),
-             "Then choose the distance you are interested in and the kind of linkage for the hierarchical cluster analysis.", br(),
+          h3("Clustering",style="color:#edeeed"),
+          h4("Select data you want to cluster.", br(),
+             "Choose the distance you want to use and the kind of linkage for the hierarchical cluster analysis.", br(),
              "Results will be shown below by plotting dendrogram and multidimensional scaling output.",
                         style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           hr(class = "hrHeader")
@@ -641,10 +641,10 @@ body<-dashboardBody(
     tabItem(tabName = "changepoint",
       fluidRow(
         column(12,
-          h3("Here you can estimate change points.",style="color:#edeeed"),
-          h4("Select data for which you want to estimate change points from table 'Available Data'.", br(),
-            "Then choose the algorithm you want to use for the estimation.", br(),
-            "Results will be shown below by plotting series and detected change points.",
+          h3("Change Point Estimation",style="color:#edeeed"),
+          h4("Select the data you wish to estimate change points for.", br(),
+            "Choose the algorithm you want to use for estimation.", br(),
+            "Results will be shown below by plotting the series and the detected change points.",
             style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           hr(class = "hrHeader")
         )
@@ -827,8 +827,10 @@ body<-dashboardBody(
     tabItem(tabName = "llag",
       fluidRow(
         column(12,
-          h3("Here you can analyze Lead-Lag effects",style="color:#edeeed"),
-          h4("insert some description, pointing out that it is only valid for some processes (i.e. not volumes)",
+          h3("Lead-Lag and Correlation Analysis",style="color:#edeeed"),
+          h4("Select the series you wish to analyze and the kind of analysis you want to perform (Lead-Lag or Correlation).", br(),
+             "Choose the correlation measure (if you selected Correlation) or the maximum lag to use (if you selected Lead-Lag).",br(),
+             "You can specify which interval over the whole series to use for the analysis.",
               style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
           hr(class = "hrHeader")
         )
