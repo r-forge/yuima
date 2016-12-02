@@ -2,10 +2,10 @@
 \alias{yuimaGUI}
 
 \title{
-Interface for yuima package
+User-friendly Interface for the yuima package
 }
 \description{
-Run yuima interface
+Runs yuima Graphical User Interface
 }
 \usage{
 yuimaGUI()
@@ -13,7 +13,7 @@ yuimaGUI()
 
 
 \value{
-Start yuima GUI
+Starts yuima GUI
 }
 
 \author{

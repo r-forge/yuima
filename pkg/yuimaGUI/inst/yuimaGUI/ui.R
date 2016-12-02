@@ -1,4 +1,4 @@
-header<-dashboardHeader(
+header <- dashboardHeader(
   title = "yuimaGUI"
 )
  
@@ -64,9 +64,7 @@ body<-dashboardBody(
         column(8,h4(),br(),br(),br(),
           h4("Tips", style="color:#edeeed"),
           h4("Press F11 to go to full screen.", br(),
-             "Press CTRL+ or CTRL- to zoom in and out.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;")#, 
-          #br(),
-          #uiOutput("certificates")       
+             "Press CTRL+ or CTRL- to zoom in and out.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;")
         ),
         column(4,
           h3(em("Developed by"), style="color:#edeeed", align = "center"),

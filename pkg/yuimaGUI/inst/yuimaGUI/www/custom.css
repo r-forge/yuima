@@ -12,16 +12,6 @@
                               background-color:  #282828;
                               }
                               
-          
-.thumbnail {
-  background-color:silver;
-  border-radius:50%;
-}           
-.thumbnail:hover {
-    width:250px;
-    height:auto;
-    margin-top: -100px;
-}
 
 tr{
   background-color: #dddcdc;

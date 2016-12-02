@@ -1,9 +1,11 @@
 yuimaGUI <- function() {
-  suppressWarnings(
-    shiny::runApp(
-      system.file(
-        "yuimaGUI",
-        package = "yuimaGUI"
+  utils::capture.output(
+    suppressWarnings(
+      shiny::runApp(
+        system.file(
+          "yuimaGUI",
+          package = "yuimaGUI"
+        )
       )
     )
   )

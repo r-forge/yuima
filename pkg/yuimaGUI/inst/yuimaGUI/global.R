@@ -1,28 +1,13 @@
-require(DT)
-require(shinyjs)
-require(yuima)
-require(shiny)
-require(sde)
-require(quantmod)
-require(shinydashboard)
-require(shinyBS)
-require(ggplot2)
-
+suppressMessages(require(DT))
+suppressMessages(require(shinyjs))
+suppressMessages(require(yuima))
+suppressMessages(require(shiny))
+suppressMessages(require(sde))
+suppressMessages(require(quantmod)) 
+suppressMessages(require(shinydashboard)) 
+suppressMessages(require(shinyBS))
+suppressMessages(require(ggplot2))
 
 
 if(!exists("yuimaGUIdata"))
-  yuimaGUIdata <<- reactiveValues(series=list(), cp=list(), cpYuima=list(), model=list(), simulation=list(), hedging = list(), llag = list(), cluster = list())
-
-if(!exists("estimateSettings"))
-  estimateSettings <<- list()
-
-if(!exists("deltaSettings"))
-  deltaSettings <<- list()
-
-if(!exists("toLogSettings"))
-  toLogSettings <<- list()
-
-if(!exists("usr_models"))
-  usr_models <<- reactiveValues(model=list(), simulation=list())
-
-
+  yuimaGUIdata <- reactiveValues(series=list(), model=list(), usr_model = list(), simulation=list(), usr_simulation = list(), cp=list(), cpYuima=list(), llag = list(), cluster = list(), hedging = list())

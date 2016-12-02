@@ -1,14 +1,2 @@
 #exportPattern("^[[:alpha:]]+")
 export(yuimaGUI)
-
-import("shiny")
-import("shinyBS")
-importFrom("quantmod",getSymbols, Delt)
-import("DT")
-import("shinyjs")
-import("yuima")
-import("shinydashboard")
-
-
-
-
