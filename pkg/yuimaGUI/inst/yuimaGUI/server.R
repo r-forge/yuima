@@ -3,6 +3,8 @@ options(shiny.maxRequestSize = 9*1024^2)
 
 server <- function(input, output, session) {
 
+  
+  
   ### GLOBAL FUNCTIONS
   yuimaGUItable <<- reactiveValues(series=data.frame(),  model=data.frame(), simulation=data.frame(), hedging=data.frame())
   
@@ -635,7 +637,7 @@ server <- function(input, output, session) {
     }
     if (!is.null(temp$conversion)) if (temp$conversion==FALSE) shinyjs::hide(choicesUI)
     if (yuimaGUI$info$class=="COGARCH") {
-      test <- try(Diagnostic.Cogarch(yuimaGUI$model, param = as.list(coef(yuimaGUI$qmle))))
+      capture.output(test <- try(Diagnostic.Cogarch(yuimaGUI$model, param = as.list(coef(yuimaGUI$qmle)))))
       if (class(test)=="try-error") createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste("The estimated model does not satisfy theoretical properties.", temp$msg), style = "warning")
       else if(test$stationary==FALSE | test$positivity==FALSE) createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste("The estimated model does not satisfy theoretical properties.", temp$msg), style = "warning")
       else createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste(msg, temp$msg), style = style)
@@ -1205,9 +1207,9 @@ server <- function(input, output, session) {
     if(saveTraj==TRUE){
       times <- index(trajectory)
       if(class(info$simulate.from)=="Date")
-        index(trajectory) <- as.POSIXct(24*60*60*(times-times[1])/simulation@sampling@delta*as.numeric(info$simulate.to-info$simulate.from)/(simulation@sampling@n), origin = info$simulate.from)
+        index(trajectory) <- as.POSIXct(24*60*60*(times-times[1])/simulation@sampling@delta[1]*as.numeric(info$simulate.to-info$simulate.from)/(simulation@sampling@n[1]), origin = info$simulate.from)
       if(class(info$simulate.from)=="numeric")
-        index(trajectory) <- as.numeric(times/simulation@sampling@delta*as.numeric(info$simulate.to-info$simulate.from)/(simulation@sampling@n))
+        index(trajectory) <- as.numeric(times/simulation@sampling@delta[1]*as.numeric(info$simulate.to-info$simulate.from)/(simulation@sampling@n[1]))
       if(!is.null(colnames(trajectory)))
         colnames(trajectory) <- seq(1:length(colnames(trajectory)))
     }
@@ -1431,6 +1433,9 @@ server <- function(input, output, session) {
   
   
   
+  
+  
+  ###Save all available data
   saveData <- function() {
     dataDownload_series <- reactive({
       for (symb in names(yuimaGUIdata$series)){
@@ -1460,22 +1465,6 @@ server <- function(input, output, session) {
     switch(class, "Diffusion process" = NA, "Fractional process" = NA,"Compound Poisson" = jumps, "COGARCH"=NA, "CARMA" = NA, "Levy process" = jumps)
   }
   
-  
-  ########################################
-  ########################################
-  ########################################
-  ########################################
-  ########################################
-  ########################################
-  ########################################
-  ########################################
-  ########################################
-  ########################################
-  ########################################
-  ########################################
-  ########################################
-  ########################################
-  ########################################
   ### Home
   output$video_intro <- renderUI({
     HTML('<iframe width="90%" height="250px" src="https://www.youtube.com/embed/XX_bmCrI_gc?rel=0" frameborder="0" allowfullscreen></iframe>')

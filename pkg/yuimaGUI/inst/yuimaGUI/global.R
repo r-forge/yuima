@@ -9,6 +9,7 @@ require(shinyBS)
 require(ggplot2)
 
 
+
 if(!exists("yuimaGUIdata"))
   yuimaGUIdata <<- reactiveValues(series=list(), cp=list(), cpYuima=list(), model=list(), simulation=list(), hedging = list(), llag = list(), cluster = list())
 
@@ -23,4 +24,5 @@ if(!exists("toLogSettings"))
 
 if(!exists("usr_models"))
   usr_models <<- reactiveValues(model=list(), simulation=list())
+
 
