@@ -142,7 +142,7 @@ server <- function(input, output, session) {
       if (symb %in% names(yuimaGUIdata$series))
         alreadyIn <- c(alreadyIn, symb)
       else{
-        temp <- data.frame("Index" = rownames(x), "symb" = as.numeric(as.character(x[,symb])))
+        temp <- data.frame("Index" = rownames(x), "symb" = as.numeric(gsub(as.character(x[,symb]), pattern = ",", replacement = ".")))
         temp <- temp[complete.cases(temp), ]
         rownames(temp) <- temp[,"Index"]
         colnames(temp) <- c("Index", symb)
@@ -1345,19 +1345,19 @@ server <- function(input, output, session) {
     withProgress(message = 'Clustering: ', value = 0, {
       k <- 1
       for(i in 1:l){
-        delta_i <- as.numeric(abs(mean(diff(index(object)[!is.na(object[,i])]), na.rm = TRUE)))
+        #delta_i <- as.numeric(abs(mean(diff(index(object)[!is.na(object[,i])]), na.rm = TRUE)))
         if (percentage == TRUE) data_i <- as.vector(na.omit(Delt(object[,i])))
         else data_i <- as.vector(na.omit(diff(object[,i])))
         data_i <- data_i[data_i!="Inf"]
-        dens1 <-  density(data_i/sqrt(delta_i)+mean(data_i, na.rm = TRUE)*(1/delta_i-1/sqrt(delta_i)), na.rm = TRUE)
+        dens1 <-  density(data_i, na.rm = TRUE)#/sqrt(delta_i)+mean(data_i, na.rm = TRUE)*(1/delta_i-1/sqrt(delta_i)), na.rm = TRUE)
         for(j in i:l)
           if (i!=j){
             incProgress(2/(l*(l-1)), detail = paste(k,"(/", l*(l-1)/2 ,")"))
-            delta_j <- as.numeric(abs(mean(diff(index(object)[!is.na(object[,j])]), na.rm = TRUE)))
+            #delta_j <- as.numeric(abs(mean(diff(index(object)[!is.na(object[,j])]), na.rm = TRUE)))
             if (percentage == TRUE) data_j <- as.vector(na.omit(Delt(object[,j])))
             else data_j <- as.vector(na.omit(diff(object[,j])))
             data_j <- data_j[data_j!="Inf"]
-            dens2 <-  density(data_j/sqrt(delta_j)+mean(data_j, na.rm = TRUE)*(1/delta_j-1/sqrt(delta_j)), na.rm = TRUE)
+            dens2 <-  density(data_j, na.rm = TRUE)#/sqrt(delta_j)+mean(data_j, na.rm = TRUE)*(1/delta_j-1/sqrt(delta_j)), na.rm = TRUE)
             f_dist <- function(x) {0.5*abs(f(x,dens1)-f(x,dens2))}
             dist <- try(integrate(f_dist, lower = min(dens1$x[1],dens2$x[1]), upper = max(last(dens1$x), last(dens2$x)), subdivisions = 100000, rel.tol = 0.01))
             d[j,i] <- min(1, ifelse(class(dist)=="try-error", 1, dist$value))
@@ -2467,17 +2467,18 @@ server <- function(input, output, session) {
     id <- unlist(strsplit(rownames(yuimaGUItable$model)[rowToPrint$id], split = " "))
     info <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info
     div(
-      h3(id[1], " - " , info$modName),
+      h3(id[1], " - " , info$modName, class = "hModal"),
       h4(
         em("delta:"), info$delta, br(),
         em("series to log:"), info$toLog, br(),
         em("method:"), info$method, br(),
         em("threshold:"), info$threshold, br(),
         em("trials:"), info$trials, br(),
-        em("seed:"), info$seed, br()
+        em("seed:"), info$seed, br(),
         #REMOVE# em("joint:"), info$joint, br(),
         #REMOVE# em("aggregation:"), info$aggregation, br(),
         #REMOVE# em("threshold:"), info$threshold
+        class = "hModal"
       ),
       align="center"
     )
@@ -2594,7 +2595,7 @@ server <- function(input, output, session) {
           ksTest <- try(ks.test(x = as.numeric(z$V1), "pnorm"))
           output$model_modal_plot_test <- renderUI({
             if(class(ksTest)!="try-error")
-              HTML(paste("<div><h5>Kolmogorov-Smirnov p-value (the two distributions coincide): ", format(ksTest$p.value, scientific=T, digits = 2), "</h5></div>"))
+              HTML(paste("<div><h5 class='hModal'>Kolmogorov-Smirnov p-value (the two distributions coincide): ", format(ksTest$p.value, scientific=T, digits = 2), "</h5></div>"))
           })
         }
         
@@ -2647,7 +2648,7 @@ server <- function(input, output, session) {
             ksTest <- try(ks.test(x = as.numeric(dx$V1), "pnorm", mean = mu_jump, sd = sigma_jump))
             output$model_modal_plot_test <- renderUI({
               if(class(ksTest)!="try-error")
-                HTML(paste("<div><h5>Kolmogorov-Smirnov p-value (the two distributions coincide): ", format(ksTest$p.value, scientific=T, digits = 2), "</h5></div>"))
+                HTML(paste("<div><h5 class='hModal'>Kolmogorov-Smirnov p-value (the two distributions coincide): ", format(ksTest$p.value, scientific=T, digits = 2), "</h5></div>"))
             })
           }
           if(y$info$jumps=="Uniform"){
@@ -2668,7 +2669,7 @@ server <- function(input, output, session) {
             ksTest <- try(ks.test(x = as.numeric(dx$V1), "punif", min = a_jump, max = b_jump))
             output$model_modal_plot_test <- renderUI({
               if(class(ksTest)!="try-error")
-                HTML(paste("<div><h5>Kolmogorov-Smirnov p-value (the two distributions coincide): ", format(ksTest$p.value, scientific=T, digits = 2), "</h5></div>"))
+                HTML(paste("<div><h5 class='hModal'>Kolmogorov-Smirnov p-value (the two distributions coincide): ", format(ksTest$p.value, scientific=T, digits = 2), "</h5></div>"))
             })
           }
           
@@ -3210,12 +3211,16 @@ server <- function(input, output, session) {
               Initial <- round(digits = 0, yuimaGUIsettings$simulation[[modID]][["t0"]]/as.numeric(mean(diff(index(data)))))*yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
               Terminal <- round(digits = 0, yuimaGUIsettings$simulation[[modID]][["t1"]]/as.numeric(mean(diff(index(data)))))*yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
             }
-            if (yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class %in% c("COGARCH", "CARMA") | is.na(yuimaGUIsettings$simulation[[modID]][["nstep"]])){
+            if (yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class %in% c("COGARCH", "CARMA")){
               n <- (Terminal-Initial)/yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
               #delta <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
-            } else {
-              n <- yuimaGUIsettings$simulation[[modID]][["nstep"]]
-              #delta <- NA
+            } else if (!is.null(yuimaGUIsettings$simulation[[modID]][["nstep"]])) {
+              if (is.na(yuimaGUIsettings$simulation[[modID]][["nstep"]])) {
+                n <- (Terminal-Initial)/yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
+              } else {
+                n <- yuimaGUIsettings$simulation[[modID]][["nstep"]]
+                #delta <- NA
+              } 
             }
             if (yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class=="Fractional process") true.parameter <- as.list(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle["Estimate",])
             else true.parameter <- as.list(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle@coef)
@@ -3643,7 +3648,7 @@ server <- function(input, output, session) {
                         "Median"="median", 
                         "centroid"="Centroid")
       if (dist=="Minkowski") dist <- paste(dist, " (", info$power,")", sep = "")
-      return(HTML(paste("<div style='color:#CDCECD;'><h4>&nbsp &nbsp Linkage:",linkage, " &nbsp &nbsp &nbsp &nbsp Distance:", dist, "</h4></div>")))
+      return(HTML(paste("<div><h4>&nbsp &nbsp Linkage:",linkage, " &nbsp &nbsp &nbsp &nbsp Distance:", dist, "</h4></div>")))
     }
   })
   
@@ -3796,9 +3801,10 @@ server <- function(input, output, session) {
     if(!is.null(input$changepoint_symb)){
       info <- yuimaGUIdata$cp[[input$changepoint_symb]]
       div(
-        h3(input$changepoint_symb),
+        h3(input$changepoint_symb, class = "hModal"),
         h4(
-          em(switch(info$method, "KSdiff"="Increments Distriution", "KSperc"="Percentage Increments Distriution")), br()
+          em(switch(info$method, "KSdiff"="Increments Distriution", "KSperc"="Percentage Increments Distriution")), br(),
+          class = "hModal"
         ),
         align="center"
       )
@@ -4182,7 +4188,7 @@ server <- function(input, output, session) {
         h4(
           em(paste("Change Point:", as.character(isolate({yuimaGUIdata$cpYuima[[input$parametric_changepoint_symb]]$tau}))))
         ),
-        align="center", style="color:#CDCECD"
+        align="center"
       )
     }
   })
@@ -4190,12 +4196,12 @@ server <- function(input, output, session) {
   output$parametric_changepoint_modal_info_text <- renderUI({
     info <- yuimaGUIdata$cpYuima[[input$parametric_changepoint_symb]]$info
     div(
-      h3(input$parametric_changepoint_symb, " - " , info$model),
+      h3(input$parametric_changepoint_symb, " - " , info$model, class = "hModal"),
       h4(
         em("series to log:"), info$toLog, br(),
         em("method:"), info$method, br(),
         em("trials:"), info$trials, br(),
-        em("seed:"), info$seed, br()
+        em("seed:"), info$seed, br(), class = "hModal"
       ),
       align="center")
   })
@@ -4435,7 +4441,7 @@ server <- function(input, output, session) {
                          "PTHY"="Pre-averaged Truncated Hayashi-Yoshida", 
                          "SRC"="Subsampled Realized Covariance", 
                          "SBPC"="Subsampled realized BiPower Covariation")
-        return(HTML(paste("<div style='color:#CDCECD;'><h4>&nbsp &nbsp Method:", method, "</h4></div>")))
+        return(HTML(paste("<div><h4>&nbsp &nbsp Method:", method, "</h4></div>")))
       }
     }
   })

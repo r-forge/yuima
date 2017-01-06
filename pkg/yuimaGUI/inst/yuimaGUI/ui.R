@@ -36,24 +36,24 @@ body<-dashboardBody(
     tabItem(tabName = "home",
       fluidRow(
         column(12,
-          h1("Welcome to yuimaGUI", style="color:#edeeed", align = "center"),
-          h4("an amazingly powerful tool for your analysis", style="color:#edeeed; font-family: Times New Roman, Georgia, Serif;", align = "center"), 
+          h1("Welcome to yuimaGUI", align = "center", class = "hTitle"),
+          h4("an amazingly powerful tool for your analysis", align = "center"), 
           hr(class = "hrHeader"),
-          h4("Get acquainted with yuimaGUI and learn how to best exploit it in a few simple steps:", style="color:#edeeed", align = "center"),
+          h4("Get acquainted with yuimaGUI and learn how to best exploit it in a few simple steps:", class = "hTitle", align = "center"),
           br()
       )),
       fluidRow(
         column(8,
-          h4("Step 1", style="color:#edeeed"),
+          h4("Step 1", class = "hTitle"),
           h4("Load the data you wish to analyze in section 'Data I/O'.", br(), 
              "An easy way to load economic data (i.e. GDP) or financial series (stocks and shares) from the Internet is provided. Otherwise you can load data from your own files.",br(),
-             "Once data are loaded, you can go and use sections 'Explorative Data Analysis' and 'Modeling'.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
-          h4("Step 2", style="color:#edeeed"),
+             "Once data are loaded, you can go and use sections 'Explorative Data Analysis' and 'Modeling'."),
+          h4("Step 2", class = "hTitle"),
           h4("Model data in section 'Modeling'.", br(),
              "Here you can fit models choosing between some default options or defining your own model.", br(),
-             "Now you are ready to go to section 'Simulate'.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
-          h4("Step 3", style="color:#edeeed"),
-          h4("Read the short explanation at the beginning of every section for further information. Enjoy!", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;")
+             "Now you are ready to go to section 'Simulate'."),
+          h4("Step 3", class = "hTitle"),
+          h4("Read the short explanation at the beginning of every section for further information. Enjoy!")
         ),
         column(4,
           br(), br(),
@@ -62,15 +62,15 @@ body<-dashboardBody(
       ),
       fluidRow(
         column(8,h4(),br(),br(),br(),
-          h4("Tips", style="color:#edeeed"),
+          h4("Tips", class = "hTitle"),
           h4("Press F11 to go to full screen.", br(),
-             "Press CTRL+ or CTRL- to zoom in and out.", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;")
+             "Press CTRL+ or CTRL- to zoom in and out.")
         ),
         column(4,
-          h3(em("Developed by"), style="color:#edeeed", align = "center"),
-          h4("Emanuele Guidotti", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;", align = "center"),
-          h3(em("in collaboration with"), style="color:#edeeed", align = "center"),
-          h4("Stefano M. Iacus & Lorenzo Mercuri", style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;", align = "center")
+          h3(em("Developed by"), class = "hTitle", align = "center"),
+          h4("Emanuele Guidotti", align = "center"),
+          h3(em("in collaboration with"), class = "hTitle", align = "center"),
+          h4("Stefano M. Iacus & Lorenzo Mercuri", align = "center")
         )
       )
     ),
@@ -78,7 +78,7 @@ body<-dashboardBody(
     tabItem(tabName="finData",
       fluidRow(
         column(12,
-          h3("Load Financial and Economic data",style="color:#edeeed"),
+          h3("Load Financial and Economic data",class = "hTitle"),
           h4("For Stocks and Shares select Yahoo source using symbols you can find ",
              a("here", href="http://finance.yahoo.com/lookup", target = "_blank"), ".",
              br(),
@@ -88,17 +88,16 @@ body<-dashboardBody(
              "Economic series are available on ",a("Federal Reserve Bank of St. Louis", href="https://research.stlouisfed.org/fred2/", target = "_blank"), ".",
              "Follow this ", a("example",href="example.jpg", target = "_blank"), " to find symbols.",
              br(),
-             "Multiple symbols are allowed if divided by empty space and/or commas (e.g. AAPL FB CSCO or AAPL,FB,CSCO).",
-             style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
+             "Multiple symbols are allowed if divided by empty space and/or commas (e.g. AAPL FB CSCO or AAPL,FB,CSCO)."),
           hr(class = "hrHeader")
         )
       ),
       fluidRow(column(12,bsAlert("finDataAlert"))),
       fluidRow(
         column(6,
-          textInput(inputId="symb", value = NULL,label = span(style="color:#CDCECD", "Insert Symbol")),
-          dateRangeInput(inputId="dR", label = span(style="color:#CDCECD", "Download data from"), start = "1900-01-01" ,end = Sys.Date()),
-          selectInput(inputId="sources", label = span(style="color:#CDCECD", "Source"), choices = c("Yahoo (OHLC data)" = "yahoo", "Oanda (Currencies &  Metals)" = "oanda", "Federal Reserve Bank of St. Louis" = "FRED")),
+          textInput(inputId="symb", value = NULL,label = "Insert Symbol"),
+          dateRangeInput(inputId="dR", label = "Download data from", start = "1900-01-01" ,end = Sys.Date()),
+          selectInput(inputId="sources", label = "Source", choices = c("Yahoo (OHLC data)" = "yahoo", "Oanda (Currencies &  Metals)" = "oanda", "Federal Reserve Bank of St. Louis" = "FRED")),
           tags$button(type="button", id="finDataGo", class = "action-button", em("Load data")),
           br(),br(),br(),
           column(9),
@@ -128,15 +127,14 @@ body<-dashboardBody(
     tabItem("yourData",
       fluidRow(
         column(12,
-          h3("Load data from Your Own Files",style="color:#edeeed"),
+          h3("Load data from Your Own Files",class = "hTitle"),
           h4("Upload your file and specify its structure. A preview will be shown below.",
              br(),
              "Declare if the file contains raw and/or column headers and specify what kind of field separator has to be used to read the data.",
              br(),
              "Each column will be uploaded as a different series. So you might want to switch columns with rows if your file is organized differently.",
              br(),
-             "Specify the format and the column to use as index.",
-              style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
+             "Specify the format and the column to use as index."),
           hr(class = "hrHeader")
         )
       ),
@@ -180,13 +178,12 @@ body<-dashboardBody(
     tabItem(tabName="models", fluidRow(column(12,
       fluidRow(
         column(12,
-          h3("Univariate Model Estimation",style="color:#edeeed"),
+          h3("Univariate Model Estimation",class = "hTitle"),
           h4("Select the data and the model you wish to estimate. Every model will be fitted to every selected series.",
              br(),
              "Click on buttons 'Set Range' and 'Advanced Settings' to customize the estimation process.",
              br(),
-             "Some default models are available but you can set your own model (tab 'Set model') and use it for estimation and/or simulation purposes.",
-             style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
+             "Some default models are available but you can set your own model (tab 'Set model') and use it for estimation and/or simulation purposes."),
           hr(class = "hrHeader")
         )
       ),
@@ -203,18 +200,18 @@ body<-dashboardBody(
               uiOutput("pq_C")
             )),
             column(5,
-              fluidRow(shinyjs::hidden(h4(id="titlePrintModelLatex","Models to estimate:", style="color:#CDCECD;font-size: 2em; font-family: Goudy Old Style, Serif"))),
+              fluidRow(shinyjs::hidden(h4(id="titlePrintModelLatex","Models to estimate:", style="font-size: 2em;"))),
               fluidRow(uiOutput("PrintModelLatex"))
             )
           ),
           br(),
           fluidRow(
             column(4,
-                   h4("Available data", style="color:#CDCECD"),
+                   h4("Available data"),
                    DT::dataTableOutput("database3")
             ),
             column(4,
-                   h4("Selected data", style="color:#CDCECD"),
+                   h4("Selected data"),
                    DT::dataTableOutput("database4")
             ),
             column(4,
@@ -265,7 +262,7 @@ body<-dashboardBody(
           shinyjs::hidden(div(id="estimates_info", fluidRow(
             column(12,
               textOutput("SymbolName"),
-              a(id = "linkMoreInfo", tags$u("More Info"), href = "", style="color:#FFF48B"),
+              a(id = "linkMoreInfo", tags$u("More Info"), href = ""),
               bsModal(id = "MoreInfo", trigger = "linkMoreInfo", title = "Info", size = "large",
                 column(12,
                   fluidRow(uiOutput("text_MoreInfo")),
@@ -289,7 +286,7 @@ body<-dashboardBody(
           br(),
           fluidRow(
             column(2,actionButton(inputId = "databaseModels_button_showResults", label = "Show Fitting")),
-            bsTooltip("databaseModels_button_showResults", title = "Available for: Diffusive Processes", placement = "top"),
+            bsTooltip("databaseModels_button_showResults", title = "Available for: Diffusive Processes, Compound Poisson and COGARCH", placement = "top"),
             column(6),
             column(2,actionButton(inputId = "databaseModelsDelete", label = "Delete")),
             bsTooltip("databaseModelsDelete", title = "Delete selected model", placement = "top"),
@@ -314,8 +311,8 @@ body<-dashboardBody(
           )
         )
       ))),
-      bsModal(id="plotsRange", trigger = "DisplayPlotsRange", title = div(h4(em("Select range to use for models estimation")), align="center"), size = "large",
-        div(id="plotsRangeErrorMessage",align = "center",h3("Select some series from table 'Available Data'")),
+      bsModal(id="plotsRange", trigger = "DisplayPlotsRange", title = "Select range to use for models estimation", size = "large",
+        div(id="plotsRangeErrorMessage",align = "center",h3("Select some series from table 'Available Data'", class = "hModal")),
         div(id="plotsRangeAll",
           fluidRow(
             column(8,
@@ -341,13 +338,13 @@ body<-dashboardBody(
           )
         )
       ),
-      bsModal(id="advancedSettings", title=div(h4(em(a("Advanced Settings", style="color:blue", href="http://www.rdocumentation.org/packages/yuima/functions/qmle", target = "_blank"))),align="center"), trigger = "advancedSettingsButton", size = "large",
-        div(id="advancedSettingsErrorMessage",align = "center",h3("Select some models and series (from table 'Available Data')")),
+      bsModal(id="advancedSettings", title="Advanced Settings", trigger = "advancedSettingsButton", size = "large",
+        div(id="advancedSettingsErrorMessage",align = "center",h3("Select some models and series (from table 'Available Data')", class = "hModal")),
         div(id="advancedSettingsAll",
           fluidRow(
             column(6,
               box(width = 12,div(align="center",
-                h3("Series Settings"),
+                h3("Series Settings", class = "hModal"),
                 uiOutput("advancedSettingsSeries", align="center"),
                 fluidRow(
                   column(6,uiOutput("advancedSettingsDelta", align="center")),
@@ -359,7 +356,7 @@ body<-dashboardBody(
                 )
               )),
               box(width = 12,div(align="center",
-                h3("General Settings"),
+                h3("General Settings", class = "hModal"),
                 uiOutput("advancedSettingsMethod", align="center"),
                 uiOutput("advancedSettingsThreshold", align="center"),
                 fluidRow(
@@ -377,7 +374,7 @@ body<-dashboardBody(
             ),
             column(6,
               box(width = 12,div(align="center",
-                h3("Model Settings"),
+                h3("Model Settings", class = "hModal"),
                 uiOutput("advancedSettingsModel", align="center"),
                 uiOutput("advancedSettingsParameter", align="center"),
                 uiOutput("advancedSettingsFixed", align="center"),
@@ -404,13 +401,12 @@ body<-dashboardBody(
     tabItem(tabName = "simulate",
       fluidRow(
         column(12,
-          h3("Univariate Simulation",style="color:#edeeed"),
+          h3("Univariate Simulation",class = "hTitle"),
           h4("Select the estimated models you wish to simulate.",
              br(),
              "If you want to simulate a model that has not been estimated you can use tab 'Simuate equation'.",
              br(),
-             "Click on buttons 'Set Simulation' and 'Advanced Settings' to customize the simulation process.",
-             style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
+             "Click on buttons 'Set Simulation' and 'Advanced Settings' to customize the simulation process."),
           hr(class = "hrHeader")
         )
       ),
@@ -418,7 +414,7 @@ body<-dashboardBody(
         tabPanel(title = "Simulate model",
           fluidRow(column(12,bsAlert("panel_simulate_model_alert"))),
           fluidRow(column(12, br(),
-            h4("Available models", style="color:#CDCECD"),
+            h4("Available models"),
             DT::dataTableOutput("simulate_databaseModels"),
             br(),
             fluidRow(
@@ -487,7 +483,7 @@ body<-dashboardBody(
         fluidRow(
           column(12,br(),br(),br()),
           column(8,
-            h4("Selected Models", style="color:#CDCECD"),
+            h4("Selected Models"),
             DT::dataTableOutput("simulate_selectedModels")
           ),
           column(4,
@@ -506,7 +502,7 @@ body<-dashboardBody(
           column(4,actionButton("simulate_simulateModels", label = "Start Simulation", align = "center"))
         )
       ),
-      bsModal(id="simulate_showSimulation", trigger = "simulate_monitor_button_showSimulation", title = div(h4(em("Simulation")), align="center"), size = "large",
+      bsModal(id="simulate_showSimulation", trigger = "simulate_monitor_button_showSimulation", title = "Simulation", size = "large",
         fluidRow(column(12,
           fluidRow(column(8,div(align="center",uiOutput("simulate_showSimulation_simID")))),
           fluidRow(div(id="simulate_showSimulation_plot_div", align = "center",
@@ -537,9 +533,9 @@ body<-dashboardBody(
           ))
         ))
       ),
-      bsModal(id="simulate_setSimulation", trigger = "simulate_button_setSimulation", title = div(h4(em("Set Simulation")), align="center"), size = "small",
+      bsModal(id="simulate_setSimulation", trigger = "simulate_button_setSimulation", title = "Set Simulation", size = "small",
         tags$style(type = "text/css", ".datepicker{z-index: 1100 !important;}"),
-        div(id="simulate_setSimulation_errorMessage",align = "center", h3("Select some models first")),
+        div(id="simulate_setSimulation_errorMessage",align = "center", h3("Select some models first", class = "hModal")),
         div(id="simulate_setSimulation_body", align = "center",
           uiOutput("simulate_modelID"),
           br(),
@@ -561,8 +557,8 @@ body<-dashboardBody(
           )
         )
       ),
-      bsModal(id="simulate_advancedSettings", trigger = "simulate_button_advancedSettings", title = div(h4(em("Advanced Settings")), align="center"), size = "small",
-        div(id="simulate_advancedSettings_errorMessage", align = "center", h3("Select some models first")),
+      bsModal(id="simulate_advancedSettings", trigger = "simulate_button_advancedSettings", title = "Advanced Settings", size = "small",
+        div(id="simulate_advancedSettings_errorMessage", align = "center", h3("Select some models first", class = "hModal")),
         div(id="simulate_advancedSettings_body", align = "center",
           uiOutput("simulate_advancedSettings_modelID"),
           uiOutput("simulate_seed"),
@@ -576,28 +572,27 @@ body<-dashboardBody(
     tabItem(tabName = "cluster",
       fluidRow(
         column(12,
-          h3("Clustering",style="color:#edeeed"),
+          h3("Clustering",class = "hTitle"),
           h4("Select data you want to cluster.", br(),
              "Choose the distance you want to use and the kind of linkage for the hierarchical cluster analysis.", br(),
-             "Results will be shown below by plotting dendrogram and multidimensional scaling output.",
-                        style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
+             "Results will be shown below by plotting dendrogram and multidimensional scaling output."),
           hr(class = "hrHeader")
         )
       ),
       fluidRow(column(12,bsAlert("cluster_alert"))),
       fluidRow(column(12,
         column(4,
-          h4("Available data", style="color:#CDCECD"),
+          h4("Available data"),
           DT::dataTableOutput("cluster_table_select")
         ),
         column(4,
-          h4("Selected data", style="color:#CDCECD"),
+          h4("Selected data"),
           DT::dataTableOutput("cluster_table_selected")
         ),
         column(4,br(),br(),
           div(align="center",
             selectInput("cluster_linkage", "Linkage", choices = c("Complete"="complete", "Single"="single", "Average"="average", "Ward"="ward.D", "Ward squared"="ward.D2", "McQuitty"="mcquitty", "Median"="median", "Centroid"="centroid")),
-            selectInput("cluster_distance", "Distance", choices = c("Markov Operator"="MOdist", "Percentage Increments Distribution"="MYdist_perc", "Increments Distribution"="MYdist_ass", "Euclidean"="euclidean", "Maximum"="maximum", "Manhattan"="manhattan", "Canberra"="canberra", "Minkowski"="minkowski")),
+            selectInput("cluster_distance", "Distance", choices = c("Percentage Increments Distribution"="MYdist_perc", "Increments Distribution"="MYdist_ass", "Markov Operator"="MOdist", "Euclidean"="euclidean", "Maximum"="maximum", "Manhattan"="manhattan", "Canberra"="canberra", "Minkowski"="minkowski")),
             shinyjs::hidden(numericInput("cluster_distance_minkowskiPower", label = "Power", value = 2)))
         )
       )),
@@ -639,11 +634,10 @@ body<-dashboardBody(
     tabItem(tabName = "changepoint",
       fluidRow(
         column(12,
-          h3("Change Point Estimation",style="color:#edeeed"),
+          h3("Change Point Estimation",class = "hTitle"),
           h4("Select the data you wish to estimate change points for.", br(),
             "Choose the algorithm you want to use for estimation.", br(),
-            "Results will be shown below by plotting the series and the detected change points.",
-            style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
+            "Results will be shown below by plotting the series and the detected change points."),
           hr(class = "hrHeader")
         )
       ),
@@ -652,11 +646,11 @@ body<-dashboardBody(
           fluidRow(column(12,bsAlert("nonparametric_changepoint_alert"))),
           fluidRow(column(12,
             column(4,
-              h4("Available data", style="color:#CDCECD"),
+              h4("Available data"),
               DT::dataTableOutput("changepoint_table_select")
             ),
             column(4,
-              h4("Selected data", style="color:#CDCECD"),
+              h4("Selected data"),
               DT::dataTableOutput("changepoint_table_selected")
             ),
             column(4,br(),br(),br(),br(),
@@ -682,7 +676,7 @@ body<-dashboardBody(
             uiOutput("changepoint_symb", align="center"),
             div(fluidRow(
               column(6, div(align = "left", selectInput("changepoint_scale", label = "Scale", choices=c("Linear","Logarithmic (Y)","Logarithmic (X)", "Logarithmic (XY)"), width = "150px"))),
-              column(6, div(align = "right", a(id = "linkChangePointInfo", tags$u(h4("Change Points Info")), href = "", style="color:#FFF48B")))
+              column(6, div(align = "right", br(), a(id = "linkChangePointInfo", "Change Points Info", style = "font-size: 140%;", href = "")))
             )),
             bsModal(id = "ChangePointInfo", trigger = "linkChangePointInfo", title = "Change Points Info",
                     column(12,
@@ -708,11 +702,11 @@ body<-dashboardBody(
                  fluidRow(column(12,bsAlert("parametric_changepoint_alert"))),
                  fluidRow(column(12,
                                  column(4,
-                                        h4("Available data", style="color:#CDCECD"),
+                                        h4("Available data"),
                                         DT::dataTableOutput("parametric_changepoint_table_select")
                                  ),
                                  column(4,
-                                        h4("Selected data", style="color:#CDCECD"),
+                                        h4("Selected data"),
                                         DT::dataTableOutput("parametric_changepoint_table_selected")
                                  ),
                                  column(4,br(),br(),div(align="center", 
@@ -721,13 +715,13 @@ body<-dashboardBody(
                                         br(),
                                         actionButton("parametric_button_settings", label = "Advanced Settings")
                                 )),
-                                bsModal(id="parametric_modal_id", title=div(h4(em(a("Settings", style="color:blue", href="http://www.rdocumentation.org/packages/yuima/functions/qmle", target = "_blank"))),align="center"), trigger = "parametric_button_settings", size = "large",
-                                        div(id="parametric_modal_errorMessage", align = "center", h3("Select some series (from table 'Available Data')")),
+                                bsModal(id="parametric_modal_id", title="Advanced Settings", trigger = "parametric_button_settings", size = "large",
+                                        div(id="parametric_modal_errorMessage", align = "center", h3("Select some series (from table 'Available Data')", class = "hModal")),
                                         div(id="parametric_modal_body",
                                             fluidRow(
                                               column(6,
                                                      box(width = 12,div(align="center",
-                                                                        h3("Series Settings"),
+                                                                        h3("Series Settings", class = "hModal"),
                                                                         uiOutput("parametric_modal_series", align="center"),
                                                                         fluidRow(
                                                                           column(6,uiOutput("parametric_modal_delta", align="center")),
@@ -740,7 +734,7 @@ body<-dashboardBody(
                                                                         )
                                                      )),
                                                      box(width = 12,div(align="center",
-                                                                        h3("General Settings"),
+                                                                        h3("General Settings", class = "hModal"),
                                                                         uiOutput("parametric_modal_method", align="center"),
                                                                         fluidRow(
                                                                           column(6,uiOutput("parametric_modal_trials", align="center")),
@@ -754,7 +748,7 @@ body<-dashboardBody(
                                               ),
                                               column(6,
                                                      box(width = 12,div(align="center",
-                                                                        h3("Model Settings"),
+                                                                        h3("Model Settings", class = "hModal"),
                                                                         uiOutput("parametric_modal_model", align="center"),
                                                                         uiOutput("parametric_modal_parameter", align="center"),
                                                                         uiOutput("parametric_modal_start", align="center"),
@@ -799,7 +793,7 @@ body<-dashboardBody(
                                                           column(6,plotOutput("parametric_changepoint_plot_series", brush = brushOpts(id = "parametric_changePoint_brush", delayType = "debounce", delay = 10000, resetOnNew = TRUE), dblclick = "parametric_changePoint_dbclick")),
                                                           column(6,
                                                                  div(uiOutput("parametric_changepoint_info"),
-                                                                     a(id = "parametric_linkChangePointInfo", tags$u(h4("Change Point Info")), href = "", style="color:#FFF48B"),
+                                                                     a(id = "parametric_linkChangePointInfo", "Change Point Info", style = "font-size: 140%;", href = ""),
                                                                      align="center"),br(),br(),br(),br(),br(),br(),br(),br(),br(),
                                                                  fluidRow(
                                                                    column(2),
@@ -813,8 +807,8 @@ body<-dashboardBody(
                                                         bsModal(id = "parametric_changepoint_modal_info", title = "Change Point Info", trigger = "parametric_linkChangePointInfo",
                                                                 fluidRow(column(12, uiOutput("parametric_changepoint_modal_info_text"))), br(),
                                                                 fluidRow(
-                                                                  column(6, div(h5("Estimates before the Change Point"), tableOutput("parametric_changepoint_modal_info_tableL"), align="center")),
-                                                                  column(6, div(h5("Estimates after the Change Point"), tableOutput("parametric_changepoint_modal_info_tableR"), align="center"))
+                                                                  column(6, div(h5("Estimates before the Change Point", class = "hModal"), tableOutput("parametric_changepoint_modal_info_tableL"), align="center")),
+                                                                  column(6, div(h5("Estimates after the Change Point", class = "hModal"), tableOutput("parametric_changepoint_modal_info_tableR"), align="center"))
                                                                 )
                                                                 
                                                         )
@@ -825,22 +819,21 @@ body<-dashboardBody(
     tabItem(tabName = "llag",
       fluidRow(
         column(12,
-          h3("Lead-Lag and Correlation Analysis",style="color:#edeeed"),
+          h3("Lead-Lag and Correlation Analysis",class = "hTitle"),
           h4("Select the series you wish to analyze and the kind of analysis you want to perform (Lead-Lag or Correlation).", br(),
              "Choose the correlation measure (if you selected Correlation) or the maximum lag to use (if you selected Lead-Lag).",br(),
-             "You can specify which interval over the whole series to use for the analysis.",
-              style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
+             "You can specify which interval over the whole series to use for the analysis."),
           hr(class = "hrHeader")
         )
       ),
       fluidRow(column(12,bsAlert("llag_alert"))),
       fluidRow(column(12,
         column(4,
-          h4("Available data", style="color:#CDCECD"),
+          h4("Available data"),
           DT::dataTableOutput("llag_table_select")
         ),
         column(4,
-          h4("Selected data", style="color:#CDCECD"),
+          h4("Selected data"),
           DT::dataTableOutput("llag_table_selected")
         ),
         column(4,br(),br(),
@@ -893,7 +886,7 @@ body<-dashboardBody(
             column(6),
             column(2,actionButton("llag_deleteAll_analysis", label = "Delete All"))
           ),
-          HTML("<div id = 'llag_plot_howToRead' style='color:#CDCECD;'><b>How to read the plot:</b><br/>If the lead-lag is positive: 'row.name' anticipates 'col.name of 'X' periods<br/>If the lead-lag is negative: 'row.name' follows 'col.name' with 'X' delay periods<br/><br/><b>'X'</b> are the numbers in the plot above.<br/>They are expressed in days if you are using time series, or in the same unit of measure of time if you are using numerical time index.</div>")
+          HTML("<div id = 'llag_plot_howToRead'><h4><b>How to read the plot:</b><br/>If the lead-lag is positive: 'row.name' anticipates 'col.name of 'X' periods<br/>If the lead-lag is negative: 'row.name' follows 'col.name' with 'X' delay periods<br/><br/><b>'X'</b> are the numbers in the plot above.<br/>They are expressed in days if you are using time series, or in the same unit of measure of time if you are using numerical time index.</h4></div>")
         )))
       )
     ),
@@ -901,11 +894,10 @@ body<-dashboardBody(
     tabItem(tabName = "hedging",
       fluidRow(
         column(12,
-          h3("Here you can manage risk deriving from buying options and the underlying asset.",style="color:#edeeed"),
+          h3("Here you can manage risk deriving from buying options and the underlying asset.",class = "hTitle"),
           h4("The evolution of the underlying asset is simulated by models you estimated in section Modeling.", br(),
              "After performing the simulation click on rows of the table in tab 'Profit&Loss' in order to choose the number of options and assets to buy/sell.",br(),
-             "The Profit&Loss distribution of your position will be displayed (it includes transaction costs that you can customize).",
-            style="color:#CDCECD; font-family: Times New Roman, Georgia, Serif;"),
+             "The Profit&Loss distribution of your position will be displayed (it includes transaction costs that you can customize)."),
           hr(class = "hrHeader")
         )
       ),
@@ -913,7 +905,7 @@ body<-dashboardBody(
       tabsetPanel(id = "panel_hedging", type = "tabs",
         tabPanel(title = "Start simulations",
           fluidRow(column(12, br(),
-              h4("Click on the model by which to simulate the evolution of the underlying asset", style="color:#CDCECD"),
+              h4("Click on the model by which to simulate the evolution of the underlying asset"),
               DT::dataTableOutput("hedging_databaseModels")
             )
           ),
@@ -972,7 +964,7 @@ body<-dashboardBody(
               column(3,numericInput("hedging_optMarketPrice2", label = "Modify Option Price", min = 0, value = NA)),
               column(3,br(),actionButton("hedging_button_saveHedging", "Save Changes", width = "80%"))
             ),
-            bsModal(id="hedging_commissionPlan", trigger = "hedging_button_commissionPlan", title = div(h4(em("Commission Plan")), align="center"), size = "small",
+            bsModal(id="hedging_commissionPlan", trigger = "hedging_button_commissionPlan", title = "Commission Plan", size = "small",
               div(align = "center",
                 box(width = 12,
                   numericInput("hedging_percCostAss", label="Asset - Trading cost (%):", value=0.19, min = 0),
