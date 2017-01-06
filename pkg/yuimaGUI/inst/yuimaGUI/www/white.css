@@ -1,19 +1,5 @@
-.skin-blue .main-header .logo {
-                              background-color: black;
-                              }
-.skin-blue .main-header .navbar {
-                              background-color: black;
-                              }   
-.skin-blue .main-sidebar {
-                              background-color: black;
-                              font-family: "Times New Roman", Times, serif;
-                              }
-.content-wrapper, .right-side {
-                              background-color:  #282828;
-                              }
-         
 .hTitle {
-  color: #edeeed;
+  color: black;
   font-weight: bold;
 }
 
@@ -33,7 +19,7 @@
 }
 
 h1, h2, h3, h4, h5, h6 {
-  color: #CDCECD;
+  color: black;
   font-family: "Times New Roman", Georgia, Serif;
 }
 
@@ -54,7 +40,7 @@ th{
     padding: 0;
     border: none;
     border-top: medium double #333;
-    color: #edeeed;
+    color: blue;
     text-align: center;
     border-color: #c0afaf;
 }
@@ -66,13 +52,8 @@ th{
     top: -0.7em;
     font-size: 1.5em;
     padding: 0 0.25em;
-    background: #282828;
 }
 
-.shiny-input-container{
-  color: #CDCECD;
-  font-family: Georgia, sans-serif;
-}
 
 .progress {
   width: 100%;
@@ -82,20 +63,13 @@ th{
 
 
 a:link, a:visited, a:active {
-    color: #53ea7c;
+    color: blue;
 }
 
 a:hover {
     color: #f076eb;
 }
 
-.dataTables_filter label {
-    color: #CDCECD;
-}
-
-.dataTables_filter input {
-    color: black;
-}
 
 
 
@@ -191,7 +165,7 @@ a:hover {
 
 
 #yourFilePreviewText{
-  color: #CDCECD;
+  color: black;
   font-size: 3em;
   font-family: Goudy Old Style, Serif;
 }
@@ -210,14 +184,14 @@ a:hover {
 
 #SymbolName{
   font-size: 160%;
-  color: #CDCECD;
+  color: black;
   font-weight: bold;
   
 }
 
 #PrintModelLatex, #estimatedModelsLatex, #usr_modelClass_latex, #usr_model_saved_latex, #simulate_PrintModelLatex{
   font-size: 125%;
-  color: #CDCECD;
+  color: black;
 }
 
 #estimatedModelsTable{

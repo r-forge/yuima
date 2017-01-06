@@ -8,9 +8,12 @@ User-friendly Interface for the yuima package
 Runs yuima Graphical User Interface
 }
 \usage{
-yuimaGUI()
+yuimaGUI(theme = "last")
 }
 
+\arguments{
+  \item{theme}{GUI theme: black or white. By default the last one you used is chosen.}
+}
 
 \value{
 Starts yuima GUI
