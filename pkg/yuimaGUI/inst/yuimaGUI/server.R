@@ -146,7 +146,8 @@ server <- function(input, output, session) {
         temp <- temp[complete.cases(temp), ]
         rownames(temp) <- temp[,"Index"]
         colnames(temp) <- c("Index", symb)
-        if (typeIndex=="numeric"){
+        if (all(is.na(temp[,2]))) err <- c(err, symb)
+        else if (typeIndex=="numeric"){
           test <- try(read.zoo(temp, FUN=as.numeric, drop = FALSE))
           if (class(test)!="try-error")
             yuimaGUIdata$series[[symb]] <<- test
@@ -1490,9 +1491,29 @@ server <- function(input, output, session) {
   ###############################################################################
   ###############################################################################
   ###############################################################################
+
   
+  output$saveSession <- {
+    downloadHandler(
+      filename = "yuimaGUIsession.Rdata",
+      content = function(file) {
+        save("yuimaGUIdata", file = file)
+      }
+    )
+  } 
   
-  
+  observeEvent(input$loadSession, {
+    try(load(choose.files(caption = "Select a yuimaGUIsession.Rdata file", multi = FALSE)))
+    yuimaGUIdata$series <<- yuimaGUIdata$series
+    yuimaGUIdata$model <<- yuimaGUIdata$model
+    yuimaGUIdata$usr_model <<- yuimaGUIdata$usr_model
+    yuimaGUIdata$simulation <<- yuimaGUIdata$simulation
+    yuimaGUIdata$usr_simulation <<- yuimaGUIdata$usr_simulation
+    yuimaGUIdata$cp <<- yuimaGUIdata$cp
+    yuimaGUIdata$cpYuima <<- yuimaGUIdata$cpYuima
+    yuimaGUIdata$llag <<- yuimaGUIdata$llag
+    yuimaGUIdata$cluster <<- yuimaGUIdata$cluster
+  })
   
   ########################Load Economic and Financial Data
   ########################
@@ -1599,28 +1620,39 @@ server <- function(input, output, session) {
   ########################
   ########################
 
+  
+  
   ###Read file
   fileUp_O <- reactive({
     if (!is.null(input$yourFile$datapath)){
       sep <- input$yourFileSep
-      if(input$yourFileSep=="default")
-        sep <- ""
+      if(input$yourFileSep=="default") sep <- ""
+      skip <- input$yourFileLine-1
+      if(is.na(skip)) skip <- 0
+      dec <- input$yourFileDec
+      if(input$yourFileDec=="") dec <- "."
       if(input$yourFileHeader=="Only rows")
-        z <- read.table(input$yourFile$datapath ,sep = sep, header = FALSE, row.names = 1, check.names = FALSE)
+        z <- read.csv(input$yourFile$datapath ,sep = sep, header = FALSE, row.names = 1, check.names = FALSE, stringsAsFactors = FALSE, dec = dec, na.strings = input$yourFileNA, skip = skip)
       if(input$yourFileHeader=="Only columns"){
-        z <- read.table(input$yourFile$datapath, sep = sep, header = FALSE, check.names = FALSE)
+        z <- read.csv(input$yourFile$datapath, sep = sep, header = FALSE, check.names = FALSE, stringsAsFactors = FALSE, dec = dec, na.strings = input$yourFileNA, skip = skip)
         z <- data.frame(t(z), row.names = 1, check.names = FALSE)
         z <- data.frame(t(z), check.names = FALSE)
       }
       if (input$yourFileHeader=="Both")
-        z <- read.table(input$yourFile$datapath, sep = sep, header = TRUE, check.names = FALSE)
+        z <- read.csv(input$yourFile$datapath, sep = sep, header = TRUE, check.names = FALSE, stringsAsFactors = FALSE, dec = dec, na.strings = input$yourFileNA, skip = skip)
       if (input$yourFileHeader=="None")
-        z <- read.table(input$yourFile$datapath, sep = sep, header = FALSE, check.names = FALSE)
+        z <- read.csv(input$yourFile$datapath, sep = sep, header = FALSE, check.names = FALSE, stringsAsFactors = FALSE, dec = dec, na.strings = input$yourFileNA, skip = skip)
       if (input$yourFileHeader=="Default")
-        z <- read.table(input$yourFile$datapath, sep = sep, check.names = FALSE)
+        z <- read.csv(input$yourFile$datapath, sep = sep, check.names = FALSE, stringsAsFactors = FALSE, dec = dec, na.strings = input$yourFileNA, skip = skip)
       if (input$yourFileHeader=="Only rows" | identical(colnames(z),paste("V",seq(1,length(colnames(z))),sep="")))
         colnames(z) <- paste("X",seq(1,length(colnames(z))),"_",make.names(input$yourFile$name),sep="")
-      return(z)
+      dec <- isolate({ifelse(input$yourFileDec=="", ".", input$yourFileDec)})
+      if(dec==".") dec <- "\\."
+      thnd <- input$yourFileThnd
+      if(thnd==".") thnd <- "\\."
+      zz <- data.frame(row.names = rownames(z), x = apply(z, 2, function(x) gsub(pattern =  dec, replacement =  ".", x = gsub(pattern =  thnd, replacement =  "", x = as.character(x)))))
+      colnames(zz) <- colnames(z)
+      return(zz)
     }
   })
 
@@ -1645,22 +1677,23 @@ server <- function(input, output, session) {
       return(selectInput("yourFileIndex",label = "Index", choices = c("Default"="default","Numeric"="numeric",temp), selected = "default"))
   })
 
-  ###Display choices for Index Type and set to "numeric" if Index is "numeric"
-  output$yourFileFUN <- renderUI({
-    if (!is.null(input$yourFileIndex)){
-      sel <- "%Y-%m-%d"
-      if (input$yourFileIndex=="numeric")
-        sel <- "numeric"
-      selectInput("yourFileFUN", label = "Index Format", choices = c("Numeric"="numeric", "Year-Month-Day    (yyyy-mm-dd)"="%Y-%m-%d", "Month-Day-Year    (mm-dd-yyyy)"="%m-%d-%Y", "Month-Day-Year    (mm-dd-yy)"="%m-%d-%y", "Day-Month-Year    (dd-mm-yyyy)"="%d-%m-%Y", "Day-Month-Year    (dd-mm-yy)"="%d-%m-%y", "Year/Month/Day    (yyyy/mm/dd)"="%Y/%m/%d", "Month/Day/Year    (mm/dd/yyyy)"="%m/%d/%Y", "Month/Day/Year    (mm/dd/yy)"="%m/%d/%y", "Day/Month/Year    (dd/mm/yyyy)"="%d/%m/%Y", "Day/Month/Year    (dd/mm/yy)"="%d/%m/%y"), selected = sel)
-    }
-  })
 
   ###File to upload
   fileUp <- reactive({
     if (!is.null(input$yourFile$datapath)){
       z <- fileUp_O()
-      if (input$yourFileSwitch==TRUE)
-        z <- fileUp_T()
+      if (input$yourFileSwitch==TRUE) z <- fileUp_T()
+      ###Display choices for Index Type and set to "numeric" if Index is "numeric"
+      output$yourFileFUN <- renderUI({
+        if (!is.null(input$yourFileIndex)){
+          sel <- "%Y-%m-%d"
+          if (input$yourFileIndex=="numeric" | 
+              "try-error"!=class(try(as.numeric(as.character(z[,input$yourFileIndex])))) | 
+              ("try-error"!=class(try(as.numeric(as.character(rownames(z))))) & (input$yourFileIndex=="default")))
+            sel <- "numeric"
+          selectInput("yourFileFUN", label = "Index Format", choices = c("Numeric"="numeric", "Year-Month-Day    (yyyy-mm-dd)"="%Y-%m-%d", "Month-Day-Year    (mm-dd-yyyy)"="%m-%d-%Y", "Month-Day-Year    (mm-dd-yy)"="%m-%d-%y", "Day-Month-Year    (dd-mm-yyyy)"="%d-%m-%Y", "Day-Month-Year    (dd-mm-yy)"="%d-%m-%y", "Year/Month/Day    (yyyy/mm/dd)"="%Y/%m/%d", "Month/Day/Year    (mm/dd/yyyy)"="%m/%d/%Y", "Month/Day/Year    (mm/dd/yy)"="%m/%d/%y", "Day/Month/Year    (dd/mm/yyyy)"="%d/%m/%Y", "Day/Month/Year    (dd/mm/yy)"="%d/%m/%y"), selected = sel)
+        }
+      })
       if(input$yourFileIndex!="default" & input$yourFileIndex!="numeric")
         z <- data.frame(z, row.names = which(colnames(z)==input$yourFileIndex), check.names = FALSE)
       if(input$yourFileIndex=="numeric")
@@ -1674,7 +1707,11 @@ server <- function(input, output, session) {
     if (!is.null(input$yourFile$datapath))
       return(tags$button(type="button", id="yourFileGo", class = "action-button", em("Load data")))
   })
-
+  
+  observe({
+    shinyjs::toggle("yourFileButton", condition = "try-error"!=(class(try(fileUp()))))
+  })
+  
   ###Display text "Preview"
   output$yourFilePreviewText <- renderText ({
     if (!is.null(input$yourFile$datapath))
