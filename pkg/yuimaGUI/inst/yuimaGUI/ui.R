@@ -840,6 +840,7 @@ body<-dashboardBody(
           div(align="center",
             selectInput("llag_type", label = "Type of analysis", choices = c("Lead-Lag"="llag", "Correlation"="corr"), selected = "llag"),
             numericInput("llag_maxLag", label = "Max Lag", value = 20, min = 1, step = 1),
+            bsTooltip("llag_maxLag", title = "Max Lag is expressed in days if you are using time series, or in the same unit of measure of time if you are using numerical time index", placement = "top"),
             shinyjs::hidden(selectInput("llag_corr_method", label = "Method", choices = c("Pearson"="pearson", "Kendall"="kendall", "Spearman"="spearman", "Hayashi-Yoshida"="HY", "Pre-averaged Hayashi-Yoshida"="PHY", "Modulated Realized Covariance"="MRC", "Two Scales realized CoVariance"="TSCV", "Generalized Multiscale Estimator"="GME", "Realized Kernel"="RK", "Quasi Maximum Likelihood Estimator"="QMLE", "Separating Information Maximum Likelihood"="SIML", "Truncated Hayashi-Yoshida"="THY", "Pre-averaged Truncated Hayashi-Yoshida"="PTHY", "Subsampled Realized Covariance"="SRC", "Subsampled realized BiPower Covariation"="SBPC"), selected = "HY")),
             dateRangeInput("llag_range_date", label = "Range", start = Sys.Date()-365, end = Sys.Date()),
             shinyjs::hidden(div(id="llag_range_numeric",
