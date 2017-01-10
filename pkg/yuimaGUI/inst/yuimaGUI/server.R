@@ -1656,21 +1656,15 @@ server <- function(input, output, session) {
     }
   })
 
-  ###Exchange rows/columns of file
-  fileUp_T <- reactive({
-    if (!is.null(input$yourFile$datapath)){
-      z <- as.data.frame(t(fileUp_O()), check.names = FALSE)
-      if (input$yourFileHeader=="Only columns" | identical(colnames(z),paste("V",seq(1,length(colnames(z))),sep="")))
-        colnames(z) <- paste("X",seq(1,length(colnames(z))),"_",make.names(input$yourFile$name),sep="")
-      return(z)
-    }
-  })
-
   ###Display Index choices: columns of file or transposed file
   output$yourFileIndex <- renderUI({
     temp <- try(colnames(fileUp_O()))
-    if (input$yourFileSwitch==TRUE)
-      temp <- try(colnames(fileUp_T()))
+    if (input$yourFileSwitch==TRUE){
+      temp <- try(rownames(fileUp_O()))
+      if(class(temp)!="try-error")      
+        if (input$yourFileHeader=="Only columns" | identical(temp,paste("V",seq(1,length(temp)),sep="")))
+          temp <- paste("X",seq(1,length(temp)),"_",make.names(input$yourFile$name),sep="")
+    }
     if (class(temp)=="try-error")
       return(selectInput("yourFileIndex",label = "Index", choices = c("Default"="default","Numeric"="numeric"), selected = "default"))
     if (class(temp)!="try-error")
@@ -1682,7 +1676,11 @@ server <- function(input, output, session) {
   fileUp <- reactive({
     if (!is.null(input$yourFile$datapath)){
       z <- fileUp_O()
-      if (input$yourFileSwitch==TRUE) z <- fileUp_T()
+      if (input$yourFileSwitch==TRUE) {
+        z <- as.data.frame(t(z), check.names = FALSE)
+        if (identical(colnames(z), as.character(seq(1,length(colnames(z))))))
+          colnames(z) <- paste("X",seq(1,length(colnames(z))),"_",make.names(input$yourFile$name),sep="")
+      }
       ###Display choices for Index Type and set to "numeric" if Index is "numeric"
       output$yourFileFUN <- renderUI({
         if (!is.null(input$yourFileIndex)){
@@ -4506,22 +4504,24 @@ server <- function(input, output, session) {
         co<-melt(t(co))
         digits <- 2
       }
+      fillColor <- switch(getOption("yuimaGUItheme"), "black"="#282828", "white"="#f0f4f5")
+      textColor <- switch(getOption("yuimaGUItheme"), "black"="#CDCECD", "white"="black")
       ggplot(co, aes(Var1, Var2)) + # x and y axes => Var1 and Var2
         geom_tile(aes(fill = value)) + # background colours are mapped according to the value column
         geom_text(aes(label = round(co$value, digits))) + # write the values
-        scale_fill_gradient2(low = "#ff9f80", 
-                             mid = "gray30", 
-                             high = "lightblue", 
+        scale_fill_gradient2(low = "#ffa500", 
+                             mid = switch(getOption("yuimaGUItheme"), "black"="gray30", "white"="#C7E2DF"), 
+                             high = "#74d600", 
                              midpoint = 0) + # determine the colour
         theme(panel.grid.major.x=element_blank(), #no gridlines
               panel.grid.minor.x=element_blank(), 
               panel.grid.major.y=element_blank(), 
               panel.grid.minor.y=element_blank(),
-              panel.background=element_rect(fill="#282828"), # background=white
-              plot.background = element_rect(fill = "#282828", linetype = 0, color = "#282828"),
-              axis.text.x = element_text(angle=90,hjust = 1, size = 12,face = "bold", colour = "#CDCECD"),
-              plot.title = element_text(size=20,face="bold", colour = "#CDCECD", hjust = 0.5),
-              axis.text.y = element_text(size = 12,face = "bold",  colour = "#CDCECD")) + 
+              panel.background=element_rect(fill=fillColor), # background=white
+              plot.background = element_rect(fill = fillColor, linetype = 0, color = fillColor),
+              axis.text.x = element_text(angle=90,hjust = 1, size = 12,face = "bold", colour = textColor),
+              plot.title = element_text(size=20,face="bold", colour = textColor, hjust = 0.5),
+              axis.text.y = element_text(size = 12,face = "bold",  colour = textColor)) + 
         ggtitle(paste("Analyzed data from", info$start, "to", info$end)) + 
         theme(legend.title=element_text(face="bold", size=14)) + 
         scale_x_discrete(name="") +
