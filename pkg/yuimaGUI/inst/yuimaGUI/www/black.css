@@ -252,3 +252,11 @@ a:hover {
   border-color: #282828;
 }
 
+
+#saveSession, #loadSession {
+  color: black;
+}
+
+#yourFileMoreSettings {
+  background-color: #282828;
+}

@@ -19,8 +19,13 @@ sidebar<-dashboardSidebar(
              ),
     menuItem("Simulation", tabName = "simulate_section", icon = icon("area-chart"),
              menuSubItem("Univariate", tabName = "simulate")
-             )#,
-    #hr(),
+             ),
+    hr(),
+    fluidRow(
+      column(12,
+      column(6,downloadButton("saveSession", label = "Save")),
+      column(6,actionButton("loadSession", label = "Load", icon = icon("open", lib = "glyphicon")))
+    ))
     #menuItem("Finance", tabName = "finance",
     #         menuSubItem("P&L distribution", tabName = "hedging")
     #        )
@@ -28,7 +33,7 @@ sidebar<-dashboardSidebar(
 )
 
 body<-dashboardBody(
-  tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")),
+  tags$head(tags$link(rel = "stylesheet", type = "text/css", href = paste(getOption("yuimaGUItheme"), ".css", sep = ""))),
   shinyjs::useShinyjs(),
   withMathJax(),
 
@@ -144,10 +149,17 @@ body<-dashboardBody(
           fileInput(inputId = "yourFile", label = "Choose file to upload", multiple = FALSE),
           selectInput('yourFileHeader', 'Headers', choices = c("Default","Only columns", "Only rows", "Both", "None"), selected = "Default"),
           selectInput(inputId = 'yourFileSep', label = 'Field Separator', choices = c("Space"="default", "Comma"=',', "Semicolon"=';', "Tab"='\t'), selected = "default"),
-          selectInput('yourFileSwitch', 'Switch rows/columns', choices = c("No"=FALSE, "Yes"=TRUE)),
           uiOutput("yourFileIndex"),
-          uiOutput("yourFileFUN")
-        ),
+          uiOutput("yourFileFUN"),
+          br(),
+          div(align = "center", box(width = 7, background = switch(getOption("yuimaGUItheme"), "black"="black", "white"=NULL),  title = "More Settings", collapsible = TRUE, id = "yourFileMoreSettings", collapsed = TRUE,
+              selectInput('yourFileSwitch', 'Switch rows/columns', choices = c("No"=FALSE, "Yes"=TRUE)),
+              textInput('yourFileDec', 'Decimal Separator', value = "."),
+              textInput('yourFileThnd', 'Thousands Separator', value = ""),
+              textInput("yourFileNA", "Missing Value string", value = "NA"),
+              numericInput("yourFileLine", "Begin from line", value = 1, min = 1, step = 1)
+              )
+        )),
         column(7,
           textOutput("yourFilePreviewText"),
           DT::dataTableOutput("yourFilePreview"),
