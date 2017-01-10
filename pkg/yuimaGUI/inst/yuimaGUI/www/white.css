@@ -1,3 +1,13 @@
+.skin-blue .main-sidebar {
+                              background-color: black;
+                              font-family: "Times New Roman", Times, serif;
+                              }
+                              
+.content-wrapper, .right-side {
+                              background-color: #f0f4f5;
+                              }
+
+
 .hTitle {
   color: black;
   font-weight: bold;
@@ -222,8 +232,8 @@ a:hover {
 }
 
 #parametric_modal_rangeFraction .js-irs-0 .irs-single, .js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {
-  background: #878792;
-  border-color: #282828;
+  background: #F0FBFF;
+  border-color: #F0FBFF;
 }
 
 

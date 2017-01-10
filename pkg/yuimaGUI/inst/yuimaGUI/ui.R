@@ -153,11 +153,11 @@ body<-dashboardBody(
           uiOutput("yourFileFUN"),
           br(),
           div(align = "center", box(width = 7, background = switch(getOption("yuimaGUItheme"), "black"="black", "white"=NULL),  title = "More Settings", collapsible = TRUE, id = "yourFileMoreSettings", collapsed = TRUE,
-              selectInput('yourFileSwitch', 'Switch rows/columns', choices = c("No"=FALSE, "Yes"=TRUE)),
               textInput('yourFileDec', 'Decimal Separator', value = "."),
               textInput('yourFileThnd', 'Thousands Separator', value = ""),
               textInput("yourFileNA", "Missing Value string", value = "NA"),
-              numericInput("yourFileLine", "Begin from line", value = 1, min = 1, step = 1)
+              numericInput("yourFileLine", "Begin from line", value = 1, min = 1, step = 1),
+              selectInput('yourFileSwitch', 'Switch rows/columns', choices = c("No"=FALSE, "Yes"=TRUE))
               )
         )),
         column(7,
@@ -636,8 +636,9 @@ body<-dashboardBody(
         fluidRow(column(12,
           column(2, div(actionButton("cluster_button_delete_analysis", label = "Delete"))),
           column(2, div(actionButton("cluster_button_deleteAll_analysis", label = "Delete All"))),
-          column(4),
+          column(2),
           column(2, div(downloadButton("cluster_button_saveDendogram", label = "Dendrogram"))), 
+          column(2),
           column(2, div(downloadButton("cluster_button_saveScaling2D", label = "Scaling")))
         ))
       )
