@@ -2623,7 +2623,8 @@ server <- function(input, output, session) {
         }
         
         else if (y$info$class=="Compound Poisson" | y$info$class=="Levy process"){
-          threshold <- ifelse(is.na(y$info$threshold), 0, y$info$threshold)          
+          if (is.null(y$info$threshold)) threshold <- 0
+          else threshold <- ifelse(is.na(y$info$threshold), 0, y$info$threshold)          
           x <- as.numeric(y$model@data@zoo.data[[1]])
           dx <- diff(x)
           dx <- dx[abs(dx)>threshold]
