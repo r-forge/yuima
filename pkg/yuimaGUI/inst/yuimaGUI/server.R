@@ -1,7 +1,11 @@
-options(shiny.maxRequestSize = 9*1024^2)
+options(shiny.maxRequestSize = 100*1024^2)
 options("getSymbols.warning4.0"=FALSE)
 
 server <- function(input, output, session) {
+  
+  session$onSessionEnded(function() {
+    stopApp()
+  })
 
   yuimaGUItable <- reactiveValues(series=data.frame(),  model=data.frame(), simulation=data.frame(), hedging=data.frame())
   yuimaGUIsettings <- list(simulation = list(), estimation = list(), delta = list(), toLog = list())
@@ -78,6 +82,7 @@ server <- function(input, output, session) {
           "Model" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$model),
           "Jumps" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$jumps),
           "N sim" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$nsim),
+          "N step" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$nstep),
           "Simulated from" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$simulate.from),
           "Simulated to" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$simulate.to),
           "Estimated from" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$estimate.from),
@@ -101,9 +106,9 @@ server <- function(input, output, session) {
       for (i in 1:length(yuimaGUIdata$hedging)){
         newRow <- data.frame(
           "Symb" = as.character(yuimaGUIdata$hedging[[i]]$symb),
-          "Profit (%)" = round(as.numeric(yuimaGUIdata$hedging[[i]]$info$profit*100),2),
-          "Std.Err (%)" = round(as.numeric(yuimaGUIdata$hedging[[i]]$info$stdErr*100),2),
-          "Option Lots" = as.integer(yuimaGUIdata$hedging[[i]]$info$LotsToBuy),
+          "Number of Simulations" = as.integer(yuimaGUIdata$hedging[[i]]$info$nsim),
+          "Average Return (%)" = round(as.numeric(yuimaGUIdata$hedging[[i]]$info$profit*100),2),
+          "Option Lots_to_Buy" = as.integer(yuimaGUIdata$hedging[[i]]$info$LotsToBuy),
           "Assets to Buy" = as.integer(yuimaGUIdata$hedging[[i]]$info$buy),
           "Assets to Sell" = as.integer(yuimaGUIdata$hedging[[i]]$info$sell),
           "Asset Price" = as.numeric(yuimaGUIdata$hedging[[i]]$info$assPrice),
@@ -111,6 +116,11 @@ server <- function(input, output, session) {
           "Option Type" = yuimaGUIdata$hedging[[i]]$info$type,
           "Strike" = as.numeric(yuimaGUIdata$hedging[[i]]$info$strike),
           "Maturity" = as.Date(yuimaGUIdata$hedging[[i]]$info$maturity),
+          "Lot Multiplier"=as.numeric(yuimaGUIdata$hedging[[i]]$info$optLotMult),
+          "Trading_Cost per Lot"=as.numeric(yuimaGUIdata$hedging[[i]]$info$optLotCost),
+          "Asset Trading_Cost (%)"=as.numeric(yuimaGUIdata$hedging[[i]]$info$assPercCost)*100,
+          "Asset Min Trading_Cost"=as.numeric(yuimaGUIdata$hedging[[i]]$info$assMinCost),
+          "Asset Yearly_Short_Rate (%)"=as.numeric(yuimaGUIdata$hedging[[i]]$info$assRateShortSelling)*100,
           "Model" = as.character(yuimaGUIdata$hedging[[i]]$info$model),
           "Estimated from" = as.Date(yuimaGUIdata$hedging[[i]]$info$estimate.from),
           "Estimated to" = as.Date(yuimaGUIdata$hedging[[i]]$info$estimate.to),
@@ -456,6 +466,7 @@ server <- function(input, output, session) {
           x <- gsub(x, pattern = "'", replacement = "")
           x <- gsub(x, pattern = "x", replacement = "X_t")
           x <- gsub(x, pattern = "W1", replacement = "W_t")
+          x <- gsub(x, pattern = "\\$", replacement = "")
           mod <- paste(mod, ifelse(mod=="","","\\\\"), x)
         }
         if (name == "Brownian Motion" | name == "Bm")
@@ -489,6 +500,7 @@ server <- function(input, output, session) {
           x <- gsub(x, pattern = "'", replacement = "")
           x <- gsub(x, pattern = "x", replacement = "X_t")
           x <- gsub(x, pattern = "W1", replacement = "W_t^H")
+          x <- gsub(x, pattern = "\\$", replacement = "")
           mod <- paste(mod, ifelse(mod=="","","\\\\"), x)
         }
         if (name == "Frac. Brownian Motion" | name == "Bm")
@@ -1029,7 +1041,7 @@ server <- function(input, output, session) {
       model = modelName,
       toLog = toLog,
       trials = trials,
-      method = "L-BFGS-B"
+      method = method
     )
     yuima <- setYuima(data = setDataGUI(series, delta = delta), model = mod)
     t0 <- start(yuima@data@zoo.data[[1]])
@@ -1040,7 +1052,7 @@ server <- function(input, output, session) {
       for(j in 1:3){
         for (i in miss)
           start[[i]] <- runif(1, min = max(lower[[i]],startMin[[i]], na.rm = TRUE), max = min(upper[[i]],startMax[[i]],na.rm = TRUE))
-        QMLEtempL <- try(qmleL(yuima = yuima, t = t0 + fracL*length(series)*delta, start = start, method="L-BFGS-B", lower = lower, upper = upper, rcpp = TRUE))
+        QMLEtempL <- try(qmleL(yuima = yuima, t = t0 + fracL*length(series)*delta, start = start, method=method, lower = lower, upper = upper, rcpp = TRUE))
         if (class(QMLEtempL)!="try-error") if (all(!is.na(summary(QMLEtempL)@coef[,"Estimate"])))
           break
       }
@@ -1050,7 +1062,7 @@ server <- function(input, output, session) {
           coefTable <- summary(QMLEtempL)@coef
           for (param in names(start))
             start[[param]] <- as.numeric(coefTable[param,"Estimate"])
-          QMLEtempL <- try(qmleL(yuima = yuima, t = t0 + fracL*length(series)*delta, start = start, method="L-BFGS-B", lower = lower, upper = upper, rcpp = TRUE))
+          QMLEtempL <- try(qmleL(yuima = yuima, t = t0 + fracL*length(series)*delta, start = start, method=method, lower = lower, upper = upper, rcpp = TRUE))
           if (class(QMLEtempL)=="try-error") break
           else if (summary(QMLEtempL)@m2logL>=m2logL*abs(sign(m2logL)-0.001)) break
         }
@@ -1079,7 +1091,7 @@ server <- function(input, output, session) {
     if (!exists("QMLEL")) stop()
     
     tmpL <- QMLEL
-    tmpR <- try(qmleR(yuima = yuima, t = t0 + fracR*length(series)*delta, start = as.list(coef(tmpL)), method="L-BFGS-B", lower = lower, upper = upper, rcpp = TRUE))
+    tmpR <- try(qmleR(yuima = yuima, t = t0 + fracR*length(series)*delta, start = as.list(coef(tmpL)), method=method, lower = lower, upper = upper, rcpp = TRUE))
     
     if (class(tmpR)=="try-error") stop()
     
@@ -1087,9 +1099,9 @@ server <- function(input, output, session) {
     if(class(cp_prec)=="try-error") stop()
     diff_prec <- delta*nrow(series)
     repeat{
-      tmpL <- try(qmleL(yuima, start=as.list(coef(tmpL)), t = cp_prec$tau, lower=lower, upper = upper, method="L-BFGS-B", rcpp = TRUE))
+      tmpL <- try(qmleL(yuima, start=as.list(coef(tmpL)), t = cp_prec$tau, lower=lower, upper = upper, method=method, rcpp = TRUE))
       if(class(tmpL)=="try-error") stop()
-      tmpR <- try(qmleR(yuima, start=as.list(coef(tmpR)), t = cp_prec$tau, lower=lower, upper = upper, method="L-BFGS-B", rcpp = TRUE))
+      tmpR <- try(qmleR(yuima, start=as.list(coef(tmpR)), t = cp_prec$tau, lower=lower, upper = upper, method=method, rcpp = TRUE))
       if(class(tmpR)=="try-error") stop()
       cp <- try(CPoint(yuima = yuima, param1=coef(tmpL), param2=coef(tmpR)))
       if(class(cp)=="try-error") stop()
@@ -1220,6 +1232,7 @@ server <- function(input, output, session) {
     }
     
     info$nsim <- nsim
+    info$nstep <- sampling@n
     yuimaGUIdata$simulation[[symbName]][[ifelse(is.null(length(yuimaGUIdata$simulation[[symbName]])),1,length(yuimaGUIdata$simulation[[symbName]])+1)]] <<- list(
       trajectory = trajectory,
       hist = hist,
@@ -1495,7 +1508,7 @@ server <- function(input, output, session) {
   
   output$saveSession <- {
     downloadHandler(
-      filename = "yuimaGUIsession.Rdata",
+      filename = "session.yuimaGUI",
       content = function(file) {
         save("yuimaGUIdata", file = file)
       }
@@ -1503,7 +1516,7 @@ server <- function(input, output, session) {
   } 
   
   observeEvent(input$loadSession, {
-    try(load(choose.files(caption = "Select a yuimaGUIsession.Rdata file", multi = FALSE)))
+    try(load(choose.files(caption = "Select a .yuimaGUI file", multi = FALSE)))
     yuimaGUIdata$series <<- yuimaGUIdata$series
     yuimaGUIdata$model <<- yuimaGUIdata$model
     yuimaGUIdata$usr_model <<- yuimaGUIdata$usr_model
@@ -1666,9 +1679,9 @@ server <- function(input, output, session) {
           temp <- paste("X",seq(1,length(temp)),"_",make.names(input$yourFile$name),sep="")
     }
     if (class(temp)=="try-error")
-      return(selectInput("yourFileIndex",label = "Index", choices = c("Default"="default","Numeric"="numeric"), selected = "default"))
+      return(selectInput("yourFileIndex",label = "Index", choices = c("Row Headers"="default","Numeric"="numeric"), selected = "default"))
     if (class(temp)!="try-error")
-      return(selectInput("yourFileIndex",label = "Index", choices = c("Default"="default","Numeric"="numeric",temp), selected = "default"))
+      return(selectInput("yourFileIndex",label = "Index", choices = c("Row Headers"="default","Numeric"="numeric",temp), selected = "default"))
   })
 
 
@@ -1687,7 +1700,7 @@ server <- function(input, output, session) {
           sel <- "%Y-%m-%d"
           if (input$yourFileIndex=="numeric" | 
               "try-error"!=class(try(as.numeric(as.character(z[,input$yourFileIndex])))) | 
-              ("try-error"!=class(try(as.numeric(as.character(rownames(z))))) & (input$yourFileIndex=="default")))
+              (!all(is.na(as.numeric(as.character(rownames(z))))) & (input$yourFileIndex=="default")))
             sel <- "numeric"
           selectInput("yourFileFUN", label = "Index Format", choices = c("Numeric"="numeric", "Year-Month-Day    (yyyy-mm-dd)"="%Y-%m-%d", "Month-Day-Year    (mm-dd-yyyy)"="%m-%d-%Y", "Month-Day-Year    (mm-dd-yy)"="%m-%d-%y", "Day-Month-Year    (dd-mm-yyyy)"="%d-%m-%Y", "Day-Month-Year    (dd-mm-yy)"="%d-%m-%y", "Year/Month/Day    (yyyy/mm/dd)"="%Y/%m/%d", "Month/Day/Year    (mm/dd/yyyy)"="%m/%d/%Y", "Month/Day/Year    (mm/dd/yy)"="%m/%d/%y", "Day/Month/Year    (dd/mm/yyyy)"="%d/%m/%Y", "Day/Month/Year    (dd/mm/yy)"="%d/%m/%y"), selected = sel)
         }
@@ -2624,7 +2637,7 @@ server <- function(input, output, session) {
                 stat_function(fun = dnorm, args = list(mean = 0, sd = 1), fill = "blue",color = "blue", geom = 'area', alpha = 0.5) +
                 geom_density(alpha = 0.5, fill = "green", color = "green") +
                 xlim(-4, 4) + 
-                labs(fill="", title = "Estimated VS Theoretical Distribution", x = "Increments", y = "Density")
+                labs(fill="", title = "Empirical VS Theoretical Distribution", x = "Standardized Increments", y = "Density")
             )
           })
           ksTest <- try(ks.test(x = as.numeric(z$V1), "pnorm"))
@@ -2652,7 +2665,7 @@ server <- function(input, output, session) {
                   axis.title=element_text(size=12),
                   legend.position="none"
                 ) +
-                labs(fill="", title = "Estimated VS Sample Volatility", x = "Time", y = "Increments")
+                labs(fill="", title = "Empirical VS Estimated Volatility", x = "", y = "Increments")
             )
           })
         }
@@ -2678,7 +2691,7 @@ server <- function(input, output, session) {
                   stat_function(fun = dnorm, args = list(mean = mu_jump, sd = sigma_jump), fill = "blue",color = "blue", geom = 'area', alpha = 0.5) +
                   geom_density(alpha = 0.5, fill = "green", color = "green") +
                   xlim(-4, 4) + 
-                  labs(fill="", title = "Estimated VS Theoretical Distribution", x = "Increments", y = "Density")
+                  labs(fill="", title = "Empirical VS Estimated Distribution", x = "Increments", y = "Density")
               )
             })
             ksTest <- try(ks.test(x = as.numeric(dx$V1), "pnorm", mean = mu_jump, sd = sigma_jump))
@@ -2699,7 +2712,7 @@ server <- function(input, output, session) {
                   stat_function(fun = dunif, args = list(min = a_jump, max = b_jump), fill = "blue",color = "blue", geom = 'area', alpha = 0.5) +
                   geom_density(alpha = 0.5, fill = "green", color = "green") +
                   xlim(min(dx$V1),max(dx$V1)) + 
-                  labs(fill="", title = "Estimated VS Theoretical Distribution", x = "Increments", y = "Density")
+                  labs(fill="", title = "Empirical VS Estimated Distribution", x = "Increments", y = "Density")
               )
             })
             ksTest <- try(ks.test(x = as.numeric(dx$V1), "punif", min = a_jump, max = b_jump))
@@ -2728,7 +2741,7 @@ server <- function(input, output, session) {
                   axis.title=element_text(size=12),
                   legend.position="none"
                 ) +
-                labs(fill="", title = "Estimated VS Theoretical Intensity", x = "", y = "Number of Jumps")
+                labs(fill="", title = "Empirical VS Estimated Intensity", x = "", y = "Number of Jumps")
             )
 
           })
@@ -3075,9 +3088,10 @@ server <- function(input, output, session) {
   output$simulate_nstep <- renderUI({
     if(!is.null(input$simulate_modelID)){
       id <- unlist(strsplit(input$simulate_modelID, split = " "))
-      if (input$simulate_modelID %in% names(yuimaGUIdata$usr_simulation))
+      if (input$simulate_modelID %in% names(yuimaGUIdata$usr_simulation)){
+        if (is.na(yuimaGUIsettings$simulation[[input$simulate_modelID]][["nstep"]])) yuimaGUIsettings$simulation[[input$simulate_modelID]][["nstep"]] <<- 1000
         numericInput("simulate_nstep", label = "Number of steps per simulation", value = yuimaGUIsettings$simulation[[input$simulate_modelID]][["nstep"]], min = 1, step = 1)
-      else if (!(isolate({yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class}) %in% c("COGARCH", "CARMA")))
+      } else if (!(isolate({yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class}) %in% c("COGARCH", "CARMA")))
         numericInput("simulate_nstep", label = "Number of steps per simulation", value = yuimaGUIsettings$simulation[[input$simulate_modelID]][["nstep"]], min = 1, step = 1)
     }
   })
@@ -3182,11 +3196,11 @@ server <- function(input, output, session) {
 
   observeEvent(input$simulate_simulateModels, {
     if (is.null(modelsToSimulate$table)) {
-      if (input$panel_simulations=="Simulate model") createAlert(session = session, anchorId = "panel_simulate_model_alert", alertId = "simulate_alert_buttonEstimate1", content = "Table 'Selected Models' is empty", style = "warning")
-      if (input$panel_simulations=="Simulate equation") createAlert(session = session, anchorId = "panel_simulate_equation_alert", alertId = "simulate_alert_buttonEstimate2", content = "Table 'Selected Models' is empty", style = "warning")
+      if (input$panel_simulations=="Estimated models") createAlert(session = session, anchorId = "panel_simulate_model_alert", alertId = "simulate_alert_buttonEstimate1", content = "Table 'Selected Models' is empty", style = "warning")
+      if (input$panel_simulations=="Non-estimated models") createAlert(session = session, anchorId = "panel_simulate_equation_alert", alertId = "simulate_alert_buttonEstimate2", content = "Table 'Selected Models' is empty", style = "warning")
     } else if (nrow(modelsToSimulate$table)==0) {
-      if (input$panel_simulations=="Simulate model") createAlert(session = session, anchorId = "panel_simulate_model_alert", alertId = "simulate_alert_buttonEstimate1", content = "Table 'Selected Models' is empty", style = "warning")
-      if (input$panel_simulations=="Simulate equation") createAlert(session = session, anchorId = "panel_simulate_equation_alert", alertId = "simulate_alert_buttonEstimate2", content = "Table 'Selected Models' is empty", style = "warning")
+      if (input$panel_simulations=="Estimated models") createAlert(session = session, anchorId = "panel_simulate_model_alert", alertId = "simulate_alert_buttonEstimate1", content = "Table 'Selected Models' is empty", style = "warning")
+      if (input$panel_simulations=="Non-estimated models") createAlert(session = session, anchorId = "panel_simulate_equation_alert", alertId = "simulate_alert_buttonEstimate2", content = "Table 'Selected Models' is empty", style = "warning")
     }
     else{
       withProgress(message = 'Simulating: ', value = 0, {
@@ -3203,7 +3217,6 @@ server <- function(input, output, session) {
               "simulate.to" = as.numeric(yuimaGUIsettings$simulation[[modID]][["t1"]]))
             Initial <- yuimaGUIsettings$simulation[[modID]][["t0"]]
             Terminal <- yuimaGUIsettings$simulation[[modID]][["t1"]]
-            n <- ifelse(is.na(yuimaGUIsettings$simulation[[modID]][["nstep"]]),1000,yuimaGUIsettings$simulation[[modID]][["nstep"]])
             addSimulation(
               modelYuima = setYuima(model = setModelByName(name = info$model, jumps = info$jumps)),
               true.parameter = yuimaGUIdata$usr_simulation[[modID]][["true.param"]],
@@ -3211,7 +3224,7 @@ server <- function(input, output, session) {
               info = info,
               xinit = yuimaGUIsettings$simulation[[modID]][["xinit"]],
               nsim = yuimaGUIsettings$simulation[[modID]][["nsim"]],
-              sampling = setSampling(Initial = Initial, Terminal = Terminal, n=n, delta = NA),
+              sampling = setSampling(Initial = Initial, Terminal = Terminal, n=yuimaGUIsettings$simulation[[modID]][["nstep"]], delta = NA),
               saveTraj = yuimaGUIsettings$simulation[[modID]][["traj"]],
               seed = yuimaGUIsettings$simulation[[modID]][["seed"]],
               session = session,
@@ -3353,16 +3366,6 @@ server <- function(input, output, session) {
     }
   })
 
-  output$simulate_showSimulation_hist_nBins <- renderUI({
-    if(!is.null(input$simulate_showSimulation_simID)){
-      if(input$simulate_showSimulation_simID %in% rownames(yuimaGUItable$simulation)){
-        id <- unlist(strsplit(input$simulate_showSimulation_simID, split = " "))
-        Max <- yuimaGUIdata$simulation[[id[1]]][[as.numeric(id[2])]]$info$nsim
-        sliderInput("simulate_showSimulation_hist_nBins", width = "75%",min = 1, max = as.integer(Max), step = 1,value = as.integer(Max/5),ticks = FALSE, round = TRUE, label = "Adjust bin width")
-      }
-    }
-  })
-
   simulation_hist <- reactiveValues(distribution=list(), values=vector())
   observe({
     if(!is.null(input$simulate_showSimulation_simID)){
@@ -3404,29 +3407,13 @@ server <- function(input, output, session) {
     }
   })
 
-
-  output$simulate_showSimulation_hist_probability_slider <- renderUI({
-    if(length(simulation_hist$values)!=0){
-      Min <- min(simulation_hist$values)
-      Max <- max(simulation_hist$values)
-      sliderInput("simulate_showSimulation_hist_probability_slider", width = "75%",min = Min-0.01, max = Max+0.01, value = c(Min+0.25*(Max-Min),Min+0.75*(Max-Min)), label = "Mean & Probability", step = 0.01, ticks=FALSE, round = -2)
-    }
-  })
-
-  output$simulate_showSimulation_hist_probability_text <- renderText({
+  output$simulate_showSimulation_hist_text <- renderUI({
     if(length(simulation_hist$values)!=0 & !is.null(input$simulate_showSimulation_hist_probability_slider)){
       val <- as.numeric(simulation_hist$values)
-      paste("Probability: ",as.character(100*sum(ifelse(val>=input$simulate_showSimulation_hist_probability_slider[1] & val<=input$simulate_showSimulation_hist_probability_slider[2],1,0))/length(val)),"%")
+      qq <- quantile(val, probs = input$simulate_showSimulation_hist_probability_slider/100)
+      HTML(paste("<div>", "Lower:", qq[1],"<br/>", "Upper: ", qq[2], "<br/>", "Mean: ", mean(val[val>=qq[1] & val<=qq[2]]), "</div>"))
     }
   })
-  output$simulate_showSimulation_hist_mean_text <- renderText({
-    if(length(simulation_hist$values)!=0 & !is.null(input$simulate_showSimulation_hist_probability_slider)){
-      val <- as.numeric(simulation_hist$values)
-      val <- val[val>=input$simulate_showSimulation_hist_probability_slider[1] & val<=input$simulate_showSimulation_hist_probability_slider[2]]
-      paste("Mean: ",mean(val))
-    }
-  })
-
 
   ###Save Trajectory Button
   output$simulate_showSimulation_button_saveTrajectory <- {
@@ -3928,6 +3915,153 @@ server <- function(input, output, session) {
   })
   
   
+  ###Interactive range of selectRange chart
+  parametric_range_selectRange <- reactiveValues(x=NULL, y=NULL)
+  observe({
+    if (!is.null(input$parametric_selectRange_brush) & !is.null(input$parametric_plotsRangeSeries)){
+      data <- getData(input$parametric_plotsRangeSeries)
+      test <- (length(index(window(data, start = input$parametric_selectRange_brush$xmin, end = input$parametric_selectRange_brush$xmax))) > 3)
+      if (test==TRUE){
+        parametric_range_selectRange$x <- c(as.Date(input$parametric_selectRange_brush$xmin), as.Date(input$parametric_selectRange_brush$xmax))
+        parametric_range_selectRange$y <- c(input$parametric_selectRange_brush$ymin, input$parametric_selectRange_brush$ymax)
+      }
+    }
+  })
+  
+  
+  observe({
+    shinyjs::toggle(id="parametric_plotsRangeErrorMessage", condition = nrow(parametric_seriesToChangePoint$table)==0)
+    shinyjs::toggle(id="parametric_plotsRangeAll", condition = nrow(parametric_seriesToChangePoint$table)!=0)
+  })
+  
+  ###Display charts: series and its increments
+  observe({
+    symb <- input$parametric_plotsRangeSeries
+    if(!is.null(symb))
+      if (symb %in% rownames(yuimaGUItable$series)){
+        data <- getData(symb)
+        incr <- na.omit(Delt(data, type = "arithmetic"))
+        condition <- all(is.finite(incr))
+        shinyjs::toggle("parametric_selectRangeReturns", condition = condition)
+        parametric_range_selectRange$x <- NULL
+        parametric_range_selectRange$y <- NULL
+        start <- as.character(parametric_seriesToChangePoint$table[input$parametric_plotsRangeSeries,"From"])
+        end <- as.character(parametric_seriesToChangePoint$table[input$parametric_plotsRangeSeries,"To"])
+        if(class(index(data))=="numeric"){
+          start <- as.numeric(start)
+          end <- as.numeric(end)
+        }
+        output$parametric_selectRange <- renderPlot({
+          if ((symb %in% rownames(yuimaGUItable$series) & (symb %in% rownames(parametric_seriesToChangePoint$table)))){
+            par(bg="black")
+            plot.zoo(window(data, start = parametric_range_selectRange$x[1], end = parametric_range_selectRange$x[2]), main=symb, xlab="Index", ylab=NA, log=switch(input$parametric_scale_selectRange,"Linear"="","Logarithmic (Y)"="y", "Logarithmic (X)"="x", "Logarithmic (XY)"="xy"), col="grey", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
+            lines(window(data, start = start, end = end), col = "green")
+            grid(col="grey")
+          }
+        })
+        output$parametric_selectRangeReturns <- renderPlot({
+          if (symb %in% rownames(yuimaGUItable$series) & (symb %in% rownames(parametric_seriesToChangePoint$table)) & condition){
+            par(bg="black")
+            plot.zoo( window(incr, start = parametric_range_selectRange$x[1], end = parametric_range_selectRange$x[2]), main=paste(symb, " - Percentage Increments"), xlab="Index", ylab=NA, log=switch(input$parametric_scale_selectRange,"Linear"="","Logarithmic (Y)"="", "Logarithmic (X)"="x", "Logarithmic (XY)"="x"), col="grey", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
+            lines(window(incr, start = start,  end = end), col = "green")
+            grid(col="grey")
+          }
+        })
+      }
+  })
+  
+  
+  output$parametric_plotsRangeSeries <- renderUI({
+    selectInput("parametric_plotsRangeSeries", label = "Series", choices = rownames(parametric_seriesToChangePoint$table), selected = input$parametric_plotsRangeSeries)
+  })
+  
+  ###Choose Range input set to "Select range from charts" if charts have been brushed
+  output$parametric_chooseRange <- renderUI({
+    sel <- "full"
+    if (!is.null(parametric_range_selectRange$x)) sel <- "selected"
+    selectInput("parametric_chooseRange", label = "Range", choices = c("Full Range" = "full", "Select Range from Charts" = "selected", "Specify Range" = "specify"), selected = sel)
+  })
+  
+  output$parametric_chooseRange_specify <- renderUI({
+    if(!is.null(input$parametric_plotsRangeSeries)) {
+      data <- getData(input$parametric_plotsRangeSeries)
+      if(class(index(data))=="numeric") 
+        return(div(
+          column(6,numericInput("parametric_chooseRange_specify_t0", label = "From", min = start(data), max = end(data), value = start(data))),
+          column(6,numericInput("parametric_chooseRange_specify_t1", label = "To", min = start(data), max = end(data), value = end(data)))
+        ))
+      if(class(index(data))=="Date")
+        return(dateRangeInput("parametric_chooseRange_specify_date", start = start(data), end = end(data), label = "Specify Range"))
+    }
+  })
+  
+  
+  observe({
+    shinyjs::toggle(id = "parametric_chooseRange_specify", condition = (input$parametric_chooseRange)=="specify")
+  })
+  
+  ###Function to update data range to use to estimate models
+  updateRange_parametric_seriesToChangePoint <- function(symb, range = c("full","selected","specify"), type = c("Date", "numeric")){
+    for (i in symb){
+      data <- getData(i)
+      if (range == "full"){
+        levels(parametric_seriesToChangePoint$table[,"From"]) <- c(levels(parametric_seriesToChangePoint$table[,"From"]), as.character(start(data)))
+        levels(parametric_seriesToChangePoint$table[,"To"]) <- c(levels(parametric_seriesToChangePoint$table[,"To"]), as.character(end(data)))
+        parametric_seriesToChangePoint$table[i,"From"] <<- as.character(start(data))
+        parametric_seriesToChangePoint$table[i,"To"] <<- as.character(end(data))
+      }
+      if (range == "selected"){
+        if(!is.null(parametric_range_selectRange$x) & class(index(data))==type){
+          start <- parametric_range_selectRange$x[1]
+          end <- parametric_range_selectRange$x[2]
+          if(class(index(data))=="numeric"){
+            start <- as.numeric(start)
+            end <- as.numeric(end)
+          }
+          start <- max(start(data),start)
+          end <- min(end(data), end)
+          levels(parametric_seriesToChangePoint$table[,"From"]) <- c(levels(parametric_seriesToChangePoint$table[,"From"]), as.character(start))
+          levels(parametric_seriesToChangePoint$table[,"To"]) <- c(levels(parametric_seriesToChangePoint$table[,"To"]), as.character(end))
+          parametric_seriesToChangePoint$table[i,"From"] <<- as.character(start)
+          parametric_seriesToChangePoint$table[i,"To"] <<- as.character(end)
+        }
+      }
+      if (range == "specify"){
+        if(class(index(data))==type){
+          if(class(index(data))=="Date"){
+            start <- input$parametric_chooseRange_specify_date[1]
+            end <- input$parametric_chooseRange_specify_date[2]
+          }
+          if(class(index(data))=="numeric"){
+            start <- input$parametric_chooseRange_specify_t0
+            end <- input$parametric_chooseRange_specify_t1
+          }
+          start <- max(start(data),start)
+          end <- min(end(data), end)
+          levels(parametric_seriesToChangePoint$table[,"From"]) <- c(levels(parametric_seriesToChangePoint$table[,"From"]), as.character(start))
+          levels(parametric_seriesToChangePoint$table[,"To"]) <- c(levels(parametric_seriesToChangePoint$table[,"To"]), as.character(end))
+          parametric_seriesToChangePoint$table[i,"From"] <<- as.character(start)
+          parametric_seriesToChangePoint$table[i,"To"] <<- as.character(end)
+        }
+      }
+    }
+  }
+  
+  ###Apply selected range by double click
+  observeEvent(input$parametric_selectRange_dbclick, priority = 1, {
+    updateRange_parametric_seriesToChangePoint(input$parametric_plotsRangeSeries, range = "selected", type = class(index(getData(input$parametric_plotsRangeSeries))))
+  })
+  
+  ###Apply selected range
+  observeEvent(input$parametric_buttonApplyRange, priority = 1, {
+    updateRange_parametric_seriesToChangePoint(input$parametric_plotsRangeSeries, range = input$parametric_chooseRange, type = class(index(getData(input$parametric_plotsRangeSeries))))
+  })
+  
+  ###ApplyAll selected range
+  observeEvent(input$parametric_buttonApplyAllRange, priority = 1, {
+    updateRange_parametric_seriesToChangePoint(rownames(parametric_seriesToChangePoint$table), range = input$parametric_chooseRange, type = class(index(getData(input$parametric_plotsRangeSeries))))
+  })
+  
   
   ### Estimation Settings
   parametric_modal_prev_buttonDelta <- 0
@@ -4051,9 +4185,7 @@ server <- function(input, output, session) {
   })
   output$parametric_modal_method <- renderUI({
     if (!is.null(input$parametric_modal_model) & !is.null(input$parametric_modal_series))
-      selectInput("parametric_modal_method", label = "method", choices = c("L-BFGS-B"
-                                                                           #, "Nelder-Mead", "BFGS", "CG", "SANN", "Brent"
-                                                                           ), selected = yuimaGUIsettings$estimation[[input$parametric_modal_model]][[input$parametric_modal_series]][["method"]])
+      selectInput("parametric_modal_method", label = "method", choices = c("L-BFGS-B", "Nelder-Mead", "BFGS", "CG", "SANN", "Brent"), selected = yuimaGUIsettings$estimation[[input$parametric_modal_model]][[input$parametric_modal_series]][["method"]])
   })
   output$parametric_modal_trials <- renderUI({
     if (!is.null(input$parametric_modal_model) & !is.null(input$parametric_modal_series) & !is.null(input$parametric_modal_method))
@@ -4063,56 +4195,18 @@ server <- function(input, output, session) {
     if (!is.null(input$parametric_modal_model) & !is.null(input$parametric_modal_series))
       numericInput("parametric_modal_seed", label = "seed", min = 1, value = yuimaGUIsettings$estimation[[input$parametric_modal_model]][[input$parametric_modal_series]][["seed"]])
   })
-  output$parametric_modal_range <- renderUI({
-    if(!is.null(input$parametric_modal_series)){
-      series <- getData(input$parametric_modal_series)
-      type <- class(index(series)[1])
-      if(type=="Date") return(column(12,dateRangeInput("parametric_modal_range_date", label = "Range", start = start(series), end = end(series))))
-      else return(div(
-        column(6,numericInput("parametric_modal_range_numeric_t0", label = "From", value = start(series))),
-        column(6,numericInput("parametric_modal_range_numeric_t1", label = "To", value = end(series)))
-      ))      
-    }
-  })
   
   
   
   observeEvent(input$parametric_modal_button_applyDelta, {
     yuimaGUIsettings$delta[[input$parametric_modal_series]] <<- input$parametric_modal_delta
     yuimaGUIsettings$toLog[[input$parametric_modal_series]] <<- input$parametric_modal_toLog
-    type <- class(index(getData(input$parametric_modal_series))[1])
-    if(type=="Date"){
-      from <- input$parametric_modal_range_date[1]
-      to <- input$parametric_modal_range_date[2]
-    } else {
-      from <- input$parametric_modal_range_numeric_t0
-      to <- input$parametric_modal_range_numeric_t1
-    }
-    levels(parametric_seriesToChangePoint$table[,"From"]) <- c(levels(parametric_seriesToChangePoint$table[,"From"]), as.character(from))
-    levels(parametric_seriesToChangePoint$table[,"To"]) <- c(levels(parametric_seriesToChangePoint$table[,"To"]), as.character(to))
-    parametric_seriesToChangePoint$table[input$parametric_modal_series,"From"] <<- as.character(from)
-    parametric_seriesToChangePoint$table[input$parametric_modal_series,"To"] <<- as.character(to)
   })
   observeEvent(input$parametric_modal_button_applyAllDelta, {
-    type <- class(index(getData(input$parametric_modal_series))[1])
-    if(type=="Date"){
-      from <- input$parametric_modal_range_date[1]
-      to <- input$parametric_modal_range_date[2]
-    } else {
-      from <- input$parametric_modal_range_numeric_t0
-      to <- input$parametric_modal_range_numeric_t1
-    }
-    levels(parametric_seriesToChangePoint$table[,"From"]) <- c(levels(parametric_seriesToChangePoint$table[,"From"]), as.character(from))
-    levels(parametric_seriesToChangePoint$table[,"To"]) <- c(levels(parametric_seriesToChangePoint$table[,"To"]), as.character(to))
     for (symb in rownames(parametric_seriesToChangePoint$table)){
       yuimaGUIsettings$delta[[symb]] <<- input$parametric_modal_delta
       if (input$parametric_modal_toLog==FALSE) yuimaGUIsettings$toLog[[symb]] <<- input$parametric_modal_toLog
       else if (all(getData(symb)>0)) yuimaGUIsettings$toLog[[symb]] <<- input$parametric_modal_toLog
-      type_symb <- class(index(getData(symb))[1])
-      if(type_symb==type){
-        parametric_seriesToChangePoint$table[symb,"From"] <<- as.character(from)
-        parametric_seriesToChangePoint$table[symb,"To"] <<- as.character(to)
-      }
     }
   })
   observeEvent(input$parametric_modal_button_applyModel,{
@@ -4543,6 +4637,7 @@ server <- function(input, output, session) {
   ########################
   ########################
   
+  hedging_databaseModels_table <- data.frame()
   output$hedging_databaseModels <- DT::renderDataTable(options=list(scrollY = 200, scrollX = TRUE, scrollCollapse = FALSE, deferRender = FALSE, dom = 'frtS'), extensions = 'Scroller', rownames = TRUE, selection = "single",{
     if (length(yuimaGUItable$model)==0){
       NoData <- data.frame("Symb"=NA,"Please estimate some models first"=NA, check.names = FALSE)
@@ -4571,6 +4666,18 @@ server <- function(input, output, session) {
     }
   })
 
+  output$hedging_strike <- renderUI({
+    if (is.null(input$hedging_databaseModels_rows_selected))
+      numericInput("hedging_strike", label="Strike Price:", value=0, min = 0, max = NA, step = NA, width = NULL)
+    else {
+      if(input$hedging_databaseModels_row_last_clicked %in% input$hedging_databaseModels_rows_selected){
+        id <- unlist(strsplit(rownames(hedging_databaseModels_table)[input$hedging_databaseModels_row_last_clicked], split = " "))
+        numericInput("hedging_strike", label="Strike Price:", value=as.numeric(tail(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@data@original.data,1)), min = 0, max = NA, step = NA, width = NULL)
+      }
+      else
+        numericInput("hedging_assMarketPrice", label="Asset Market Price:", value=NA, min = 0)
+    }
+  })
   
   observeEvent(input$hedging_button_startComputation, {
     closeAlert(session, "hedging_alert_selectRow")
@@ -4596,11 +4703,11 @@ server <- function(input, output, session) {
           "type"=input$hedging_type, 
           "optPrice"=input$hedging_optMarketPrice, 
           "optLotMult"=input$hedging_lotMult,
-          "optLotCost"=input$hedging_lotCostOpt,
+          "optLotCost"= ifelse(is.na(input$hedging_lotCostOpt), 0, input$hedging_lotCostOpt),
           "assPrice"=input$hedging_assMarketPrice,
-          "assPercCost"=input$hedging_percCostAss/100,
-          "assMinCost"=input$hedging_minCostAss,
-          "assRateShortSelling"=input$hedging_rateShort/100)
+          "assPercCost"= ifelse(is.na(input$hedging_percCostAss), 0, input$hedging_percCostAss/100),
+          "assMinCost"= ifelse(is.na(input$hedging_minCostAss), 0, input$hedging_minCostAss),
+          "assRateShortSelling"= ifelse(is.na(input$hedging_rateShort), 0, input$hedging_rateShort/100))
         Initial <- 0
         Terminal <- as.numeric(input$hedging_maturity-info$estimate.to)/as.numeric(info$estimate.to-info$estimate.from)*length(data)*yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
         n <- as.numeric(input$hedging_maturity-info$estimate.to)/as.numeric(info$estimate.to-info$estimate.from)*length(data)
@@ -4633,65 +4740,98 @@ server <- function(input, output, session) {
   })
   
   
-  hedging_values <- reactiveValues(profits=NULL, symb=NULL, model=NULL, id.changed=FALSE)
   
-  output$hedging_nOptLot_hedge <- renderUI({
-    if (!is.null(input$hedging_table_results_row_last_clicked)){
-      info <- isolate({yuimaGUIdata$hedging[[input$hedging_table_results_row_last_clicked]]$info})
-      nMax <- as.integer(input$hedging_maxCapital/(info$optLotMult*info$optPrice+input$hedging_lotCostOpt))
-      isolate({hedging_values$id.changed <- TRUE})
-      sliderInput("hedging_nOptLot_hedge", label = "Option - number of Lots", min = 0, max = nMax, value = info$LotsToBuy, step = 1, ticks = FALSE)
-    }
+  
+  
+  hedging_values <- reactiveValues(profits=NULL, symb=NULL, model=NULL, return = NA)
+  hedging_values2 <- reactiveValues(number_of_ids = 0)
+  na_zero <- function(x){ifelse(is.na(x), 0, x)}
+  
+  observe({
+    hedging_values2$number_of_ids <<- length(yuimaGUIdata$hedging)
+    shinyjs::toggle(id = "hedging_button_show", condition = hedging_values2$number_of_ids>0)
   })
   
+  output$hedging_modal_id <- renderUI({
+    if(hedging_values2$number_of_ids>0) 
+      selectInput("hedging_modal_id", label = "ID", choices = seq(1, hedging_values2$number_of_ids))
+  })
+  
+  output$hedging_modal_id_hidden <- renderUI({
+    selectInput("hedging_modal_id_hidden", label = "ID", choices = input$hedging_modal_id, selected = input$hedging_modal_id)
+  })
   output$hedging_nAss_hedge <- renderUI({
-    if (!is.null(input$hedging_table_results_row_last_clicked)){
-      if (!is.null(input$hedging_nOptLot_hedge)){
-        info <- isolate({yuimaGUIdata$hedging[[input$hedging_table_results_row_last_clicked]]$info})
-        assCapital <- input$hedging_maxCapital-input$hedging_nOptLot_hedge*(info$optLotMult*info$optPrice+input$hedging_lotCostOpt)
-        nMax <- as.integer(assCapital/(info$assPrice*(1+input$hedging_percCostAss/100)))
-        val <- min(nMax, isolate({input$hedging_nAss_hedge}))
-        isolate({
-          if (hedging_values$id.changed == TRUE){
-            val <- switch (info$type,
-              "call" = info$sell,
-              "put" = info$buy
-            )
-            hedging_values$id.changed <- FALSE
-          }
-        })
-        type <- info$type
-        if (input$hedging_type2!="default")
-          type <- input$hedging_type2
-        lab <- paste("Number of Assets to", ifelse(type=="call", "Sell", "Buy"))
-        sliderInput("hedging_nAss_hedge", label = lab, min = 0, max = nMax, value = val, step = 1, ticks = FALSE)
+    if (!is.null(input$hedging_modal_id)){
+      id <- as.integer(input$hedging_modal_id)
+      if (hedging_values2$number_of_ids>=id){
+        info <- yuimaGUIdata$hedging[[id]]$info
+        val <- switch (info$type, "call" = info$sell, "put" = info$buy)
+        lab <- paste("Number of Assets to", ifelse(info$type=="call", "Sell", "Buy"))
+        numericInput("hedging_nAss_hedge", label = lab, min = 0, value = val, step = 1)
+      }
+    }
+  })
+  output$hedging_nOptLot_hedge <- renderUI({
+    if (!is.null(input$hedging_modal_id)){
+      id <- as.integer(input$hedging_modal_id)
+      if (hedging_values2$number_of_ids>=id){
+        info <- yuimaGUIdata$hedging[[id]]$info
+        nOpt <- info$LotsToBuy
+        numericInput("hedging_nOptLot_hedge", label = "Option - number of Lots", min = 0, value = nOpt, step = 1)
+      }
+    }
+  })
+  output$hedging_type2 <- renderUI({
+    if (!is.null(input$hedging_modal_id)){
+      id <- as.integer(input$hedging_modal_id)
+      if (hedging_values2$number_of_ids>=id){
+        type <- yuimaGUIdata$hedging[[id]]$info$type
+        selectInput("hedging_type2", width = "75%", label="Modify Type", c(Call="call", Put="put"), selected = type)
+      }
+    }
+  })
+  output$hedging_strike2 <- renderUI({
+    if (!is.null(input$hedging_modal_id)){
+      id <- as.integer(input$hedging_modal_id)
+      if (hedging_values2$number_of_ids>=id){
+        strike <- yuimaGUIdata$hedging[[id]]$info$strike
+        numericInput("hedging_strike2", width = "75%", label = "Modify Strike", min = 0, value = strike)
+      }
+    }
+  })
+  output$hedging_optMarketPrice2 <- renderUI({
+    if (!is.null(input$hedging_modal_id)){
+      id <- as.integer(input$hedging_modal_id)
+      if (hedging_values2$number_of_ids>=id){
+        optPrice <- yuimaGUIdata$hedging[[id]]$info$optPrice
+        numericInput("hedging_optMarketPrice2", width = "75%", label = "Modify Market Price", min = 0, value = optPrice)
       }
     }
   })
   
-  
   observe({
-    if (!is.null(input$hedging_table_results_row_last_clicked)){
-      if(isolate({length(yuimaGUIdata$hedging)})>=input$hedging_table_results_row_last_clicked & !is.null(input$hedging_nOptLot_hedge) & !is.null(input$hedging_nAss_hedge)){
-        id <- input$hedging_table_results_row_last_clicked
-        info <- isolate({yuimaGUIdata$hedging[[id]]$info})
-        profits <- profit_distribution(nOpt=input$hedging_nOptLot_hedge*info$optLotMult, 
-                                       nAss=input$hedging_nAss_hedge, 
-                                       type=ifelse(is.na(input$hedging_type2) | input$hedging_type2=="default", info$type, input$hedging_type2), 
+    id <- input$hedging_modal_id_hidden
+    if (!is.null(id) & !is.null(input$hedging_strike2) & !is.null(input$hedging_nAss_hedge)){
+      id <- as.integer(id)
+      if(hedging_values2$number_of_ids>=id){
+        info <- yuimaGUIdata$hedging[[id]]$info
+        profits <- profit_distribution(nOpt= na_zero(input$hedging_nOptLot_hedge)*info$optLotMult, 
+                                       nAss= na_zero(input$hedging_nAss_hedge), 
+                                       type=input$hedging_type2,
                                        strike=ifelse(is.na(input$hedging_strike2), info$strike, input$hedging_strike2),
-                                       priceAtMaturity=isolate({yuimaGUIdata$hedging[[id]]$hist}), 
+                                       priceAtMaturity=yuimaGUIdata$hedging[[id]]$hist, 
                                        optMarketPrice=ifelse(is.na(input$hedging_optMarketPrice2), info$optPrice, input$hedging_optMarketPrice2),
                                        assMarketPrice=info$assPrice, 
-                                       percCostAss=input$hedging_percCostAss/100, 
-                                       minCostAss=input$hedging_minCostAss, 
-                                       lotCostOpt=input$hedging_lotCostOpt, 
+                                       percCostAss=na_zero(input$hedging_percCostAss)/100, 
+                                       minCostAss=na_zero(input$hedging_minCostAss), 
+                                       lotCostOpt=na_zero(input$hedging_lotCostOpt), 
                                        lotMultiplier=info$optLotMult, 
-                                       shortCostPerYear=input$hedging_rateShort/100, 
+                                       shortCostPerYear=na_zero(input$hedging_rateShort)/100, 
                                        t0=info$estimate.to, 
                                        maturity=info$maturity)
         hedging_values$profits <- profits
-        hedging_values$symb <- isolate({yuimaGUIdata$hedging[[id]]$symb})
-        hedging_values$model <- isolate({yuimaGUIdata$hedging[[id]]$info$model})
+        hedging_values$symb <- yuimaGUIdata$hedging[[id]]$symb
+        hedging_values$model <- yuimaGUIdata$hedging[[id]]$info$model
       }
     }
   })
@@ -4699,102 +4839,77 @@ server <- function(input, output, session) {
   output$hedging_plot_distribution <- renderPlot({
     par(bg="black")
     if (!is.null(hedging_values$profits) & !is.null(hedging_values$model) & !is.null(hedging_values$symb))
-      hist(hedging_values$profits, main = paste(hedging_values$symb,"-",hedging_values$model), xlab = "", breaks = input$hedging_slider_nBin, col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black")
+      hist(hedging_values$profits, main = paste(hedging_values$symb,"-",hedging_values$model), xlab = "Profit & Loss", breaks = input$hedging_slider_nBin, col="green", col.axis="grey", col.lab="grey", col.main="grey", fg="black", right = FALSE)
     grid()
   })
-  output$hedging_slider_rangeHist <- renderUI({
-    if (!is.null(hedging_values$profits)){
-      Min <- min(hedging_values$profits)
-      Max <- max(hedging_values$profits)
-      val <- c(round(Min-1), round(Max+1))
-      sliderInput("hedging_slider_rangeHist", width = "75%", min = round(Min-1), max = round(Max+1), value = val, label = "Mean & Probability", step = 1, ticks=FALSE, round = -2)
-    }
-  })
-  output$hedging_probability_text <- renderText({
-    if(!is.null(input$hedging_slider_rangeHist) & !is.null(hedging_values$profits)){
-      binary <- ifelse(hedging_values$profits>=input$hedging_slider_rangeHist[1] & hedging_values$profits<=input$hedging_slider_rangeHist[2],1,0)
-      prob <- mean(binary)
-      sdErr <- sd(binary)/sqrt(length(binary))
-      paste("Probability: ",round(100*prob,2),"%", " ± ", round(100*sdErr,2), "%")
-    }
-  })
-  output$hedging_mean_text <- renderText({
+  output$hedging_quantiles_text <- renderUI({
     if(!is.null(input$hedging_slider_rangeHist) & !is.null(hedging_values$profits)){
       val <- hedging_values$profits
-      val <- val[val>=input$hedging_slider_rangeHist[1] & val<=input$hedging_slider_rangeHist[2]]
-      paste("Mean: ",round(mean(val),0), " ± ", round(sd(val)/sqrt(length(val)),0))
+      qq <- quantile(val, probs = input$hedging_slider_rangeHist/100)
+      HTML(paste("<div>", "Lower:", round(qq[1],0),"<br/>", "Upper: ", round(qq[2],0), "<br/>", "Mean: ", round(mean(val[val>=qq[1] & val<=qq[2]]),0), "</div>"))
     }
   })
-  output$hedging_capital_text <- renderText({
-    if (!is.null(input$hedging_table_results_row_last_clicked)){
-      id <- input$hedging_table_results_row_last_clicked
-      info <- isolate({yuimaGUIdata$hedging[[id]]$info})
-      optPrice <- ifelse(is.na(input$hedging_optMarketPrice2), info$optPrice, input$hedging_optMarketPrice2)
-      cap <- input$hedging_nOptLot_hedge*(info$optLotMult*optPrice+input$hedging_lotCostOpt)+input$hedging_nAss_hedge*info$assPrice + ifelse(input$hedging_nAss_hedge>0,max(input$hedging_nAss_hedge*info$assPrice*input$hedging_percCostAss/100,input$hedging_minCostAss),0)
-      paste("Invested Capitalt: ", round(cap,0))
-    }
-  })
-  output$hedging_meanPerc_text <- renderText({
-    if (!is.null(input$hedging_table_results_row_last_clicked) & !is.null(hedging_values$profits)){
-      id <- input$hedging_table_results_row_last_clicked
-      info <- isolate({yuimaGUIdata$hedging[[id]]$info})
-      optPrice <- ifelse(is.na(input$hedging_optMarketPrice2), info$optPrice, input$hedging_optMarketPrice2)
-      cap <- input$hedging_nOptLot_hedge*(info$optLotMult*optPrice+input$hedging_lotCostOpt)+input$hedging_nAss_hedge*info$assPrice + ifelse(input$hedging_nAss_hedge>0,max(input$hedging_nAss_hedge*info$assPrice*input$hedging_percCostAss/100,input$hedging_minCostAss),0)
-      val <- hedging_values$profits
-      val <- val[val>=input$hedging_slider_rangeHist[1] & val<=input$hedging_slider_rangeHist[2]]
-      paste("Return on Capital: ", round(mean(val)/cap*100,2), "%", " ± ", round(sd(val)/cap*100/sqrt(length(val)),2)," %")
+  output$hedging_capital_text <- renderUI({
+    if (!is.null(input$hedging_modal_id) & !is.null(hedging_values$profits)){
+      id <- as.integer(input$hedging_modal_id)
+      if (hedging_values2$number_of_ids>=id){
+        info <- isolate({yuimaGUIdata$hedging[[id]]$info})
+        optPrice <- ifelse(is.na(input$hedging_optMarketPrice2), info$optPrice, input$hedging_optMarketPrice2)
+        percCostAss <- na_zero(input$hedging_percCostAss)/100
+        minCostAss <- na_zero(input$hedging_minCostAss)
+        lotCostOpt <- na_zero(input$hedging_lotCostOpt)
+        nOptLot <- na_zero(input$hedging_nOptLot_hedge)
+        nAss <- na_zero(input$hedging_nAss_hedge)
+        cap <- nOptLot*(info$optLotMult*optPrice+lotCostOpt)+nAss*info$assPrice + ifelse(nAss>0,max(nAss*info$assPrice*percCostAss,minCostAss),0)
+        val <- hedging_values$profits
+        ret <- mean(val)/cap
+        hedging_values$return <- ret
+        HTML(paste("Invested Capital: ", round(cap,0), "<br/>", "Average Return: ", round(ret*100,2), "%"))
+      }
     }
   })
   
+    
   observeEvent(input$hedging_button_saveHedging, {
-    id <- input$hedging_table_results_row_last_clicked
-    yuimaGUIdata$hedging[[id]]$info$assPercCost <<- input$hedging_percCostAss/100
-    yuimaGUIdata$hedging[[id]]$info$assMinCost <<- input$hedging_minCostAss
-    yuimaGUIdata$hedging[[id]]$info$assRateShortSelling <<- input$hedging_rateShort/100
-    yuimaGUIdata$hedging[[id]]$info$optLotCost <<- input$hedging_lotCostOpt
-    if (!is.na(input$hedging_type2) & input$hedging_type2!="default")
-      yuimaGUIdata$hedging[[id]]$info$type <<- input$hedging_type2
+    id <- as.integer(input$hedging_modal_id)
+    yuimaGUIdata$hedging[[id]]$info$assPercCost <<- ifelse(is.na(input$hedging_percCostAss), 0, input$hedging_percCostAss/100)
+    yuimaGUIdata$hedging[[id]]$info$assMinCost <<- ifelse(is.na(input$hedging_minCostAss), 0, input$hedging_minCostAss)
+    yuimaGUIdata$hedging[[id]]$info$assRateShortSelling <<- ifelse(is.na(input$hedging_rateShort), 0, input$hedging_rateShort/100)
+    yuimaGUIdata$hedging[[id]]$info$optLotCost <<- ifelse(is.na(input$hedging_lotCostOpt), 0, input$hedging_lotCostOpt)
+    yuimaGUIdata$hedging[[id]]$info$type <<- input$hedging_type2
     if (yuimaGUIdata$hedging[[id]]$info$type=="put"){
-      yuimaGUIdata$hedging[[id]]$info$buy <<- input$hedging_nAss_hedge
+      yuimaGUIdata$hedging[[id]]$info$buy <<- na_zero(input$hedging_nAss_hedge)
       yuimaGUIdata$hedging[[id]]$info$sell <<- NA
     }
     if (yuimaGUIdata$hedging[[id]]$info$type=="call"){
-      yuimaGUIdata$hedging[[id]]$info$sell <<- input$hedging_nAss_hedge
+      yuimaGUIdata$hedging[[id]]$info$sell <<- na_zero(input$hedging_nAss_hedge)
       yuimaGUIdata$hedging[[id]]$info$buy <<- NA
     }
-    yuimaGUIdata$hedging[[id]]$info$LotsToBuy <<- input$hedging_nOptLot_hedge
+    yuimaGUIdata$hedging[[id]]$info$LotsToBuy <<- na_zero(input$hedging_nOptLot_hedge)
     if (!is.na(input$hedging_strike2))
       yuimaGUIdata$hedging[[id]]$info$strike <<- input$hedging_strike2
     if (!is.na(input$hedging_optMarketPrice2))
       yuimaGUIdata$hedging[[id]]$info$optPrice <<- input$hedging_optMarketPrice2
-    yuimaGUIdata$hedging[[id]]$info$profit <<- mean(hedging_values$profits)/(input$hedging_nOptLot_hedge*(yuimaGUIdata$hedging[[id]]$info$optLotMult*yuimaGUIdata$hedging[[id]]$info$optPrice+input$hedging_lotCostOpt)+input$hedging_nAss_hedge*yuimaGUIdata$hedging[[id]]$info$assPrice + ifelse(input$hedging_nAss_hedge>0,max(input$hedging_nAss_hedge*yuimaGUIdata$hedging[[id]]$info$assPrice*input$hedging_percCostAss/100,input$hedging_minCostAss),0))
-    yuimaGUIdata$hedging[[id]]$info$stdErr <<- sd(hedging_values$profits)/sqrt(length(hedging_values$profits))/(input$hedging_nOptLot_hedge*(yuimaGUIdata$hedging[[id]]$info$optLotMult*yuimaGUIdata$hedging[[id]]$info$optPrice+input$hedging_lotCostOpt)+input$hedging_nAss_hedge*yuimaGUIdata$hedging[[id]]$info$assPrice + ifelse(input$hedging_nAss_hedge>0,max(input$hedging_nAss_hedge*yuimaGUIdata$hedging[[id]]$info$assPrice*input$hedging_percCostAss/100,input$hedging_minCostAss),0))
+    yuimaGUIdata$hedging[[id]]$info$profit <<- hedging_values$return
   })
 
   observe({
     shinyjs::toggle("hedging_alert_selectRow", condition = (input$panel_hedging=="Start simulations"))
-    valid <- FALSE
-    if (!is.null(input$hedging_table_results_row_last_clicked) & !is.null(input$hedging_table_results_rows_selected))
-      if (input$hedging_table_results_row_last_clicked %in% input$hedging_table_results_rows_selected)
-        valid <- TRUE
-    shinyjs::toggle("hedging_body", condition = valid)
   })
   
   ###Delete Hedging
   observeEvent(input$hedging_button_delete, priority = 1, {
-    if(!is.null(input$hedging_table_results_rows_selected) & !is.null(input$hedging_table_results_row_last_clicked)){
+    if(!is.null(input$hedging_table_results_rows_selected) & !is.null(input$hedging_modal_id)){
       if(input$hedging_table_results_row_last_clicked %in% input$hedging_table_results_rows_selected){
         delHedging(n=input$hedging_table_results_row_last_clicked)
       }
     }
-    shinyjs::hide("hedging_body")
   })
   
   ###DeleteAll Hedging
   observeEvent(input$hedging_button_deleteAll, priority = 1, {
     if(!is.null(input$hedging_table_results_rows_all))
       delHedging(n=input$hedging_table_results_rows_all)
-    shinyjs::hide("hedging_body")
   })
   
   

@@ -21,14 +21,17 @@ sidebar<-dashboardSidebar(
              menuSubItem("Univariate", tabName = "simulate")
              ),
     hr(),
+    menuItem("Finance", tabName = "finance",
+             menuSubItem("P&L distribution", tabName = "hedging")
+            ),
+    hr(),br(),
     fluidRow(
-      column(12,
-      column(6,downloadButton("saveSession", label = "Save")),
-      column(6,actionButton("loadSession", label = "Load", icon = icon("open", lib = "glyphicon")))
-    ))
-    #menuItem("Finance", tabName = "finance",
-    #         menuSubItem("P&L distribution", tabName = "hedging")
-    #        )
+    column(12,div(id="sessionButtons",
+           fluidRow(downloadButton("saveSession", label = "Save Session")),
+           br(),
+           fluidRow(actionButton("loadSession", label = "Load Session", icon = icon("open", lib = "glyphicon")))
+      ))
+    )
   )
 )
 
@@ -147,12 +150,12 @@ body<-dashboardBody(
       fluidRow(
         column(5,
           fileInput(inputId = "yourFile", label = "Choose file to upload", multiple = FALSE),
-          selectInput('yourFileHeader', 'Headers', choices = c("Default","Only columns", "Only rows", "Both", "None"), selected = "Default"),
+          selectInput('yourFileHeader', 'Headers', choices = c("Auto"="Default","Only columns", "Only rows", "Both", "None"), selected = "Default"),
           selectInput(inputId = 'yourFileSep', label = 'Field Separator', choices = c("Space"="default", "Comma"=',', "Semicolon"=';', "Tab"='\t'), selected = "default"),
           uiOutput("yourFileIndex"),
           uiOutput("yourFileFUN"),
           br(),
-          div(align = "center", box(width = 7, background = switch(getOption("yuimaGUItheme"), "black"="black", "white"=NULL),  title = "More Settings", collapsible = TRUE, id = "yourFileMoreSettings", collapsed = TRUE,
+          div(align = "center", box(background = switch(getOption("yuimaGUItheme"), "black"="black", "white"=NULL),  title = "More Settings", collapsible = TRUE, id = "yourFileMoreSettings", collapsed = TRUE,
               textInput('yourFileDec', 'Decimal Separator', value = "."),
               textInput('yourFileThnd', 'Thousands Separator', value = ""),
               textInput("yourFileNA", "Missing Value string", value = "NA"),
@@ -205,7 +208,7 @@ body<-dashboardBody(
           br(),
           fluidRow(
             column(4,div(align="center",
-              selectInput("modelClass",label = "Model Class", choices = c("Diffusion process", "Fractional process", "Compound Poisson", "Levy process", 
+              selectInput("modelClass",label = "Model Class", choices = c("Diffusion process", "Fractional process", "Compound Poisson", #"Levy process", 
                                                                           "CARMA", "COGARCH"), selected = "Diffusion process"),
               uiOutput("model"),
               uiOutput("jumps"),
@@ -416,14 +419,14 @@ body<-dashboardBody(
           h3("Univariate Simulation",class = "hTitle"),
           h4("Select the estimated models you wish to simulate.",
              br(),
-             "If you want to simulate a model that has not been estimated you can use tab 'Simuate equation'.",
+             "If you want to simulate a model that has not been estimated you can use tab 'Non-estimated models'.",
              br(),
              "Click on buttons 'Set Simulation' and 'Advanced Settings' to customize the simulation process."),
           hr(class = "hrHeader")
         )
       ),
       fluidRow(column(12,tabsetPanel(id = "panel_simulations", type = "tabs",
-        tabPanel(title = "Simulate model",
+        tabPanel(title = "Estimated models",
           fluidRow(column(12,bsAlert("panel_simulate_model_alert"))),
           fluidRow(column(12, br(),
             h4("Available models"),
@@ -438,7 +441,7 @@ body<-dashboardBody(
             )
           )
         )),
-        tabPanel(title = "Simulate equation",
+        tabPanel(title = "Non-estimated models",
           fluidRow(column(12,bsAlert("panel_simulate_equation_alert"))),
           fluidRow(
             uiOutput("simulate_PrintModelLatex")       
@@ -524,7 +527,7 @@ body<-dashboardBody(
             column(4,br(),br(),br(),
               div(selectInput("simulate_showSimulation_plot_scale", label = "Chart Scale", choices = c("Linear", "Logarithmic (Y)", "Logarithmic (X)", "Logarithmic (XY)")), align = "center"),
               br(),br(),br(),br(),br(),br(),br(),
-              downloadButton(outputId = "simulate_showSimulation_button_saveTrajectory", label = "Save")
+              downloadButton(outputId = "simulate_showSimulation_button_saveTrajectory", label = "Save Trajectories")
             )
           )),
           br(),
@@ -534,12 +537,11 @@ body<-dashboardBody(
             ),
             column(4,
               div(align="center",br(),br(),br(),
-                uiOutput("simulate_showSimulation_hist_nBins"),
-                uiOutput("simulate_showSimulation_hist_probability_slider"),
-                textOutput("simulate_showSimulation_hist_probability_text"),
-                textOutput("simulate_showSimulation_hist_mean_text"),
+                sliderInput("simulate_showSimulation_hist_nBins", width = "75%",min = 1, max = 100, step = 1,value = 30, ticks = FALSE, label = "Adjust bin width"),
+                sliderInput("simulate_showSimulation_hist_probability_slider", width = "75%", min = 0, max = 100, value = c(5, 95), label = "Quantiles (%)", step = 0.01, ticks=FALSE),
+                uiOutput("simulate_showSimulation_hist_text"),
                 br(),
-                downloadButton(outputId = "simulate_showSimulation_button_saveHist", label = "Save")
+                downloadButton(outputId = "simulate_showSimulation_button_saveHist", label = "Save Histogram")
               )
             )
           ))
@@ -726,8 +728,36 @@ body<-dashboardBody(
                                         uiOutput("parametric_changepoint_model"),
                                         sliderInput("parametric_modal_rangeFraction", label = "Training set (%)",min = 0, max = 100, value = c(20,80), step = 1, ticks = F),
                                         br(),
-                                        actionButton("parametric_button_settings", label = "Advanced Settings")
+                                        column(6,div(actionButton("parametric_button_setRange", width = '95%', label = "Set Range"), align = "center")),
+                                        column(6,div(actionButton("parametric_button_settings", width = '95%', label = "Advanced Settings"), align = "center"))
                                 )),
+                                bsModal(id="parametric_plotsRange", trigger = "parametric_button_setRange", title = "Select range to use for change point estimation", size = "large",
+                                        div(id="parametric_plotsRangeErrorMessage",align = "center",h3("Select some series from table 'Available Data'", class = "hModal")),
+                                        div(id="parametric_plotsRangeAll",
+                                            fluidRow(
+                                              column(8,
+                                                     plotOutput("parametric_selectRange", height = "350px", brush = brushOpts(id = "parametric_selectRange_brush", delayType = "debounce", delay = 10000, resetOnNew = TRUE), dblclick = "parametric_selectRange_dbclick"),
+                                                     br(),
+                                                     plotOutput("parametric_selectRangeReturns", height = "350px", brush = brushOpts(id = "parametric_selectRange_brush", delayType = "debounce", delay = 10000, resetOnNew = TRUE), dblclick = "parametric_selectRange_dbclick")
+                                              ),
+                                              column(4,
+                                                     div(selectInput("parametric_scale_selectRange", label = "Chart Scale", choices = c("Linear", "Logarithmic (Y)", "Logarithmic (X)", "Logarithmic (XY)")), align = "center"),
+                                                     br(),br(),br(),
+                                                     uiOutput("parametric_plotsRangeSeries", align = "center"),
+                                                     uiOutput("parametric_chooseRange", align = "center"),
+                                                     uiOutput("parametric_chooseRange_specify", align = "center"),
+                                                     column(6,
+                                                            tags$button(type="button", id="parametric_buttonApplyRange", class = "action-button", em("Apply")),
+                                                            bsTooltip("parametric_buttonApplyRange", title = "Apply Range to selected symbol", placement = "top")
+                                                     ),
+                                                     column(6,
+                                                            tags$button(type="button", id="parametric_buttonApplyAllRange", class = "action-button", em("Apply All")),
+                                                            bsTooltip("parametric_buttonApplyAllRange", title = "Apply Range to all symbols that are displayed", placement = "bottom")
+                                                     )
+                                              )
+                                            )
+                                        )
+                                ),
                                 bsModal(id="parametric_modal_id", title="Advanced Settings", trigger = "parametric_button_settings", size = "large",
                                         div(id="parametric_modal_errorMessage", align = "center", h3("Select some series (from table 'Available Data')", class = "hModal")),
                                         div(id="parametric_modal_body",
@@ -740,7 +770,6 @@ body<-dashboardBody(
                                                                           column(6,uiOutput("parametric_modal_delta", align="center")),
                                                                           column(6,uiOutput("parametric_modal_toLog", align="center"))       
                                                                         ),
-                                                                        fluidRow(uiOutput("parametric_modal_range")),
                                                                         fluidRow(
                                                                           column(6, tags$button(type="button", id="parametric_modal_button_applyDelta", class = "action-button", em("Apply"))),
                                                                           column(6, tags$button(type="button", id="parametric_modal_button_applyAllDelta", class = "action-button", em("Apply to All series")))
@@ -853,7 +882,7 @@ body<-dashboardBody(
           div(align="center",
             selectInput("llag_type", label = "Type of analysis", choices = c("Lead-Lag"="llag", "Correlation"="corr"), selected = "llag"),
             numericInput("llag_maxLag", label = "Max Lag", value = 20, min = 1, step = 1),
-            bsTooltip("llag_maxLag", title = "Max Lag is expressed in days if you are using time series, or in the same unit of measure of time if you are using numerical time index", placement = "top"),
+            bsTooltip("llag_maxLag", title = "Max Lag is expressed in days if you are using series indexed by date. It is expressed in the same unit of measure of the index if you are using numerical indexes.", placement = "top"),
             shinyjs::hidden(selectInput("llag_corr_method", label = "Method", choices = c("Pearson"="pearson", "Kendall"="kendall", "Spearman"="spearman", "Hayashi-Yoshida"="HY", "Pre-averaged Hayashi-Yoshida"="PHY", "Modulated Realized Covariance"="MRC", "Two Scales realized CoVariance"="TSCV", "Generalized Multiscale Estimator"="GME", "Realized Kernel"="RK", "Quasi Maximum Likelihood Estimator"="QMLE", "Separating Information Maximum Likelihood"="SIML", "Truncated Hayashi-Yoshida"="THY", "Pre-averaged Truncated Hayashi-Yoshida"="PTHY", "Subsampled Realized Covariance"="SRC", "Subsampled realized BiPower Covariation"="SBPC"), selected = "HY")),
             dateRangeInput("llag_range_date", label = "Range", start = Sys.Date()-365, end = Sys.Date()),
             shinyjs::hidden(div(id="llag_range_numeric",
@@ -908,10 +937,10 @@ body<-dashboardBody(
     tabItem(tabName = "hedging",
       fluidRow(
         column(12,
-          h3("Here you can manage risk deriving from buying options and the underlying asset.",class = "hTitle"),
+          h3("Here you can manage risk of a portfolio composed by options and the underlying asset.",class = "hTitle"),
           h4("The evolution of the underlying asset is simulated by models you estimated in section Modeling.", br(),
-             "After performing the simulation click on rows of the table in tab 'Profit&Loss' in order to choose the number of options and assets to buy/sell.",br(),
-             "The Profit&Loss distribution of your position will be displayed (it includes transaction costs that you can customize)."),
+             "After performing the simulation click on button 'Show P&L' in tab 'Profit&Loss' and customize your portfolio.",br(),
+             "The Profit&Loss distribution of your portfolio will be displayed (it includes transaction costs that you can customize)."),
           hr(class = "hrHeader")
         )
       ),
@@ -928,14 +957,14 @@ body<-dashboardBody(
             br(),
             fluidRow(
               column(3,selectInput("hedging_type", label="Option Type:", c(Call="call", Put="put"))),
-              column(3,numericInput("hedging_strike", label="Strike Price:", value=0, min = 0, max = NA, step = NA, width = NULL)),
+              column(3,uiOutput("hedging_strike")),
               column(3,dateInput("hedging_maturity", label="Maturity:", value = Sys.Date()+30)),
-              column(3,numericInput("hedging_lotMult", label="Number of Options per Lot:", value=1000, min = 1))
+              column(3,numericInput("hedging_optMarketPrice", label="Option Market Price:", value=NA, min = 0))
             ),
             fluidRow(
               column(3),
-              column(3,numericInput("hedging_optMarketPrice", label="Option Market Price:", value=NA, min = 0)),
               column(3,uiOutput("hedging_assMarketPrice")),
+              column(3,numericInput("hedging_lotMult", label="Number of Options per Lot:", value=1, min = 1)),
               column(3)
             ),
             fluidRow(
@@ -950,51 +979,56 @@ body<-dashboardBody(
           )))
         ),
         tabPanel(title = "Profit&Loss",
-          shinyjs::hidden(div(id="hedging_body",align="center",br(),
-            fluidRow(
-              column(3,numericInput("hedging_maxCapital", label = "Available Capital", value = 10000)),
-              column(3,uiOutput("hedging_nOptLot_hedge")),
-              column(3,uiOutput("hedging_nAss_hedge"))
-            ),
-            fluidRow(
-              column(9, plotOutput("hedging_plot_distribution")),
-              column(3,
-                sliderInput("hedging_slider_nBin", label = "Adjust bin width", min=1, max=100, value = 30, step = 1, ticks = FALSE),
-                br(),
-                uiOutput("hedging_slider_rangeHist"),
-                textOutput("hedging_probability_text"),
-                textOutput("hedging_mean_text"),
-                br(),
-                textOutput("hedging_capital_text"),
-                textOutput("hedging_meanPerc_text"),
-                br(),br(),br(),
-                actionButton("hedging_button_commissionPlan", label = "Transaction Costs", width = "80%")
-              )
-            ),
-            br(),
-            fluidRow(
-              column(3,selectInput("hedging_type2", label="Modify Option Type", c(" "="default", Call="call", Put="put"))),
-              column(3,numericInput("hedging_strike2", label = "Modify Strike", min = 0, value = NA)),
-              column(3,numericInput("hedging_optMarketPrice2", label = "Modify Option Price", min = 0, value = NA)),
-              column(3,br(),actionButton("hedging_button_saveHedging", "Save Changes", width = "80%"))
-            ),
-            bsModal(id="hedging_commissionPlan", trigger = "hedging_button_commissionPlan", title = "Commission Plan", size = "small",
-              div(align = "center",
-                box(width = 12,
-                  numericInput("hedging_percCostAss", label="Asset - Trading cost (%):", value=0.19, min = 0),
-                  numericInput("hedging_minCostAss", label="Asset - Min trading cost:", value=2.95, min = 0),
-                  numericInput("hedging_rateShort", label="Asset - Annual interest rate for short position (%):", value=4.95, min = 0),
-                  numericInput("hedging_lotCostOpt", label="Option - Trading cost per lot:", value=5.95, min = 0)
+           bsModal(id="hedging_commissionPlan", trigger = "hedging_button_show", title = "Profit & Loss", size = "large",
+            div(id="hedging_body",align="center",
+              fluidRow(
+                column(3),
+                column(6, uiOutput("hedging_modal_id")),
+                column(3, uiOutput("hedging_modal_id_hidden"))
+              ),
+              fluidRow(
+                column(3),
+                column(3,uiOutput("hedging_nOptLot_hedge")),
+                column(3,uiOutput("hedging_nAss_hedge"))
+              ),
+              fluidRow(
+                column(9, plotOutput("hedging_plot_distribution")),
+                column(3,
+                  sliderInput("hedging_slider_nBin", label = "Adjust bin width", min=1, max=100, value = 30, step = 1, ticks = FALSE),
+                  br(),
+                  sliderInput("hedging_slider_rangeHist", label = "Quantiles (%)", min = 0, max = 100, value = c(5,95), ticks = FALSE, step = 0.01),
+                  uiOutput("hedging_quantiles_text"),
+                  br(),br(),
+                  uiOutput("hedging_capital_text"),
+                  br(),br(),
+                  actionButton("hedging_button_saveHedging", "Save Changes", width = "80%")
+                )
+              ),
+              br(),
+              box(title = p("Modify Option", style="color:black; font-weight: bold;"),collapsible = TRUE, collapsed = FALSE, width = 12,
+                  fluidRow(
+                    column(4,uiOutput("hedging_type2")),
+                    column(4,uiOutput("hedging_strike2")),
+                    column(4,uiOutput("hedging_optMarketPrice2"))
+                  )
+              ),
+              box(title = p("Trading Costs", style="color:black; font-weight: bold;"),collapsible = TRUE, collapsed = FALSE, width = 12,
+                  fluidRow(
+                    column(3,br(),numericInput("hedging_percCostAss", label="Asset: Trading cost (%):", value=0.19, min = 0)),
+                    column(3,br(),numericInput("hedging_minCostAss", label="Asset: Min trading cost:", value=2.95, min = 0)),
+                    column(3,numericInput("hedging_rateShort", label="Asset: Yearly interest rate short position (%):", value=4.95, min = 0)),
+                    column(3,numericInput("hedging_lotCostOpt", label="Option: Trading cost per lot:", value=5.95, min = 0))
                 )
               )
             )
-          )),
+          ),
           fluidRow(column(12,br(),
             DT::dataTableOutput("hedging_table_results")
           )),
           br(),
           fluidRow(
-            column(8),
+            column(2,actionButton(inputId = "hedging_button_show", label = "Show P&L")),
+            column(6),
             column(2,actionButton(inputId = "hedging_button_delete", label = "Delete")),
             column(2,actionButton(inputId = "hedging_button_deleteAll", label = "Delete All"))
           )         
