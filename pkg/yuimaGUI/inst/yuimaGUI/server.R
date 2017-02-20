@@ -58,14 +58,15 @@ server <- function(input, output, session) {
     for (symb in names(yuimaGUIdata$model)){
       for (i in 1:length(yuimaGUIdata$model[[symb]])){
         newRow <- data.frame(
-          Symb = as.character(symb),
-          Class = as.character(yuimaGUIdata$model[[symb]][[i]]$info$class),
-          Model = as.character(yuimaGUIdata$model[[symb]][[i]]$info$modName),
-          Jumps = as.character(yuimaGUIdata$model[[symb]][[i]]$info$jumps),
+          Symb = symb,
+          Class = yuimaGUIdata$model[[symb]][[i]]$info$class,
+          Model = yuimaGUIdata$model[[symb]][[i]]$info$modName,
+          Jumps = yuimaGUIdata$model[[symb]][[i]]$info$jumps,
           From = as.character(start(yuimaGUIdata$model[[symb]][[i]]$model@data@original.data)),
           To = as.character(end(yuimaGUIdata$model[[symb]][[i]]$model@data@original.data)),
-          AIC = as.character(yuimaGUIdata$model[[symb]][[i]]$aic),
-          BIC = as.character(yuimaGUIdata$model[[symb]][[i]]$bic))
+          AIC = yuimaGUIdata$model[[symb]][[i]]$aic,
+          BIC = yuimaGUIdata$model[[symb]][[i]]$bic,
+          stringsAsFactors = FALSE)
         rownames(newRow) <- as.character(paste(symb," ", i, sep=""))
         yuimaGUItable$model <<- rbind(yuimaGUItable$model, newRow)
       }
@@ -76,18 +77,25 @@ server <- function(input, output, session) {
     yuimaGUItable$simulation <<- data.frame()
     for (symb in names(yuimaGUIdata$simulation)){
       for (i in 1:length(yuimaGUIdata$simulation[[symb]])){
+        estimated.from <- NA
+        estimated.to <- NA
+        if (!is.null(yuimaGUIdata$simulation[[symb]][[i]]$model$model@data@original.data)){
+          estimated.from <- as.character(start(yuimaGUIdata$simulation[[symb]][[i]]$model$model@data@original.data))
+          estimated.to <- as.character(end(yuimaGUIdata$simulation[[symb]][[i]]$model$model@data@original.data))
+        }
         newRow <- data.frame(
-          "Symb" = as.character(symb),
-          "Class" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$class),
-          "Model" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$model),
-          "Jumps" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$jumps),
-          "N sim" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$nsim),
-          "N step" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$nstep),
+          "Symb" = symb,
+          "Class" = yuimaGUIdata$simulation[[symb]][[i]]$model$info$class,
+          "Model" = yuimaGUIdata$simulation[[symb]][[i]]$model$info$modName,
+          "Jumps" = yuimaGUIdata$simulation[[symb]][[i]]$model$info$jumps,
+          "N sim" = yuimaGUIdata$simulation[[symb]][[i]]$info$nsim,
+          "N step" = yuimaGUIdata$simulation[[symb]][[i]]$info$nstep,
+          "delta" = yuimaGUIdata$simulation[[symb]][[i]]$info$delta,
           "Simulated from" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$simulate.from),
           "Simulated to" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$simulate.to),
-          "Estimated from" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$estimate.from),
-          "Estimated to" = as.character(yuimaGUIdata$simulation[[symb]][[i]]$info$estimate.to),
-          check.names = FALSE)
+          "Estimated from" = estimated.from,
+          "Estimated to" = estimated.to,
+          check.names = FALSE, stringsAsFactors = FALSE)
         rownames(newRow) <- as.character(paste(symb," ", i, sep=""))
         yuimaGUItable$simulation <<- rbind(yuimaGUItable$simulation, newRow)
       }
@@ -105,28 +113,28 @@ server <- function(input, output, session) {
     if (length(yuimaGUIdata$hedging)!=0){
       for (i in 1:length(yuimaGUIdata$hedging)){
         newRow <- data.frame(
-          "Symb" = as.character(yuimaGUIdata$hedging[[i]]$symb),
-          "Number of Simulations" = as.integer(yuimaGUIdata$hedging[[i]]$info$nsim),
-          "Average Return (%)" = round(as.numeric(yuimaGUIdata$hedging[[i]]$info$profit*100),2),
-          "Option Lots_to_Buy" = as.integer(yuimaGUIdata$hedging[[i]]$info$LotsToBuy),
-          "Assets to Buy" = as.integer(yuimaGUIdata$hedging[[i]]$info$buy),
-          "Assets to Sell" = as.integer(yuimaGUIdata$hedging[[i]]$info$sell),
-          "Asset Price" = as.numeric(yuimaGUIdata$hedging[[i]]$info$assPrice),
-          "Option Price" = as.numeric(yuimaGUIdata$hedging[[i]]$info$optPrice),
+          "Symb" = yuimaGUIdata$hedging[[i]]$symb,
+          "Number of Simulations" = yuimaGUIdata$hedging[[i]]$info$nsim,
+          "Average Return (%)" = round(yuimaGUIdata$hedging[[i]]$info$profit*100,2),
+          "Option Lots_to_Buy" = yuimaGUIdata$hedging[[i]]$info$LotsToBuy,
+          "Assets to Buy" = yuimaGUIdata$hedging[[i]]$info$buy,
+          "Assets to Sell" = yuimaGUIdata$hedging[[i]]$info$sell,
+          "Asset Price" = yuimaGUIdata$hedging[[i]]$info$assPrice,
+          "Option Price" = yuimaGUIdata$hedging[[i]]$info$optPrice,
           "Option Type" = yuimaGUIdata$hedging[[i]]$info$type,
-          "Strike" = as.numeric(yuimaGUIdata$hedging[[i]]$info$strike),
-          "Maturity" = as.Date(yuimaGUIdata$hedging[[i]]$info$maturity),
-          "Lot Multiplier"=as.numeric(yuimaGUIdata$hedging[[i]]$info$optLotMult),
-          "Trading_Cost per Lot"=as.numeric(yuimaGUIdata$hedging[[i]]$info$optLotCost),
-          "Asset Trading_Cost (%)"=as.numeric(yuimaGUIdata$hedging[[i]]$info$assPercCost)*100,
-          "Asset Min Trading_Cost"=as.numeric(yuimaGUIdata$hedging[[i]]$info$assMinCost),
-          "Asset Yearly_Short_Rate (%)"=as.numeric(yuimaGUIdata$hedging[[i]]$info$assRateShortSelling)*100,
-          "Model" = as.character(yuimaGUIdata$hedging[[i]]$info$model),
-          "Estimated from" = as.Date(yuimaGUIdata$hedging[[i]]$info$estimate.from),
-          "Estimated to" = as.Date(yuimaGUIdata$hedging[[i]]$info$estimate.to),
-          "AIC" = as.numeric(yuimaGUIdata$hedging[[i]]$aic),
-          "BIC" = as.numeric(yuimaGUIdata$hedging[[i]]$bic),
-          check.names = FALSE)
+          "Strike" = yuimaGUIdata$hedging[[i]]$info$strike,
+          "Maturity" = yuimaGUIdata$hedging[[i]]$info$maturity,
+          "Lot Multiplier"=yuimaGUIdata$hedging[[i]]$info$optLotMult,
+          "Trading_Cost per Lot"=yuimaGUIdata$hedging[[i]]$info$optLotCost,
+          "Asset Trading_Cost (%)"=yuimaGUIdata$hedging[[i]]$info$assPercCost*100,
+          "Asset Min Trading_Cost"=yuimaGUIdata$hedging[[i]]$info$assMinCost,
+          "Asset Yearly_Short_Rate (%)"=yuimaGUIdata$hedging[[i]]$info$assRateShortSelling*100,
+          "Model" = yuimaGUIdata$hedging[[i]]$model$info$modName,
+          "Estimated from" = start(yuimaGUIdata$hedging[[i]]$model$model@data@original.data),
+          "Estimated to" = end(yuimaGUIdata$hedging[[i]]$model$model@data@original.data),
+          "AIC" = yuimaGUIdata$hedging[[i]]$model$aic,
+          "BIC" = yuimaGUIdata$hedging[[i]]$model$bic,
+          check.names = FALSE, stringsAsFactors = FALSE)
         yuimaGUItable$hedging <<- rbind.fill(yuimaGUItable$hedging, newRow)
       }
     }
@@ -1149,10 +1157,11 @@ server <- function(input, output, session) {
   }
   
   
-  
-  addSimulation <- function(modelYuima, symbName, info, toLog = FALSE, xinit, true.parameter, nsim, data = NA, saveTraj = TRUE, seed=NULL, sampling, space.discretized = FALSE, method = "euler", session, anchorId){
-    if(!is.na(seed)) set.seed(seed)
-    if(is.na(seed)) set.seed(NULL)
+  simulateGUI <- function(symbName, modelYuimaGUI, xinit, nsim, nstep, simulate.from, simulate.to, saveTraj, space.discretized, method, session, anchorId, alertId = NULL, true.parameter = NULL){
+    modelYuima <- modelYuimaGUI$model
+    model <- modelYuima@model
+    toLog <- ifelse(is.null(modelYuimaGUI$info$toLog), FALSE, modelYuimaGUI$info$toLog)
+    if(toLog==TRUE) xinit <- log(xinit)
     if(saveTraj==TRUE){
       trajectory <- zoo::zoo(order.by = numeric())
       hist <- NA
@@ -1161,35 +1170,55 @@ server <- function(input, output, session) {
       trajectory <- NA
       hist <- numeric(nsim)
     }
-    if(toLog==TRUE) xinit <- log(xinit)
+    if(is.null(true.parameter)){
+      convert <- TRUE
+      if (modelYuimaGUI$info$class=="Fractional process") true.parameter <- as.list(modelYuimaGUI$qmle["Estimate",])
+      else true.parameter <- as.list(modelYuimaGUI$qmle@coef)
+      data <- modelYuima@data@original.data
+      data_index <- index(data)
+      real_delta <- as.numeric(last(data_index)-data_index[1])/(length(data_index)-1)
+      used_delta <- modelYuima@sampling@delta 
+      if(is.numeric(data_index)){
+        Initial <- round(digits = 0, simulate.from/real_delta)*used_delta
+        Terminal <- round(digits = 0, simulate.to/real_delta)*used_delta
+      } else {
+        Initial <- round(digits = 0, as.numeric(simulate.from-start(data))/real_delta)*used_delta
+        Terminal <- round(digits = 0, as.numeric(simulate.to-start(data))/real_delta)*used_delta
+      }
+      if (modelYuimaGUI$info$class %in% c("COGARCH", "CARMA") | is.na(nstep))
+        nstep <- (Terminal-Initial)/used_delta
+      sampling <- setSampling(Initial = Initial, Terminal = Terminal, n = nstep)
+    } else {
+      convert <- FALSE
+      sampling <- setSampling(Initial = simulate.from, Terminal = simulate.to, n = nstep)
+    }
     is.valid <- TRUE
-    model <- modelYuima@model
-    if (info$class=="COGARCH") {
+    if (modelYuimaGUI$info$class=="COGARCH") {
       noise <- cogarchNoise(yuima = modelYuima, param = true.parameter)
       xinit <- c(xinit, as.numeric(last(yuima:::onezoo(noise$Cogarch)))[-1])
       increments <- noise$incr.L
     }
-    if (info$class=="CARMA") {
+    if (modelYuimaGUI$info$class=="CARMA") {
       increments <- CarmaNoise(yuima = modelYuima, param = true.parameter)
-      x <- try(yuima::simulate(object = model, increment.W = t(increments), xinit = as.numeric(first(modelYuima@data@original.data)), true.parameter = true.parameter, sampling = setSampling(Initial = modelYuima@sampling@Initial, delta = modelYuima@sampling@delta, n = length(increments)), space.discretized = space.discretized, method = method))
+      x <- try(yuima::simulate(object = model, increment.W = t(increments), xinit = as.numeric(first(modelYuima@data@original.data)), true.parameter = true.parameter, sampling = setSampling(Initial = modelYuima@sampling@Initial, delta = used_delta, n = length(increments)), space.discretized = space.discretized, method = method))
       if (class(x)=="try-error"){
-        createAlert(session = session, anchorId = anchorId, content = paste("Unable to simulate ", symbName," by ", info$model, ". Probably something wrong with the estimation of this model", sep = ""), style = "danger")
+        createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste("Unable to simulate ", symbName," by ", modelYuimaGUI$info$modName, ". Probably something wrong with the estimation of this model", sep = ""), style = "danger")
         return()
       }
       xinit <- c(xinit, as.numeric(last(yuima:::onezoo(x)))[-1])
     }
-    if (info$class=="Fractional process") if (true.parameter[["hurst"]]>=1 | true.parameter[["hurst"]]<=0) {
-      createAlert(session = session, anchorId = anchorId, content = "Hurst coefficient must greater than 0 and less than 1", style = "danger")
+    if (modelYuimaGUI$info$class=="Fractional process") if (true.parameter[["hurst"]]>=1 | true.parameter[["hurst"]]<=0) {
+      createAlert(session = session, anchorId = anchorId, alertId = alertId, content = "Hurst coefficient must greater than 0 and less than 1", style = "danger")
       return()
     }
     withProgress(message = 'Simulating: ', value = 0, {
       for (i in 1:nsim){
         incProgress(1/nsim, detail = paste("Simulating:",i,"(/",nsim,")"))
-        if (info$class=="COGARCH")
+        if (modelYuimaGUI$info$class=="COGARCH")
           simulation <- try(yuima::simulate(object = model, increment.L = sample(x = increments, size = sampling@n, replace = TRUE), xinit = xinit, true.parameter = true.parameter, sampling = sampling, space.discretized = space.discretized, method = method))
-        else if (info$class=="CARMA")
+        else if (modelYuimaGUI$info$class=="CARMA")
           simulation <- try(yuima::simulate(object = model, increment.W = t(sample(x = increments, size = sampling@n, replace = TRUE)), xinit = xinit, true.parameter = true.parameter, sampling = sampling, space.discretized = space.discretized, method = method))
-        else if (info$class=="Fractional process")
+        else if (modelYuimaGUI$info$class=="Fractional process")
           simulation <- try(yuima::simulate(object = model, xinit = xinit, true.parameter = true.parameter, hurst = true.parameter[["hurst"]], sampling = sampling, space.discretized = space.discretized, method = method))
         else
           simulation <- try(yuima::simulate(object = model, xinit = xinit, true.parameter = true.parameter, sampling = sampling, space.discretized = space.discretized, method = method))
@@ -1210,35 +1239,41 @@ server <- function(input, output, session) {
       }
     })
     if (!is.valid){
-      if(info$class %in% c("CARMA","COGARCH")) msg <- paste("Unable to simulate ", symbName," by ", info$model, ". Probably something wrong with the estimation of this model", sep = "")
-      else msg <- paste("Unable to simulate", symbName,"by", info$model)
-      createAlert(session = session, anchorId = anchorId, content = msg, style = "danger")
+      if(modelYuimaGUI$info$class %in% c("CARMA","COGARCH")) msg <- paste("Unable to simulate ", symbName," by ", modelYuimaGUI$info$modName, ". Probably something wrong with the estimation of this model", sep = "")
+      else msg <- paste("Unable to simulate", symbName,"by", modelYuimaGUI$info$modName)
+      createAlert(session = session, anchorId = anchorId, alertId = alertId, content = msg, style = "danger")
       return()
     }
-    
-    if(saveTraj==TRUE){
+    if(saveTraj==TRUE & convert==TRUE){
       times <- index(trajectory)
-      if(class(info$simulate.from)=="Date")
-        index(trajectory) <- as.POSIXct(24*60*60*(times-times[1])/simulation@sampling@delta[1]*as.numeric(info$simulate.to-info$simulate.from)/(simulation@sampling@n[1]), origin = info$simulate.from)
-      if(class(info$simulate.from)=="numeric")
-        index(trajectory) <- as.numeric(times/simulation@sampling@delta[1]*as.numeric(info$simulate.to-info$simulate.from)/(simulation@sampling@n[1]))
+      if(is.numeric(data_index))
+        index(trajectory) <- as.numeric(times/used_delta*real_delta)
+      else
+        index(trajectory) <- as.POSIXct(24*60*60*(times-times[1])/used_delta*real_delta, origin = simulate.from)
       if(!is.null(colnames(trajectory)))
         colnames(trajectory) <- seq(1:length(colnames(trajectory)))
     }
-    
     if(toLog==TRUE){
       trajectory <- exp(trajectory)
       hist <- exp(hist)
     }
-    
-    info$nsim <- nsim
-    info$nstep <- sampling@n
-    yuimaGUIdata$simulation[[symbName]][[ifelse(is.null(length(yuimaGUIdata$simulation[[symbName]])),1,length(yuimaGUIdata$simulation[[symbName]])+1)]] <<- list(
-      trajectory = trajectory,
-      hist = hist,
-      true.parameter = true.parameter,
-      info = info
-    )
+    return(list(hist=hist, trajectory=trajectory, nstep = sampling@n[1], simulate.from = simulate.from, simulate.to = simulate.to, delta = sampling@delta))
+  }
+  
+  
+  
+  addSimulation <- function(modelYuimaGUI, symbName, xinit, nsim, nstep, simulate.from, simulate.to, saveTraj, seed, sampling, true.parameter = NULL, space.discretized = FALSE, method = "euler", session, anchorId){
+    if(!is.na(seed)) set.seed(seed)
+    if(is.na(seed)) set.seed(NULL)
+    sim <- simulateGUI(symbName = symbName, modelYuimaGUI = modelYuimaGUI, xinit = xinit, nsim = nsim, nstep = nstep, simulate.from = simulate.from, simulate.to = simulate.to, saveTraj = saveTraj, space.discretized = space.discretized, method = method, session = session, anchorId = anchorId, true.parameter = true.parameter)
+    if(!is.null(sim)){
+      yuimaGUIdata$simulation[[symbName]][[ifelse(is.null(length(yuimaGUIdata$simulation[[symbName]])),1,length(yuimaGUIdata$simulation[[symbName]])+1)]] <<- list(
+        model = modelYuimaGUI,
+        trajectory = sim$trajectory,
+        hist = sim$hist,
+        info = list(nsim = nsim, nstep = sim$nstep, simulate.from = sim$simulate.from, simulate.to = sim$simulate.to, delta = sim$delta)
+      )
+    }
   }
   
   
@@ -1279,55 +1314,40 @@ server <- function(input, output, session) {
   
   
   
-  addHedging <- function(model, symbName, info = list(), xinit, true.parameter, nsim, sampling, session, anchorId){
-    closeAlert(session, "addHedging_alert")
-    hist <- vector()
-    is.valid <- TRUE
-    modObj <- model$model@model
-    withProgress(message = 'Simulating: ', value = 0, {
-      for (i in 1:nsim){
-        incProgress(1/nsim, detail = paste("Simulating:",i,"(/",nsim,")"))
-        simulation <- try(yuima::simulate(object = modObj, xinit = xinit, true.parameter = true.parameter, nsim = nsim, sampling = sampling))
-        if (class(simulation)=="try-error"){
-          is.valid <- FALSE
-          break()
-        }
-        if(is.valid)
-          hist <- c(hist, as.numeric(tail(simulation@data@zoo.data[[1]],1)))
-      }
-    })
-    if (!is.valid){
-      createAlert(session = session, anchorId = anchorId, alertId = "addHedging_alert" , content = paste("Unable to simulate", symbName,"by", info$model), style = "danger")
-      return()
+  addHedging <- function(modelYuimaGUI, symbName, info, xinit, nsim, nstep, simulate.from, simulate.to, session, anchorId){
+    alertId <- "addHedging_alert"
+    closeAlert(session, alertId)
+    sim <- simulateGUI(symbName = symbName, modelYuimaGUI = modelYuimaGUI, xinit = xinit, simulate.from = simulate.from, simulate.to = simulate.to, nstep = nstep, nsim = nsim, saveTraj = FALSE, space.discretized = FALSE, method = "euler", session = session, anchorId = anchorId, alertId = alertId)
+    if(!is.null(sim)){
+      today <- simulate.from
+      profits <- profit_distribution(nOpt=1*info$optLotMult, 
+                                     nAss=0, 
+                                     type=info$type, 
+                                     strike=info$strike, 
+                                     priceAtMaturity=sim$hist, 
+                                     optMarketPrice=info$optPrice, 
+                                     assMarketPrice=info$assPrice, 
+                                     percCostAss=info$assPercCost, 
+                                     minCostAss=info$assMinCost, 
+                                     lotCostOpt=info$optLotCost, 
+                                     lotMultiplier=info$optLotMult, 
+                                     shortCostPerYear=info$assRateShortSelling, 
+                                     t0=today, 
+                                     maturity=info$maturity)
+      info$profit <- mean(profits)/(info$optLotMult*info$optPrice+info$optLotCost)
+      info$stdErr <- sd(profits)/sqrt(length(profits))/(info$optLotMult*info$optPrice+info$optLotCost)
+      info$nsim <- nsim
+      info$buy <- ifelse(info$type=="call",NA,0)
+      info$sell <- ifelse(info$type=="put",NA,0)
+      info$LotsToBuy <- 1
+      info$today <- today
+      yuimaGUIdata$hedging[[length(yuimaGUIdata$hedging)+1]] <<- list(
+        model = modelYuimaGUI,
+        hist = sim$hist,
+        info = info,
+        symb = symbName
+      )
     }
-    profits <- profit_distribution(nOpt=1*info$optLotMult, 
-                                   nAss=0, 
-                                   type=info$type, 
-                                   strike=info$strike, 
-                                   priceAtMaturity=hist, 
-                                   optMarketPrice=info$optPrice, 
-                                   assMarketPrice=info$assPrice, 
-                                   percCostAss=info$assPercCost, 
-                                   minCostAss=info$assMinCost, 
-                                   lotCostOpt=info$optLotCost, 
-                                   lotMultiplier=info$optLotMult, 
-                                   shortCostPerYear=info$assRateShortSelling, 
-                                   t0=info$estimate.to, 
-                                   maturity=info$maturity)
-    info$profit <- mean(profits)/(info$optLotMult*info$optPrice+info$optLotCost)
-    info$stdErr <- sd(profits)/sqrt(length(profits))/(info$optLotMult*info$optPrice+info$optLotCost)
-    info$nsim <- nsim
-    info$buy <- ifelse(info$type=="call",NA,0)
-    info$sell <- ifelse(info$type=="put",NA,0)
-    info$LotsToBuy <- 1
-    yuimaGUIdata$hedging[[length(yuimaGUIdata$hedging)+1]] <<- list(
-      hist = hist,
-      true.parameter = true.parameter,
-      info = info,
-      aic = model$aic,
-      bic = model$bic,
-      symb = symbName
-    )
   }
   
   
@@ -3021,7 +3041,7 @@ server <- function(input, output, session) {
         if (is.null(yuimaGUIsettings$simulation[[modID]][["xinit"]]))
           yuimaGUIsettings$simulation[[modID]][["xinit"]] <<- 1
         if (is.null(yuimaGUIsettings$simulation[[modID]][["nstep"]]))
-          yuimaGUIsettings$simulation[[modID]][["nstep"]] <<- NA
+          yuimaGUIsettings$simulation[[modID]][["nstep"]] <<- 1000
         if (is.null(yuimaGUIsettings$simulation[[modID]][["nsim"]]))
           yuimaGUIsettings$simulation[[modID]][["nsim"]] <<- 1
         if (is.null(yuimaGUIsettings$simulation[[modID]][["t0"]]))
@@ -3089,7 +3109,6 @@ server <- function(input, output, session) {
     if(!is.null(input$simulate_modelID)){
       id <- unlist(strsplit(input$simulate_modelID, split = " "))
       if (input$simulate_modelID %in% names(yuimaGUIdata$usr_simulation)){
-        if (is.na(yuimaGUIsettings$simulation[[input$simulate_modelID]][["nstep"]])) yuimaGUIsettings$simulation[[input$simulate_modelID]][["nstep"]] <<- 1000
         numericInput("simulate_nstep", label = "Number of steps per simulation", value = yuimaGUIsettings$simulation[[input$simulate_modelID]][["nstep"]], min = 1, step = 1)
       } else if (!(isolate({yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class}) %in% c("COGARCH", "CARMA")))
         numericInput("simulate_nstep", label = "Number of steps per simulation", value = yuimaGUIsettings$simulation[[input$simulate_modelID]][["nstep"]], min = 1, step = 1)
@@ -3207,24 +3226,23 @@ server <- function(input, output, session) {
         for (modID in rownames(modelsToSimulate$table)){
           if(modID %in% names(yuimaGUIdata$usr_simulation)){
             incProgress(1/nrow(modelsToSimulate$table), detail = paste(modID,"-",yuimaGUIdata$usr_simulation[[modID]][["Model"]]))
-            info <- list(
-              "class" = yuimaGUIdata$usr_simulation[[modID]][["Class"]],
-              "model" = yuimaGUIdata$usr_simulation[[modID]][["Model"]],
-              "jumps" = ifelse(is.null(yuimaGUIdata$usr_simulation[[modID]][["Jumps"]]),NA, yuimaGUIdata$usr_simulation[[modID]][["Jumps"]]),
-              "estimate.from" = NA,
-              "estimate.to" = NA,
-              "simulate.from" = as.numeric(yuimaGUIsettings$simulation[[modID]][["t0"]]),
-              "simulate.to" = as.numeric(yuimaGUIsettings$simulation[[modID]][["t1"]]))
-            Initial <- yuimaGUIsettings$simulation[[modID]][["t0"]]
-            Terminal <- yuimaGUIsettings$simulation[[modID]][["t1"]]
+            jumps <- ifelse(is.null(yuimaGUIdata$usr_simulation[[modID]][["Jumps"]]),NA, yuimaGUIdata$usr_simulation[[modID]][["Jumps"]])
+            modName <- yuimaGUIdata$usr_simulation[[modID]][["Model"]]
+            modelYuimaGUI <- list(model = setYuima(model = setModelByName(name = modName, jumps = jumps)),
+                                  info = list(class = yuimaGUIdata$usr_simulation[[modID]][["Class"]], 
+                                              modName = modName,
+                                              jumps = jumps
+                                              )
+                                  )
             addSimulation(
-              modelYuima = setYuima(model = setModelByName(name = info$model, jumps = info$jumps)),
-              true.parameter = yuimaGUIdata$usr_simulation[[modID]][["true.param"]],
+              modelYuimaGUI = modelYuimaGUI,
               symbName = modID,
-              info = info,
               xinit = yuimaGUIsettings$simulation[[modID]][["xinit"]],
+              true.parameter = yuimaGUIdata$usr_simulation[[modID]][["true.param"]],
               nsim = yuimaGUIsettings$simulation[[modID]][["nsim"]],
-              sampling = setSampling(Initial = Initial, Terminal = Terminal, n=yuimaGUIsettings$simulation[[modID]][["nstep"]], delta = NA),
+              nstep = yuimaGUIsettings$simulation[[modID]][["nstep"]],
+              simulate.from = yuimaGUIsettings$simulation[[modID]][["t0"]],
+              simulate.to = yuimaGUIsettings$simulation[[modID]][["t1"]],
               saveTraj = yuimaGUIsettings$simulation[[modID]][["traj"]],
               seed = yuimaGUIsettings$simulation[[modID]][["seed"]],
               session = session,
@@ -3234,54 +3252,14 @@ server <- function(input, output, session) {
           else if(modID %in% rownames(yuimaGUItable$model)){
             id <- unlist(strsplit(modID, split = " "))
             incProgress(1/nrow(modelsToSimulate$table), detail = paste(id[1],"-",yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$modName))
-            data <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@data@original.data
-            toLog <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$toLog
-            if(class(index(data))=="Date"){
-              info <- list(
-                "class" = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class,
-                "model" = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$modName,
-                "jumps" = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$jumps,
-                "estimate.from" = as.Date(start(data)),
-                "estimate.to" = as.Date(end(data)),
-                "simulate.from" = yuimaGUIsettings$simulation[[modID]][["t0"]],
-                "simulate.to" = yuimaGUIsettings$simulation[[modID]][["t1"]])
-              Initial <- round(digits = 0, as.numeric(yuimaGUIsettings$simulation[[modID]][["t0"]]-start(data))/as.numeric(mean(diff(index(data)))))*yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
-              Terminal <- round(digits = 0, as.numeric(yuimaGUIsettings$simulation[[modID]][["t1"]]-start(data))/as.numeric(mean(diff(index(data)))))*yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
-            }
-            if(is.numeric(index(data))){
-              info <- list(
-                "class" = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class,
-                "model" = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$modName,
-                "jumps" = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$jumps,
-                "estimate.from" = as.numeric(start(data)),
-                "estimate.to" = as.numeric(end(data)),
-                "simulate.from" = as.numeric(yuimaGUIsettings$simulation[[modID]][["t0"]]),
-                "simulate.to" = as.numeric(yuimaGUIsettings$simulation[[modID]][["t1"]]))
-              Initial <- round(digits = 0, yuimaGUIsettings$simulation[[modID]][["t0"]]/as.numeric(mean(diff(index(data)))))*yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
-              Terminal <- round(digits = 0, yuimaGUIsettings$simulation[[modID]][["t1"]]/as.numeric(mean(diff(index(data)))))*yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
-            }
-            if (yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class %in% c("COGARCH", "CARMA")){
-              n <- (Terminal-Initial)/yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
-              #delta <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
-            } else if (!is.null(yuimaGUIsettings$simulation[[modID]][["nstep"]])) {
-              if (is.na(yuimaGUIsettings$simulation[[modID]][["nstep"]])) {
-                n <- (Terminal-Initial)/yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
-              } else {
-                n <- yuimaGUIsettings$simulation[[modID]][["nstep"]]
-                #delta <- NA
-              } 
-            }
-            if (yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class=="Fractional process") true.parameter <- as.list(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle["Estimate",])
-            else true.parameter <- as.list(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle@coef)
             addSimulation(
-              modelYuima = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model,
-              true.parameter = true.parameter,
+              modelYuimaGUI = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]],
               symbName = id[1],
-              info = info,
-              toLog = toLog,
               xinit = yuimaGUIsettings$simulation[[modID]][["xinit"]],
               nsim = yuimaGUIsettings$simulation[[modID]][["nsim"]],
-              sampling = setSampling(Initial = Initial, Terminal = Terminal, n=n),
+              nstep = yuimaGUIsettings$simulation[[modID]][["nstep"]],
+              simulate.from = yuimaGUIsettings$simulation[[modID]][["t0"]],
+              simulate.to = yuimaGUIsettings$simulation[[modID]][["t1"]],
               saveTraj = yuimaGUIsettings$simulation[[modID]][["traj"]],
               seed = yuimaGUIsettings$simulation[[modID]][["seed"]],
               session = session,
@@ -4693,11 +4671,7 @@ server <- function(input, output, session) {
       if(input$hedging_databaseModels_row_last_clicked %in% input$hedging_databaseModels_rows_selected){
         modID <- rownames(hedging_databaseModels_table)[input$hedging_databaseModels_row_last_clicked]
         id <- unlist(strsplit(modID, split = " "))
-        data <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@data@original.data
         info = list(
-          "model" = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$modName,
-          "estimate.from" = start(data),
-          "estimate.to" = end(data),
           "maturity"= input$hedging_maturity,
           "strike"=input$hedging_strike, 
           "type"=input$hedging_type, 
@@ -4708,19 +4682,15 @@ server <- function(input, output, session) {
           "assPercCost"= ifelse(is.na(input$hedging_percCostAss), 0, input$hedging_percCostAss/100),
           "assMinCost"= ifelse(is.na(input$hedging_minCostAss), 0, input$hedging_minCostAss),
           "assRateShortSelling"= ifelse(is.na(input$hedging_rateShort), 0, input$hedging_rateShort/100))
-        Initial <- 0
-        Terminal <- as.numeric(input$hedging_maturity-info$estimate.to)/as.numeric(info$estimate.to-info$estimate.from)*length(data)*yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@sampling@delta
-        n <- as.numeric(input$hedging_maturity-info$estimate.to)/as.numeric(info$estimate.to-info$estimate.from)*length(data)
-        if (yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info$class=="Fractional process") true.parameter <- as.list(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle["Estimate",])
-        else true.parameter <- as.list(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle@coef)
         addHedging(
-          model = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]],
-          true.parameter = true.parameter,
           symbName = id[1],
+          modelYuimaGUI = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]],
           info = info,
           xinit = input$hedging_assMarketPrice,
           nsim = input$hedging_nSim,
-          sampling = setSampling(Initial = Initial, Terminal = Terminal, n=n, delta = NA),
+          nstep = NA,
+          simulate.from = end(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@data@original.data),
+          simulate.to = input$hedging_maturity,
           session = session,
           anchorId = "hedging_alert"
         )
@@ -4827,11 +4797,11 @@ server <- function(input, output, session) {
                                        lotCostOpt=na_zero(input$hedging_lotCostOpt), 
                                        lotMultiplier=info$optLotMult, 
                                        shortCostPerYear=na_zero(input$hedging_rateShort)/100, 
-                                       t0=info$estimate.to, 
+                                       t0=info$today, 
                                        maturity=info$maturity)
         hedging_values$profits <- profits
         hedging_values$symb <- yuimaGUIdata$hedging[[id]]$symb
-        hedging_values$model <- yuimaGUIdata$hedging[[id]]$info$model
+        hedging_values$model <- yuimaGUIdata$hedging[[id]]$model$info$modName
       }
     }
   })

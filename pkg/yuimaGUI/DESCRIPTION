@@ -1,7 +1,7 @@
 Package: yuimaGUI
 Type: Package
 Title: A Graphical User Interface for the 'yuima' Package
-Version: 1.0.0
+Version: 1.0.1
 Author: YUIMA Project Team
 Maintainer: Emanuele Guidotti <emanuele.guidotti@studenti.unimi.it>
 Description: Provides a graphical user interface for the 'yuima' package.
