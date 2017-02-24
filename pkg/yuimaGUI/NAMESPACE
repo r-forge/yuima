@@ -1,2 +1,12 @@
 #exportPattern("^[[:alpha:]]+")
 export(yuimaGUI)
+
+importFrom("shiny", "runApp")
+importFrom("ggplot2", "geom_line")
+importFrom("DT", "renderDataTable")
+importFrom("quantmod", "getSymbols")
+importFrom("sde", "MOdist")
+importFrom("shinyBS", "createAlert")
+importFrom("shinydashboard", "dashboardSidebar")
+importFrom("shinyjs", "show")
+importFrom("yuima", "setData")
