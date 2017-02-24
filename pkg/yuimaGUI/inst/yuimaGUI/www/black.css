@@ -1,6 +1,5 @@
-h1, h2, h3, h4, h5, h6 {
+h1, h2, h3, h4, h5, h6, p {
   color: #CDCECD;
-  font-family: "Times New Roman", Georgia, Serif;
 }
 
 a:link, a:visited, a:active {
@@ -227,7 +226,7 @@ th{
   
 }
 
-#PrintModelLatex, #estimatedModelsLatex, #usr_modelClass_latex, #usr_model_saved_latex, #simulate_PrintModelLatex{
+#PrintModelLatex, #estimatedModelsLatex, #usr_modelClass_latex, #usr_model_saved_latex, #simulate_PrintModelLatex, #parametric_changepoint_info{
   font-size: 125%;
   color: #CDCECD;
 }

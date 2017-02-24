@@ -1703,9 +1703,9 @@ server <- function(input, output, session) {
           temp <- paste("X",seq(1,length(temp)),"_",make.names(input$yourFile$name),sep="")
     }
     if (class(temp)=="try-error")
-      return(selectInput("yourFileIndex",label = "Index", choices = c("Row Headers"="default","Numeric"="numeric"), selected = "default"))
+      return(selectInput("yourFileIndex",label = "Index", width = "60%", choices = c("Row Headers"="default","Numeric"="numeric"), selected = "default"))
     if (class(temp)!="try-error")
-      return(selectInput("yourFileIndex",label = "Index", choices = c("Row Headers"="default","Numeric"="numeric",temp), selected = "default"))
+      return(selectInput("yourFileIndex",label = "Index", width = "60%", choices = c("Row Headers"="default","Numeric"="numeric",temp), selected = "default"))
   })
 
 
@@ -1724,7 +1724,7 @@ server <- function(input, output, session) {
           sel <- "%Y-%m-%d"
           if (input$yourFileIndex=="numeric" | !all(is.na(as.numeric(as.character(rownames(z))))) )
             sel <- "numeric"
-          selectInput("yourFileFUN", label = "Index Format", choices = c("Numeric"="numeric", "Year-Month-Day    (yyyy-mm-dd)"="%Y-%m-%d", "Month-Day-Year    (mm-dd-yyyy)"="%m-%d-%Y", "Month-Day-Year    (mm-dd-yy)"="%m-%d-%y", "Day-Month-Year    (dd-mm-yyyy)"="%d-%m-%Y", "Day-Month-Year    (dd-mm-yy)"="%d-%m-%y", "Year/Month/Day    (yyyy/mm/dd)"="%Y/%m/%d", "Month/Day/Year    (mm/dd/yyyy)"="%m/%d/%Y", "Month/Day/Year    (mm/dd/yy)"="%m/%d/%y", "Day/Month/Year    (dd/mm/yyyy)"="%d/%m/%Y", "Day/Month/Year    (dd/mm/yy)"="%d/%m/%y"), selected = sel)
+          selectInput("yourFileFUN", label = "Index Format", width = "60%", choices = c("Numeric"="numeric", "Year-Month-Day    (yyyy-mm-dd)"="%Y-%m-%d", "Month-Day-Year    (mm-dd-yyyy)"="%m-%d-%Y", "Month-Day-Year    (mm-dd-yy)"="%m-%d-%y", "Day-Month-Year    (dd-mm-yyyy)"="%d-%m-%Y", "Day-Month-Year    (dd-mm-yy)"="%d-%m-%y", "Year/Month/Day    (yyyy/mm/dd)"="%Y/%m/%d", "Month/Day/Year    (mm/dd/yyyy)"="%m/%d/%Y", "Month/Day/Year    (mm/dd/yy)"="%m/%d/%y", "Day/Month/Year    (dd/mm/yyyy)"="%d/%m/%Y", "Day/Month/Year    (dd/mm/yy)"="%d/%m/%y"), selected = sel)
         }
       })
       if(input$yourFileIndex!="default" & input$yourFileIndex!="numeric")
