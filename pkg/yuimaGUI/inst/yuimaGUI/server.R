@@ -1161,6 +1161,10 @@ server <- function(input, output, session) {
     modelYuima <- modelYuimaGUI$model
     model <- modelYuima@model
     toLog <- ifelse(is.null(modelYuimaGUI$info$toLog), FALSE, modelYuimaGUI$info$toLog)
+    if(simulate.from >= simulate.to){
+      createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste("Unable to simulate ", symbName," by ", modelYuimaGUI$info$modName, ": ending time before starting time.", sep = ""), style = "danger")
+      return()
+    }
     if(toLog==TRUE) xinit <- log(xinit)
     if(saveTraj==TRUE){
       trajectory <- zoo::zoo(order.by = numeric())
@@ -1718,9 +1722,7 @@ server <- function(input, output, session) {
       output$yourFileFUN <- renderUI({
         if (!is.null(input$yourFileIndex)){
           sel <- "%Y-%m-%d"
-          if (input$yourFileIndex=="numeric" | 
-              "try-error"!=class(try(as.numeric(as.character(z[,input$yourFileIndex])))) | 
-              (!all(is.na(as.numeric(as.character(rownames(z))))) & (input$yourFileIndex=="default")))
+          if (input$yourFileIndex=="numeric" | !all(is.na(as.numeric(as.character(rownames(z))))) )
             sel <- "numeric"
           selectInput("yourFileFUN", label = "Index Format", choices = c("Numeric"="numeric", "Year-Month-Day    (yyyy-mm-dd)"="%Y-%m-%d", "Month-Day-Year    (mm-dd-yyyy)"="%m-%d-%Y", "Month-Day-Year    (mm-dd-yy)"="%m-%d-%y", "Day-Month-Year    (dd-mm-yyyy)"="%d-%m-%Y", "Day-Month-Year    (dd-mm-yy)"="%d-%m-%y", "Year/Month/Day    (yyyy/mm/dd)"="%Y/%m/%d", "Month/Day/Year    (mm/dd/yyyy)"="%m/%d/%Y", "Month/Day/Year    (mm/dd/yy)"="%m/%d/%y", "Day/Month/Year    (dd/mm/yyyy)"="%d/%m/%Y", "Day/Month/Year    (dd/mm/yy)"="%d/%m/%y"), selected = sel)
         }
@@ -3398,14 +3400,16 @@ server <- function(input, output, session) {
     dataDownload_traj <- reactive({
       id <- unlist(strsplit(input$simulate_showSimulation_simID, split = " "))
       x <- yuimaGUIdata$simulation[[id[1]]][[as.numeric(id[2])]]$trajectory
-      data.frame(x, row.names = index(x))
+      d <- data.frame(x, row.names = index(x))
+      colnames(d) <- paste(id[1],id[2],"_",seq(1, ncol(d)), sep = "")
+      return(d)
     })
     downloadHandler(
       filename = function() {
         paste(input$simulate_showSimulation_simID, ".txt", sep="")
       },
       content = function(file) {
-        write.table(dataDownload_traj(), file, row.names = TRUE, col.names = FALSE, quote = TRUE)
+        write.table(dataDownload_traj(), file, row.names = TRUE, col.names = TRUE, quote = TRUE)
       }
     )
   }
