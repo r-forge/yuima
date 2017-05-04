@@ -124,7 +124,7 @@ th{
 	background: linear-gradient(#606D60, #202220, #606D60);
 }
 
-#advancedSettingsButtonApplyDelta, #advancedSettingsButtonApplyAllDelta, #advancedSettingsButtonApplyModel, #advancedSettingsButtonApplyAllModel, #advancedSettingsButtonApplyGeneral, #advancedSettingsButtonApplyAllModelGeneral, #advancedSettingsButtonApplyAllGeneral, #buttonApplyRange, #buttonApplyAllRange, #simulate_button_apply_nsim, #simulate_button_applyAll_nsim, #simulate_button_apply_xinit, #simulate_button_applyAll_xinit, #simulate_button_apply_range, #simulate_button_applyAll_range, #simulate_button_apply_advancedSettings, #simulate_button_applyAll_advancedSettings, #parametric_modal_button_applyDelta, #parametric_modal_button_applyAllDelta, #parametric_modal_button_applyGeneral, #parametric_modal_button_applyAllModelGeneral, #parametric_modal_button_applyModel, #parametric_modal_button_applyAllModel, #parametric_buttonApplyRange, #parametric_buttonApplyAllRange {
+#advancedSettingsButtonApplyDelta, #advancedSettingsButtonApplyAllDelta, #advancedSettingsButtonApplyModel, #advancedSettingsButtonApplyAllModel, #advancedSettingsButtonApplyGeneral, #advancedSettingsButtonApplyAllModelGeneral, #advancedSettingsButtonApplyAllGeneral, #buttonApplyRange, #buttonApplyAllRange, #multi_buttonApplyRange, #multi_buttonApplyAllRange, #multi_advancedSettingsButtonApplyDelta, #multi_advancedSettingsButtonApplyAllDelta, #multi_advancedSettingsButtonApplyGeneral, #multi_advancedSettingsButtonApplyAllModelGeneral, #multi_advancedSettingsButtonApplyAllGeneral, #multi_advancedSettingsButtonApplyModel, #multi_advancedSettingsButtonApplyAllModel, #simulate_button_apply_nsim, #simulate_button_applyAll_nsim, #simulate_button_apply_xinit, #simulate_button_applyAll_xinit, #simulate_button_apply_range, #simulate_button_applyAll_range, #simulate_button_apply_advancedSettings, #simulate_button_applyAll_advancedSettings, #parametric_modal_button_applyDelta, #parametric_modal_button_applyAllDelta, #parametric_modal_button_applyGeneral, #parametric_modal_button_applyAllModelGeneral, #parametric_modal_button_applyModel, #parametric_modal_button_applyAllModel, #parametric_buttonApplyRange, #parametric_buttonApplyAllRange {
   width: 100%;
   color: #ffffff;
 	text-shadow: 1px 1px 1px #000;
@@ -144,7 +144,7 @@ th{
 	background: linear-gradient(#606D60, #202220, #606D60);
 }
 
-#finDataDelete, #finDataDeleteAll, #yourFileDelete, #yourFileDeleteAll, #buttonSelect_models_Univariate, #buttonSelectAll_models_Univariate, #buttonDelete_models_Univariate, #buttonDeleteAll_models_Univariate, #databaseModelsDelete, #databaseModelsDeleteAll, #simulation_button_deleteModels, #simulation_button_deleteAllModels, #simulate_button_selectModels, #simulate_button_selectAllModels, #simulate_monitor_button_delete, #simulate_monitor_button_deleteAll, #simulate_model_usr_button_select, #simulate_model_usr_button_selectAll, #simulate_model_usr_button_delete, #simulate_model_usr_button_deleteAll, #cluster_button_select, #cluster_button_selectAll, #cluster_button_delete, #cluster_button_deleteAll, #changepoint_button_select, #changepoint_button_selectAll, #changepoint_button_delete, #changepoint_button_deleteAll, #hedging_button_delete, #hedging_button_deleteAll, #parametric_changepoint_button_select, #parametric_changepoint_button_selectAll, #parametric_changepoint_button_delete, #parametric_changepoint_button_deleteAll, #llag_button_select, #llag_button_selectAll, #llag_button_delete, #llag_button_deleteAll, #changepoint_button_delete_estimated, #changepoint_button_deleteAll_estimated, #parametric_changepoint_button_delete_estimated, #parametric_changepoint_button_deleteAll_estimated, #llag_delete_analysis, #llag_deleteAll_analysis, #cluster_button_delete_analysis, #cluster_button_deleteAll_analysis {
+#finDataDelete, #finDataDeleteAll, #yourFileDelete, #yourFileDeleteAll, #buttonSelect_models_Univariate, #buttonSelectAll_models_Univariate, #buttonDelete_models_Univariate, #buttonDeleteAll_models_Univariate, #multi_buttonSelect_models_Univariate, #multi_buttonSelectAll_models_Univariate, #multi_buttonDelete_models_Univariate, #multi_buttonDeleteAll_models_Univariate, #databaseModelsDelete, #databaseModelsDeleteAll, #simulation_button_deleteModels, #simulation_button_deleteAllModels, #simulate_button_selectModels, #simulate_button_selectAllModels, #simulate_monitor_button_delete, #simulate_monitor_button_deleteAll, #simulate_model_usr_button_select, #simulate_model_usr_button_selectAll, #simulate_model_usr_button_delete, #simulate_model_usr_button_deleteAll, #cluster_button_select, #cluster_button_selectAll, #cluster_button_delete, #cluster_button_deleteAll, #changepoint_button_select, #changepoint_button_selectAll, #changepoint_button_delete, #changepoint_button_deleteAll, #hedging_button_delete, #hedging_button_deleteAll, #parametric_changepoint_button_select, #parametric_changepoint_button_selectAll, #parametric_changepoint_button_delete, #parametric_changepoint_button_deleteAll, #llag_button_select, #llag_button_selectAll, #llag_button_delete, #llag_button_deleteAll, #changepoint_button_delete_estimated, #changepoint_button_deleteAll_estimated, #parametric_changepoint_button_delete_estimated, #parametric_changepoint_button_deleteAll_estimated, #llag_delete_analysis, #llag_deleteAll_analysis, #cluster_button_delete_analysis, #cluster_button_deleteAll_analysis {
   font-size: 110%;
   width: 100%;  
   color: black;
@@ -162,7 +162,7 @@ th{
 }
 
 
-#DisplayPlotsRange, #simulate_button_setSimulation, #parametric_button_setRange {
+#DisplayPlotsRange, #multi_DisplayPlotsRange, #simulate_button_setSimulation, #parametric_button_setRange {
   width: 40%;
   height: 39px;
   color: #ffffff;
@@ -170,7 +170,7 @@ th{
 	background: linear-gradient(#202220, #159609, #202220);
 }
 
-#advancedSettingsButton, #simulate_button_advancedSettings, #parametric_button_settings {
+#advancedSettingsButton, #multi_advancedSettingsButton, #simulate_button_advancedSettings, #parametric_button_settings {
   width: 50%;
   height: 39px;
   color: #ffffff;
@@ -192,7 +192,7 @@ th{
 	background: radial-gradient(#202220, #963131, #202220);
 }
 
-#EstimateModels, #simulate_simulateModels, #cluster_button_startCluster, #changepoint_button_startEstimation, #parametric_changepoint_button_startEstimation, #hedging_button_startComputation, #llag_button_startEstimation {
+#EstimateModels, #multi_EstimateModels, #simulate_simulateModels, #cluster_button_startCluster, #changepoint_button_startEstimation, #parametric_changepoint_button_startEstimation, #hedging_button_startComputation, #llag_button_startEstimation {
   width: 100%;  
 	color: #ffffff;
 	text-shadow: 1px 1px 1px #000;
