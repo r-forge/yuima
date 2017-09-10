@@ -7,10 +7,20 @@ suppressMessages(require(quantmod))
 suppressMessages(require(shinydashboard)) 
 suppressMessages(require(shinyBS))
 suppressMessages(require(ggplot2))
+suppressMessages(require(plotly))
 
 
 if(!exists("yuimaGUIdata"))
-  yuimaGUIdata <- reactiveValues(series=list(), model=list(), usr_model = list(), simulation=list(), usr_simulation = list(), cp=list(), cpYuima=list(), llag = list(), cluster = list(), hedging = list())
+  yuimaGUIdata <- reactiveValues(series=list(), 
+                                 model=list(), multimodel=list(), 
+                                 usr_model = list(), usr_multimodel = list(), 
+                                 simulation=list(), multisimulation=list(), 
+                                 usr_simulation = list(), usr_multisimulation = list(), 
+                                 cp=list(), 
+                                 cpYuima=list(), 
+                                 llag = list(), 
+                                 cluster = list(), 
+                                 hedging = list())
 
 if(is.null(getOption("yuimaGUItheme"))) options(yuimaGUItheme = "black")
 

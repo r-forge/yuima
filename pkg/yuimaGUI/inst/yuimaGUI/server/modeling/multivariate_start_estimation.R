@@ -1,13 +1,13 @@
 ###Model Input depending on Class Input
 output$multi_model <- renderUI({
-  choices <- as.vector(defaultModels[names(defaultModels)==input$multi_modelClass])
+  choices <- as.vector(defaultMultiModels[names(defaultMultiModels)==input$multi_modelClass])
   if(input$multi_modelClass!="Fractional process")
-    for(i in names(yuimaGUIdata$usr_model))
-      if (yuimaGUIdata$usr_model[[i]]$class==input$multi_modelClass) {
+    for(i in names(yuimaGUIdata$usr_multimodel))
+      if (yuimaGUIdata$usr_multimodel[[i]]$class==input$multi_modelClass) {
         if(input$multi_modelClass!="Diffusion process") choices <- c(i, choices)
         else if (length(setModelByName(name = i)@parameter@all)!=0) choices <- c(i, choices)
       }
-  return (selectInput("multi_model",label = "Model Name", choices = choices, multiple = TRUE))
+  return (selectInput("multi_model",label = "Model Name", choices = choices, multiple = FALSE))
 })
 
 output$multi_jumps <- renderUI({
@@ -47,7 +47,7 @@ output$multi_PrintModelLatex <- renderUI({
   if (!is.null(input$multi_model)){
     shinyjs::show("multi_titlePrintModelLatex")
     class <- isolate({input$multi_modelClass})
-    return(withMathJax(printModelLatex(names = input$multi_model, process = class, jumps = jumps_shortcut(class = class, jumps = input$multi_jumps))))
+    return(withMathJax(printModelLatex(multi = TRUE, symb = rownames(multi_seriesToEstimate$table), names = input$multi_model, process = class, jumps = jumps_shortcut(class = class, jumps = input$multi_jumps))))
   }
 })
 
@@ -253,7 +253,7 @@ observeEvent(input$multi_buttonApplyAllRange, priority = 1, {
   updateRange_multi_seriesToEstimate(rownames(multi_seriesToEstimate$table), range = input$multi_chooseRange, type = class(index(getData(input$multi_plotsRangeSeries))))
 })
 
-
+prev_dim <- 0
 prev_buttonDelta <- 0
 prev_buttonAllDelta <- 0
 observe({
@@ -262,66 +262,74 @@ observe({
     if (is.null(yuimaGUIsettings$delta[[symb]])) {
       i <- index(getData(symb))
       if(is.numeric(i)) yuimaGUIsettings$delta[[symb]] <<- mode(diff(i))
-      else yuimaGUIsettings$delta[[symb]] <<- 0.01
+      else yuimaGUIsettings$delta[[symb]] <<- mode(diff(i))/100
     }
     if (is.null(yuimaGUIsettings$toLog[[symb]])) yuimaGUIsettings$toLog[[symb]] <<- FALSE
-    data <- na.omit(as.numeric(getData(symb)))
-    if (yuimaGUIsettings$toLog[[symb]]==TRUE) data <- log(data)
-    for (modName in input$multi_model){
-      if (class(try(setModelByName(modName, intensity = input$model_levy_intensity, jumps = jumps_shortcut(class = class, jumps = input$multi_jumps), AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA))))!="try-error"){
-        if (is.null(yuimaGUIsettings$estimation[[modName]]))
-          yuimaGUIsettings$estimation[[modName]] <<- list()
-        if (is.null(yuimaGUIsettings$estimation[[modName]][[symb]]))
-          yuimaGUIsettings$estimation[[modName]][[symb]] <<- list()
-        if (is.null(yuimaGUIsettings$estimation[[modName]][[symb]][["fixed"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$multi_advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$multi_advancedSettingsButtonApplyAllDelta)
-          yuimaGUIsettings$estimation[[modName]][[symb]][["fixed"]] <<- list()
-        if (is.null(yuimaGUIsettings$estimation[[modName]][[symb]][["start"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$multi_advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$multi_advancedSettingsButtonApplyAllDelta)
-          yuimaGUIsettings$estimation[[modName]][[symb]][["start"]] <<- list()
-        if (is.null(yuimaGUIsettings$estimation[[modName]][[symb]][["threshold"]]))
-          yuimaGUIsettings$estimation[[modName]][[symb]][["threshold"]] <<- setThreshold(class = class, data = data)
-        
-        startMinMax <- defaultBounds(name = modName, 
-                                     jumps = jumps_shortcut(class = class, jumps = input$multi_jumps), 
-                                     intensity = input$model_levy_intensity,
-                                     threshold = yuimaGUIsettings$estimation[[modName]][[symb]][["threshold"]],
-                                     AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), 
-                                     MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA), 
-                                     strict = FALSE,
-                                     data = data,
-                                     delta = yuimaGUIsettings$delta[[symb]])
-        upperLower <- defaultBounds(name = modName, 
-                                    jumps = jumps_shortcut(class = class, jumps = input$multi_jumps), 
-                                    intensity = input$model_levy_intensity,
-                                    threshold = yuimaGUIsettings$estimation[[modName]][[symb]][["threshold"]],
-                                    AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), 
-                                    MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA),
-                                    strict = TRUE,
-                                    data = data,
-                                    delta = yuimaGUIsettings$delta[[symb]])
-        
-        if (is.null(yuimaGUIsettings$estimation[[modName]][[symb]][["startMin"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$multi_advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$multi_advancedSettingsButtonApplyAllDelta)
-          yuimaGUIsettings$estimation[[modName]][[symb]][["startMin"]] <<- startMinMax$lower
-        if (is.null(yuimaGUIsettings$estimation[[modName]][[symb]][["startMax"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$multi_advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$multi_advancedSettingsButtonApplyAllDelta)
-          yuimaGUIsettings$estimation[[modName]][[symb]][["startMax"]] <<- startMinMax$upper
-        if (is.null(yuimaGUIsettings$estimation[[modName]][[symb]][["upper"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$multi_advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$multi_advancedSettingsButtonApplyAllDelta)
-          yuimaGUIsettings$estimation[[modName]][[symb]][["upper"]] <<- upperLower$upper
-        if (is.null(yuimaGUIsettings$estimation[[modName]][[symb]][["lower"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$multi_advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$multi_advancedSettingsButtonApplyAllDelta)
-          yuimaGUIsettings$estimation[[modName]][[symb]][["lower"]] <<- upperLower$lower
-        if (is.null(yuimaGUIsettings$estimation[[modName]][[symb]][["method"]])){
-          if(class=="COGARCH" | class=="CARMA") yuimaGUIsettings$estimation[[modName]][[symb]][["method"]] <<- "SANN"
-          else yuimaGUIsettings$estimation[[modName]][[symb]][["method"]] <<- "L-BFGS-B"
-        }
-        if (is.null(yuimaGUIsettings$estimation[[modName]][[symb]][["trials"]]))
-          yuimaGUIsettings$estimation[[modName]][[symb]][["trials"]] <<- 1
-        if (is.null(yuimaGUIsettings$estimation[[modName]][[symb]][["seed"]]))
-          yuimaGUIsettings$estimation[[modName]][[symb]][["seed"]] <<- NA
-        if (is.null(yuimaGUIsettings$estimation[[modName]][[symb]][["joint"]]))
-          yuimaGUIsettings$estimation[[modName]][[symb]][["joint"]] <<- FALSE
-        if (is.null(yuimaGUIsettings$estimation[[modName]][[symb]][["aggregation"]]))
-          yuimaGUIsettings$estimation[[modName]][[symb]][["aggregation"]] <<- TRUE
-      }
-    }
   }
+  if(!is.null(input$multi_model)) if (class(try(setModelByName(input$multi_model, intensity = input$model_levy_intensity, jumps = jumps_shortcut(class = class, jumps = input$multi_jumps), AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA))))!="try-error" & nrow(multi_seriesToEstimate$table)>0){
+    if (is.null(yuimaGUIsettings$estimation[[input$multi_model]]))
+      yuimaGUIsettings$estimation[[input$multi_model]] <<- list()
+    if (is.null(yuimaGUIsettings$estimation[[input$multi_model]]))
+      yuimaGUIsettings$estimation[[input$multi_model]] <<- list()
+    if (is.null(yuimaGUIsettings$estimation[[input$multi_model]][["fixed"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$multi_advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$multi_advancedSettingsButtonApplyAllDelta)
+      yuimaGUIsettings$estimation[[input$multi_model]][["fixed"]] <<- list()
+    if (is.null(yuimaGUIsettings$estimation[[input$multi_model]][["start"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$multi_advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$multi_advancedSettingsButtonApplyAllDelta)
+      yuimaGUIsettings$estimation[[input$multi_model]][["start"]] <<- list()
+    if (is.null(yuimaGUIsettings$estimation[[input$multi_model]][["threshold"]]))
+      yuimaGUIsettings$estimation[[input$multi_model]][["threshold"]] <<- setThreshold(class = class, data = data)
+ 
+    deltas <- NULL
+    datas <- NULL
+    for (symb in rownames(multi_seriesToEstimate$table)){
+      deltas <- c(deltas, yuimaGUIsettings$delta[[symb]])
+      data <- getData(symb)
+      if (yuimaGUIsettings$toLog[[symb]]==TRUE) data <- log(data)
+      if(is.null(datas)) datas <- data 
+      else datas <- merge(datas, data)
+    }
+    
+    startMinMax <- defaultBounds(name = input$multi_model, 
+                                 jumps = jumps_shortcut(class = class, jumps = input$multi_jumps), 
+                                 intensity = input$model_levy_intensity,
+                                 threshold = yuimaGUIsettings$estimation[[input$multi_model]][["threshold"]],
+                                 AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), 
+                                 MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA), 
+                                 strict = FALSE,
+                                 data = datas,
+                                 delta = deltas)
+    upperLower <- defaultBounds(name = input$multi_model, 
+                                jumps = jumps_shortcut(class = class, jumps = input$multi_jumps), 
+                                intensity = input$model_levy_intensity,
+                                threshold = yuimaGUIsettings$estimation[[input$multi_model]][["threshold"]],
+                                AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), 
+                                MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA),
+                                strict = TRUE,
+                                data = datas,
+                                delta = deltas)
+    
+    if (is.null(yuimaGUIsettings$estimation[[input$multi_model]][["startMin"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$multi_advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$multi_advancedSettingsButtonApplyAllDelta | nrow(multi_seriesToEstimate$table)!=prev_dim)
+      yuimaGUIsettings$estimation[[input$multi_model]][["startMin"]] <<- startMinMax$lower
+    if (is.null(yuimaGUIsettings$estimation[[input$multi_model]][["startMax"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$multi_advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$multi_advancedSettingsButtonApplyAllDelta | nrow(multi_seriesToEstimate$table)!=prev_dim)
+      yuimaGUIsettings$estimation[[input$multi_model]][["startMax"]] <<- startMinMax$upper
+    if (is.null(yuimaGUIsettings$estimation[[input$multi_model]][["upper"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$multi_advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$multi_advancedSettingsButtonApplyAllDelta | nrow(multi_seriesToEstimate$table)!=prev_dim)
+      yuimaGUIsettings$estimation[[input$multi_model]][["upper"]] <<- upperLower$upper
+    if (is.null(yuimaGUIsettings$estimation[[input$multi_model]][["lower"]]) | !(class %in% c("Diffusion process", "Fractional process")) | prev_buttonDelta!=input$multi_advancedSettingsButtonApplyDelta | prev_buttonAllDelta!=input$multi_advancedSettingsButtonApplyAllDelta | nrow(multi_seriesToEstimate$table)!=prev_dim)
+      yuimaGUIsettings$estimation[[input$multi_model]][["lower"]] <<- upperLower$lower
+    if (is.null(yuimaGUIsettings$estimation[[input$multi_model]][["method"]])){
+      if(class=="COGARCH" | class=="CARMA") yuimaGUIsettings$estimation[[input$multi_model]][["method"]] <<- "SANN"
+      else yuimaGUIsettings$estimation[[input$multi_model]][["method"]] <<- "L-BFGS-B"
+    }
+    if (is.null(yuimaGUIsettings$estimation[[input$multi_model]][["trials"]]))
+      yuimaGUIsettings$estimation[[input$multi_model]][["trials"]] <<- 1
+    if (is.null(yuimaGUIsettings$estimation[[input$multi_model]][["seed"]]))
+      yuimaGUIsettings$estimation[[input$multi_model]][["seed"]] <<- NA
+    if (is.null(yuimaGUIsettings$estimation[[input$multi_model]][["joint"]]))
+      yuimaGUIsettings$estimation[[input$multi_model]][["joint"]] <<- FALSE
+    if (is.null(yuimaGUIsettings$estimation[[input$multi_model]][["aggregation"]]))
+      yuimaGUIsettings$estimation[[input$multi_model]][["aggregation"]] <<- TRUE
+  
+  }
+  prev_dim <<- nrow(multi_seriesToEstimate$table)
   prev_buttonDelta <<- input$multi_advancedSettingsButtonApplyDelta
   prev_buttonAllDelta <<- input$multi_advancedSettingsButtonApplyAllDelta
 })
@@ -339,7 +347,7 @@ output$multi_advancedSettingsSeries <- renderUI({
 })
 output$multi_advancedSettingsDelta <- renderUI({
   if (!is.null(input$multi_advancedSettingsModel) & !is.null(input$multi_advancedSettingsSeries))
-    return (numericInput("multi_advancedSettingsDelta", label = paste("delta", input$multi_advancedSettingsSeries), value = yuimaGUIsettings$delta[[input$multi_advancedSettingsSeries]]))
+    return (numericInput("multi_advancedSettingsDelta", label = paste("delta", input$multi_advancedSettingsSeries), value = yuimaGUIsettings$delta[[input$multi_advancedSettingsSeries]], min = 0))
 })
 output$multi_advancedSettingsToLog <- renderUI({
   if (!is.null(input$multi_advancedSettingsModel) & !is.null(input$multi_advancedSettingsSeries)){
@@ -355,7 +363,7 @@ output$multi_advancedSettingsModel <- renderUI({
 output$multi_advancedSettingsParameter <- renderUI({
   if (!is.null(input$multi_model))
     if (!is.null(input$multi_advancedSettingsModel)){
-      parL <- setModelByName(input$multi_advancedSettingsModel, intensity = input$model_levy_intensity, jumps = jumps_shortcut(class = input$multi_modelClass, jumps = input$multi_jumps), AR_C = ifelse(input$multi_modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$multi_modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))@parameter
+      parL <- setModelByName(input$multi_advancedSettingsModel, dimension = nrow(multi_seriesToEstimate$table), intensity = input$model_levy_intensity, jumps = jumps_shortcut(class = input$multi_modelClass, jumps = input$multi_jumps), AR_C = ifelse(input$multi_modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$multi_modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))@parameter
       par <- parL@all
       if (input$multi_modelClass=="COGARCH") par <- unique(c(parL@drift, parL@xinit))
       if (input$multi_modelClass=="CARMA") par <- parL@drift
@@ -370,7 +378,7 @@ output$multi_advancedSettingsStart <- renderUI({
   if (#REMOVE# !is.null(input$multi_advancedSettingsFixed) & 
     !is.null(input$multi_advancedSettingsModel) & !is.null(input$multi_advancedSettingsSeries) & !is.null(input$multi_advancedSettingsParameter))
     #REMOVE# if (is.na(input$multi_advancedSettingsFixed))
-    numericInput(inputId = "multi_advancedSettingsStart", label = "start", value = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["start"]][[input$multi_advancedSettingsParameter]])
+    numericInput(inputId = "multi_advancedSettingsStart", label = "start", value = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["start"]][[input$multi_advancedSettingsParameter]])
 })
 output$multi_advancedSettingsStartMin <- renderUI({
   input$multi_advancedSettingsButtonApplyDelta
@@ -379,7 +387,7 @@ output$multi_advancedSettingsStartMin <- renderUI({
     !is.null(input$multi_advancedSettingsStart) & !is.null(input$multi_advancedSettingsModel) & !is.null(input$multi_advancedSettingsSeries) & !is.null(input$multi_advancedSettingsParameter))
     if (#REMOVE# is.na(input$multi_advancedSettingsFixed) & 
       is.na(input$multi_advancedSettingsStart))
-      numericInput(inputId = "multi_advancedSettingsStartMin", label = "start: Min", value = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["startMin"]][[input$multi_advancedSettingsParameter]])
+      numericInput(inputId = "multi_advancedSettingsStartMin", label = "start: Min", value = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["startMin"]][[input$multi_advancedSettingsParameter]])
 })
 output$multi_advancedSettingsStartMax <- renderUI({
   input$multi_advancedSettingsButtonApplyDelta
@@ -388,45 +396,45 @@ output$multi_advancedSettingsStartMax <- renderUI({
     !is.null(input$multi_advancedSettingsStart) & !is.null(input$multi_advancedSettingsModel) & !is.null(input$multi_advancedSettingsSeries) & !is.null(input$multi_advancedSettingsParameter))
     if (#REMOVE# is.na(input$multi_advancedSettingsFixed) & 
       is.na(input$multi_advancedSettingsStart))
-      numericInput(inputId = "multi_advancedSettingsStartMax", label = "start: Max", value = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["startMax"]][[input$multi_advancedSettingsParameter]])
+      numericInput(inputId = "multi_advancedSettingsStartMax", label = "start: Max", value = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["startMax"]][[input$multi_advancedSettingsParameter]])
 })
 output$multi_advancedSettingsLower <- renderUI({
   if (#REMOVE# !is.null(input$multi_advancedSettingsFixed) & 
     !is.null(input$multi_advancedSettingsModel) & !is.null(input$multi_advancedSettingsSeries) & !is.null(input$multi_advancedSettingsParameter))
     #REMOVE# if (is.na(input$multi_advancedSettingsFixed))
     if (input$multi_advancedSettingsMethod=="L-BFGS-B" | input$multi_advancedSettingsMethod=="Brent")
-      numericInput("multi_advancedSettingsLower", label = "lower", value = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["lower"]][[input$multi_advancedSettingsParameter]])
+      numericInput("multi_advancedSettingsLower", label = "lower", value = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["lower"]][[input$multi_advancedSettingsParameter]])
 })
 output$multi_advancedSettingsUpper <- renderUI({
   if (#REMOVE# !is.null(input$multi_advancedSettingsFixed) & 
     !is.null(input$multi_advancedSettingsModel) & !is.null(input$multi_advancedSettingsSeries) & !is.null(input$multi_advancedSettingsParameter))
     #REMOVE# if (is.na(input$multi_advancedSettingsFixed))
     if (input$multi_advancedSettingsMethod=="L-BFGS-B" | input$multi_advancedSettingsMethod=="Brent")
-      numericInput("multi_advancedSettingsUpper", label = "upper", value = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["upper"]][[input$multi_advancedSettingsParameter]])
+      numericInput("multi_advancedSettingsUpper", label = "upper", value = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["upper"]][[input$multi_advancedSettingsParameter]])
 })
 #REMOVE# output$multi_advancedSettingsJoint <- renderUI({
 #REMOVE#   if (!is.null(input$multi_advancedSettingsModel) & !is.null(input$multi_advancedSettingsSeries))
-#REMOVE#     selectInput("multi_advancedSettingsJoint", label = "joint", choices = c(FALSE, TRUE), selected = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["joint"]])
+#REMOVE#     selectInput("multi_advancedSettingsJoint", label = "joint", choices = c(FALSE, TRUE), selected = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["joint"]])
 #REMOVE# })
 output$multi_advancedSettingsMethod <- renderUI({
   if (!is.null(input$multi_advancedSettingsModel) & !is.null(input$multi_advancedSettingsSeries))
-    selectInput("multi_advancedSettingsMethod", label = "method", choices = c("L-BFGS-B", "Nelder-Mead", "BFGS", "CG", "SANN", "Brent"), selected = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["method"]])
+    selectInput("multi_advancedSettingsMethod", label = "method", choices = c("L-BFGS-B", "Nelder-Mead", "BFGS", "CG", "SANN", "Brent"), selected = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["method"]])
 })
 #REMOVE# output$multi_advancedSettingsAggregation <- renderUI({
 #REMOVE#   if (!is.null(input$multi_advancedSettingsModel) & !is.null(input$multi_advancedSettingsSeries))
-#REMOVE#     selectInput("multi_advancedSettingsAggregation", label = "aggregation", choices = c(TRUE, FALSE), selected = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["aggregation"]])
+#REMOVE#     selectInput("multi_advancedSettingsAggregation", label = "aggregation", choices = c(TRUE, FALSE), selected = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["aggregation"]])
 #REMOVE# })
 output$multi_advancedSettingsThreshold <- renderUI({
   if (!is.null(input$multi_advancedSettingsModel) & !is.null(input$multi_advancedSettingsSeries)) if(isolate({input$multi_modelClass})=="Levy process")
-    numericInput("multi_advancedSettingsThreshold", label = "threshold", value = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["threshold"]])
+    numericInput("multi_advancedSettingsThreshold", label = "threshold", value = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["threshold"]])
 })
 output$multi_advancedSettingsTrials <- renderUI({
   if (!is.null(input$multi_advancedSettingsModel) & !is.null(input$multi_advancedSettingsSeries) & !is.null(input$multi_advancedSettingsMethod))
-    numericInput("multi_advancedSettingsTrials", label = "trials", min = 1, value = ifelse(input$multi_advancedSettingsMethod=="SANN" & yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["method"]]!="SANN",1,yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["trials"]]))
+    numericInput("multi_advancedSettingsTrials", label = "trials", min = 1, value = ifelse(input$multi_advancedSettingsMethod=="SANN" & yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["method"]]!="SANN",1,yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["trials"]]))
 })
 output$multi_advancedSettingsSeed <- renderUI({
   if (!is.null(input$multi_advancedSettingsModel) & !is.null(input$multi_advancedSettingsSeries))
-    numericInput("multi_advancedSettingsSeed", label = "seed", min = 1, value = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["seed"]])
+    numericInput("multi_advancedSettingsSeed", label = "seed", min = 1, value = yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["seed"]])
 })
 
 
@@ -443,53 +451,22 @@ observeEvent(input$multi_advancedSettingsButtonApplyAllDelta, {
   }
 })
 observeEvent(input$multi_advancedSettingsButtonApplyModel,{
-  #REMOVE# yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["fixed"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsFixed
-  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["start"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsStart
-  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["startMin"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsStartMin
-  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["startMax"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsStartMax
-  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["lower"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsLower
-  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["upper"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsUpper
-})
-observeEvent(input$multi_advancedSettingsButtonApplyAllModel,{
-  for (symb in rownames(multi_seriesToEstimate$table)){
-    #REMOVE# yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[symb]][["fixed"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsFixed
-    yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[symb]][["start"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsStart
-    yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[symb]][["startMin"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsStartMin
-    yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[symb]][["startMax"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsStartMax
-    yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[symb]][["lower"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsLower
-    yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[symb]][["upper"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsUpper
-  }
+  #REMOVE# yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["fixed"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsFixed
+  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["start"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsStart
+  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["startMin"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsStartMin
+  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["startMax"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsStartMax
+  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["lower"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsLower
+  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["upper"]][[input$multi_advancedSettingsParameter]] <<- input$multi_advancedSettingsUpper
 })
 observeEvent(input$multi_advancedSettingsButtonApplyGeneral,{
-  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["method"]] <<- input$multi_advancedSettingsMethod
-  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["trials"]] <<- input$multi_advancedSettingsTrials
-  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["seed"]] <<- input$multi_advancedSettingsSeed
-  #REMOVE# yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["joint"]] <<- input$multi_advancedSettingsJoint
-  #REMOVE# yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["aggregation"]] <<- input$multi_advancedSettingsAggregation
-  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[input$multi_advancedSettingsSeries]][["threshold"]] <<- input$multi_advancedSettingsThreshold
+  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["method"]] <<- input$multi_advancedSettingsMethod
+  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["trials"]] <<- input$multi_advancedSettingsTrials
+  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["seed"]] <<- input$multi_advancedSettingsSeed
+  #REMOVE# yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["joint"]] <<- input$multi_advancedSettingsJoint
+  #REMOVE# yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["aggregation"]] <<- input$multi_advancedSettingsAggregation
+  yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][["threshold"]] <<- input$multi_advancedSettingsThreshold
 })
-observeEvent(input$multi_advancedSettingsButtonApplyAllModelGeneral,{
-  for (symb in rownames(multi_seriesToEstimate$table)){
-    yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[symb]][["method"]] <<- input$multi_advancedSettingsMethod
-    yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[symb]][["trials"]] <<- input$multi_advancedSettingsTrials
-    yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[symb]][["seed"]] <<- input$multi_advancedSettingsSeed
-    #REMOVE# yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[symb]][["joint"]] <<- input$multi_advancedSettingsJoint
-    #REMOVE# yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[symb]][["aggregation"]] <<- input$multi_advancedSettingsAggregation
-    yuimaGUIsettings$estimation[[input$multi_advancedSettingsModel]][[symb]][["threshold"]] <<- input$multi_advancedSettingsThreshold
-  }
-})
-observeEvent(input$multi_advancedSettingsButtonApplyAllGeneral,{
-  for (mod in input$multi_model){
-    for (symb in rownames(multi_seriesToEstimate$table)){
-      yuimaGUIsettings$estimation[[mod]][[symb]][["method"]] <<- input$multi_advancedSettingsMethod
-      yuimaGUIsettings$estimation[[mod]][[symb]][["trials"]] <<- input$multi_advancedSettingsTrials
-      yuimaGUIsettings$estimation[[mod]][[symb]][["seed"]] <<- input$multi_advancedSettingsSeed
-      #REMOVE# yuimaGUIsettings$estimation[[mod]][[symb]][["joint"]] <<- input$multi_advancedSettingsJoint
-      #REMOVE# yuimaGUIsettings$estimation[[mod]][[symb]][["aggregation"]] <<- input$multi_advancedSettingsAggregation
-      yuimaGUIsettings$estimation[[mod]][[symb]][["threshold"]] <<- input$multi_advancedSettingsThreshold
-    }
-  }
-})
+
 
 observe({
   closeAlert(session = session, alertId = "CARMA_COGARCH_err")
@@ -512,57 +489,68 @@ observe({
 observeEvent(input$multi_EstimateModels,{
   closeAlert(session = session, alertId = "modelsErr")
   valid <- TRUE
-  if(is.null(input$multi_model) | nrow(multi_seriesToEstimate$table)==0) valid <- FALSE
-  else if (input$multi_modelClass=="Compound Poisson" & is.null(input$multi_jumps)) valid <- FALSE
-  else for(mod in input$multi_model) if (class(try(setModelByName(mod, intensity = input$model_levy_intensity, jumps = jumps_shortcut(class = input$multi_modelClass, jumps = input$multi_jumps), AR_C = ifelse(input$multi_modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$multi_modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))))=="try-error")  valid <- FALSE
+  if(is.null(input$multi_model) | nrow(multi_seriesToEstimate$table)==0) {
+    valid <- FALSE
+  } else if (input$multi_modelClass=="Compound Poisson" & is.null(input$multi_jumps)) {
+    valid <- FALSE
+  } else for(mod in input$multi_model) if (class(try(setModelByName(mod, dimension = nrow(multi_seriesToEstimate$table), intensity = input$model_levy_intensity, jumps = jumps_shortcut(class = input$multi_modelClass, jumps = input$multi_jumps), AR_C = ifelse(input$multi_modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$multi_modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))))=="try-error")  valid <- FALSE
   if(!valid){
     createAlert(session = session, anchorId = "multi_panel_run_estimation_alert", alertId = "modelsAlert_err", content = "Select some series and (valid) models to estimate", style = "warning")
-  }
-  if(valid){
-    withProgress(message = 'Estimating: ',{
-      for (modName in input$multi_model){
-        for (i in rownames(multi_seriesToEstimate$table)){
-          symb <- as.character(multi_seriesToEstimate$table[i,"Symb"])
-          incProgress(1/(length(input$multi_model)*nrow(multi_seriesToEstimate$table)), detail = paste(symb,"-",modName))
-          data <- getData(symb)
-          start <- as.character(multi_seriesToEstimate$table[i,"From"])
-          end <- as.character(multi_seriesToEstimate$table[i,"To"])
-          times <- index(data)
-          if (class(times)=="numeric")
-            data <- data[(times >= as.numeric(start)) & (times <= as.numeric(end)), , drop = FALSE]
-          else
-            data <- data[(times >= start) & (times <= end), , drop = FALSE]
+  } else {
+    deltas <- NULL; datas <- NULL; toLogs <- NULL
+    for (symb in rownames(multi_seriesToEstimate$table)){
+      deltas <- c(deltas, yuimaGUIsettings$delta[[symb]])
+      toLogs <- c(toLogs, yuimaGUIsettings$toLog[[symb]])
+      data <- getData(symb)
+      start <- as.character(multi_seriesToEstimate$table[symb,"From"])
+      end <- as.character(multi_seriesToEstimate$table[symb,"To"])
+      times <- index(data)
+      if (class(times)=="numeric")
+        data <- data[(times >= as.numeric(start)) & (times <= as.numeric(end)), , drop = FALSE]
+      else
+        data <- data[(times >= start) & (times <= end), , drop = FALSE]
+      if(is.null(datas)) datas <- data 
+      else datas <- merge(datas, data)
+    }
+    test <- try(setDataGUI(datas, delta = deltas))
+    if (class(test)=="try-error"){
+      createAlert(session = session, anchorId = "multi_panel_run_estimation_alert", alertId = "modelsAlert_err", content = "Unable to construct a synchronous grid for the data provided", style = "error")
+    } else {
+      withProgress(message = 'Estimating: ',{
+        for (modName in input$multi_model){
+          incProgress(1/(length(input$multi_model)), detail = modName)
           addModel(
             modName = modName,
+            multi = TRUE,
             modClass = input$multi_modelClass,
             intensity_levy = input$model_levy_intensity,
             AR_C = ifelse(input$multi_modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), 
             MA_C = ifelse(input$multi_modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA),
             jumps = jumps_shortcut(class = input$multi_modelClass, jumps = input$multi_jumps),
-            symbName = symb,
-            data = data,
-            delta = yuimaGUIsettings$delta[[symb]],
-            toLog = yuimaGUIsettings$toLog[[symb]],
-            start = yuimaGUIsettings$estimation[[modName]][[symb]][["start"]],
-            startMin = yuimaGUIsettings$estimation[[modName]][[symb]][["startMin"]],
-            startMax = yuimaGUIsettings$estimation[[modName]][[symb]][["startMax"]],
-            method=yuimaGUIsettings$estimation[[modName]][[symb]][["method"]],
-            trials=yuimaGUIsettings$estimation[[modName]][[symb]][["trials"]],
-            seed = yuimaGUIsettings$estimation[[modName]][[symb]][["seed"]],
-            fixed = yuimaGUIsettings$estimation[[modName]][[symb]][["fixed"]],
-            lower = yuimaGUIsettings$estimation[[modName]][[symb]][["lower"]],
-            upper = yuimaGUIsettings$estimation[[modName]][[symb]][["upper"]],
-            joint = yuimaGUIsettings$estimation[[modName]][[symb]][["joint"]],
-            aggregation = yuimaGUIsettings$estimation[[modName]][[symb]][["aggregation"]],
-            threshold = yuimaGUIsettings$estimation[[modName]][[symb]][["threshold"]],
+            symbName = paste(ncol(datas), "Series", sep = ""),
+            data = datas,
+            delta = deltas,
+            toLog = toLogs,
+            start = yuimaGUIsettings$estimation[[modName]][["start"]],
+            startMin = yuimaGUIsettings$estimation[[modName]][["startMin"]],
+            startMax = yuimaGUIsettings$estimation[[modName]][["startMax"]],
+            method=yuimaGUIsettings$estimation[[modName]][["method"]],
+            trials=yuimaGUIsettings$estimation[[modName]][["trials"]],
+            seed = yuimaGUIsettings$estimation[[modName]][["seed"]],
+            fixed = yuimaGUIsettings$estimation[[modName]][["fixed"]],
+            lower = yuimaGUIsettings$estimation[[modName]][["lower"]],
+            upper = yuimaGUIsettings$estimation[[modName]][["upper"]],
+            joint = yuimaGUIsettings$estimation[[modName]][["joint"]],
+            aggregation = yuimaGUIsettings$estimation[[modName]][["aggregation"]],
+            threshold = yuimaGUIsettings$estimation[[modName]][["threshold"]],
             session = session,
             anchorId = "multi_panel_estimates_alert",
             alertId = NULL
           )
         }
-      }
-    })
-    updateTabsetPanel(session = session,  inputId = "multi_panel_estimates", selected = "Estimates")
+      })
+      updateTabsetPanel(session = session,  inputId = "multi_panel_estimates", selected = "Estimates")
+    }
   }
 })
 

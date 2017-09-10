@@ -341,7 +341,7 @@ output$advancedSettingsSeries <- renderUI({
 })
 output$advancedSettingsDelta <- renderUI({
   if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries))
-    return (numericInput("advancedSettingsDelta", label = paste("delta", input$advancedSettingsSeries), value = yuimaGUIsettings$delta[[input$advancedSettingsSeries]]))
+    return (numericInput("advancedSettingsDelta", label = paste("delta", input$advancedSettingsSeries), value = yuimaGUIsettings$delta[[input$advancedSettingsSeries]], min = 0))
 })
 output$advancedSettingsToLog <- renderUI({
   if (!is.null(input$advancedSettingsModel) & !is.null(input$advancedSettingsSeries)){

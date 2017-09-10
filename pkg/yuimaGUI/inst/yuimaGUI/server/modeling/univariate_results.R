@@ -26,8 +26,7 @@ output$estimatedModelsLatex <- renderUI({
 ###Print Symbol
 output$SymbolName <- renderText({
   if (!is.null(rowToPrint$id))
-    unlist(strsplit(rownames(yuimaGUItable$model)[rowToPrint$id], split = " "))[1]
-  
+    rownames(yuimaGUItable$model)[rowToPrint$id]
 })
 
 ###More Info
@@ -37,8 +36,10 @@ output$text_MoreInfo <- renderUI({
   div(
     h3(id[1], " - " , info$modName, class = "hModal"),
     h4(
-      em("delta:"), info$delta, br(),
+      em("series:"), info$symb, br(),
       em("series to log:"), info$toLog, br(),
+      em("delta:"), info$delta, br(),
+      br(),
       em("method:"), info$method, br(),
       em("threshold:"), info$threshold, br(),
       em("trials:"), info$trials, br(),

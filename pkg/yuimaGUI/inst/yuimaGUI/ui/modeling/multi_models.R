@@ -7,7 +7,9 @@ tabItem(tabName="multi_models",
                                     br(),
                                     "Click on buttons 'Set Range' and 'Advanced Settings' to customize the estimation process.",
                                     br(),
-                                    "Some default models are available but you can set your own model (tab 'Set model') and use it for estimation and/or simulation purposes."),
+                                    "Building your own multivariate model will soon be possible"
+                                    #"Some default models are available but you can set your own model (tab 'Set model') and use it for estimation and/or simulation purposes."
+                                    ),
                                  hr(class = "hrHeader")
                           )
                         ),
@@ -57,29 +59,29 @@ tabItem(tabName="multi_models",
                                                                   column(4,actionButton("multi_EstimateModels", label = "Start Models Estimation", align = "center"))
                                                                 )
                                                        ),
-                                                       tabPanel(title = "Set model",
-                                                                fluidRow(column(12,bsAlert("multi_panel_set_model_alert"))),
-                                                                br(),
-                                                                fluidRow(div(align="center",
-                                                                             column(6,
-                                                                                    fluidRow(selectInput("multi_usr_modelClass",label = "Model Class", width = "50%", choices = c("Diffusion process", "Fractional process", "Compound Poisson"), selected = "Diffusion process")),
-                                                                                    fluidRow(textInput("multi_usr_model_name", label = "Model Name", width = "50%")),
-                                                                                    fluidRow(uiOutput("multi_usr_modelClass_latex")),
-                                                                                    fluidRow(uiOutput("multi_usr_model_coeff")),
-                                                                                    br(),br(),
-                                                                                    fluidRow(
-                                                                                      column(4),
-                                                                                      column(4,actionButton("multi_usr_model_button_save", label = "Save Model"))
-                                                                                    )
-                                                                             ),
-                                                                             column(6,div(id="multi_usr_model_saved_div",align="center",
-                                                                                          uiOutput("multi_usr_model_saved"),
-                                                                                          uiOutput("multi_usr_model_saved_latex"),
-                                                                                          br(),
-                                                                                          actionButton("multi_usr_model_button_delete", label = "Delete Model(s)")
-                                                                             ))
-                                                                ))
-                                                       ),
+                                                       # tabPanel(title = "Set model",
+                                                       #          fluidRow(column(12,bsAlert("multi_panel_set_model_alert"))),
+                                                       #          br(),
+                                                       #          fluidRow(div(align="center",
+                                                       #                       column(6,
+                                                       #                              fluidRow(selectInput("multi_usr_modelClass",label = "Model Class", width = "50%", choices = c("Diffusion process", "Fractional process", "Compound Poisson"), selected = "Diffusion process")),
+                                                       #                              fluidRow(textInput("multi_usr_model_name", label = "Model Name", width = "50%")),
+                                                       #                              fluidRow(uiOutput("multi_usr_modelClass_latex")),
+                                                       #                              fluidRow(uiOutput("multi_usr_model_coeff")),
+                                                       #                              br(),br(),
+                                                       #                              fluidRow(
+                                                       #                                column(4),
+                                                       #                                column(4,actionButton("multi_usr_model_button_save", label = "Save Model"))
+                                                       #                              )
+                                                       #                       ),
+                                                       #                       column(6,div(id="multi_usr_model_saved_div",align="center",
+                                                       #                                    uiOutput("multi_usr_model_saved"),
+                                                       #                                    uiOutput("multi_usr_model_saved_latex"),
+                                                       #                                    br(),
+                                                       #                                    actionButton("multi_usr_model_button_delete", label = "Delete Model(s)")
+                                                       #                       ))
+                                                       #          ))
+                                                       # ),
                                                        tabPanel(title = "Estimates",
                                                                 fluidRow(column(12,bsAlert("multi_panel_estimates_alert"))),
                                                                 shinyjs::hidden(div(id="multi_estimates_info", fluidRow(
@@ -109,7 +111,7 @@ tabItem(tabName="multi_models",
                                                                 br(),
                                                                 fluidRow(
                                                                   column(2,actionButton(inputId = "multi_databaseModels_button_showResults", label = "Show Fitting")),
-                                                                  bsTooltip("multi_databaseModels_button_showResults", title = "Available for: Diffusive Processes, Compound Poisson and COGARCH", placement = "top"),
+                                                                  bsTooltip("multi_databaseModels_button_showResults", title = "Available for: Diffusive Processes", placement = "top"),
                                                                   column(6),
                                                                   column(2,actionButton(inputId = "multi_databaseModelsDelete", label = "Delete")),
                                                                   bsTooltip("multi_databaseModelsDelete", title = "Delete selected model", placement = "top"),
@@ -120,7 +122,10 @@ tabItem(tabName="multi_models",
                                                                         div(id = "multi_model_modal_fitting_body",
                                                                             fluidRow(
                                                                               column(2),
-                                                                              column(8, uiOutput("multi_model_modal_model_id", align = "center"))
+                                                                              column(8, 
+                                                                                     uiOutput("multi_model_modal_model_id", align = "center"),
+                                                                                     uiOutput("multi_model_modal_series_id", align = "center")
+                                                                                     )
                                                                             ),
                                                                             fluidRow(
                                                                               column(12, 
@@ -189,10 +194,9 @@ tabItem(tabName="multi_models",
                                                                 uiOutput("multi_advancedSettingsJoint", align="center"),
                                                                 uiOutput("multi_advancedSettingsAggregation", align="center"),
                                                                 fluidRow(
-                                                                  column(6, tags$button(type="button", id="multi_advancedSettingsButtonApplyGeneral", class = "action-button", em("Apply"))),
-                                                                  column(6, tags$button(type="button", id="multi_advancedSettingsButtonApplyAllModelGeneral", class = "action-button", em("Apply to All series")))
-                                                                ),
-                                                                fluidRow(column(12, tags$button(type="button", id="multi_advancedSettingsButtonApplyAllGeneral", class = "action-button", em("Apply to All series & models"))))
+                                                                  column(3),
+                                                                  column(6, tags$button(type="button", id="multi_advancedSettingsButtonApplyGeneral", class = "action-button", em("Apply")))
+                                                                )
                                              ))
                                       ),
                                       column(6,
@@ -211,8 +215,8 @@ tabItem(tabName="multi_models",
                                                                   column(6,uiOutput("multi_advancedSettingsUpper", align="center"))
                                                                 ),
                                                                 fluidRow(
-                                                                  column(6, tags$button(type="button", id="multi_advancedSettingsButtonApplyModel", class = "action-button", em("Apply"))),
-                                                                  column(6, tags$button(type="button", id="multi_advancedSettingsButtonApplyAllModel", class = "action-button", em("Apply to All series")))
+                                                                  column(3),
+                                                                  column(6, tags$button(type="button", id="multi_advancedSettingsButtonApplyModel", class = "action-button", em("Apply")))
                                                                 )
                                              ))
                                       )

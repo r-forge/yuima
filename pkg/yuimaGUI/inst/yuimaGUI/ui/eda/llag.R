@@ -4,7 +4,7 @@ tabItem(tabName = "llag",
                  h3("Lead-Lag and Correlation Analysis",class = "hTitle"),
                  h4("Select the series you wish to analyze and the kind of analysis you want to perform (Lead-Lag or Correlation).", br(),
                     "Choose the correlation measure (if you selected Correlation) or the maximum lag to use (if you selected Lead-Lag).",br(),
-                    "You can specify which interval over the whole series to use for the analysis."),
+                    "You can specify which interval to use over the whole series for your analysis."),
                  hr(class = "hrHeader")
           )
         ),

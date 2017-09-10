@@ -18,12 +18,6 @@ observeEvent(input$simulate_button_selectAllModels, priority = 1, {
   modelsToSimulate$table <<- rbind.fill(modelsToSimulate$table, yuimaGUItable$model[(rownames(yuimaGUItable$model) %in% rownames(yuimaGUItable$model)[input$simulate_databaseModels_rows_all]) & !(rownames(yuimaGUItable$model) %in% rownames(modelsToSimulate$table)),])
 })
 
-output$simulate_PrintModelLatex <- renderUI({
-  if (!is.null(input$simulate_model_usr_selectModel)){
-    return(withMathJax(printModelLatex(names = input$simulate_model_usr_selectModel, process = isolate({input$simulate_model_usr_selectClass}), jumps = jumps_shortcut(class = isolate({input$simulate_model_usr_selectClass}), jumps = input$simulate_model_usr_selectJumps))))
-  }
-})
-
 
 observe({
   if("AIC" %in% colnames(modelsToSimulate$table))
