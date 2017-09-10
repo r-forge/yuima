@@ -4,7 +4,7 @@ tabItem(tabName = "changepoint",
                  h3("Change Point Estimation",class = "hTitle"),
                  h4("Select the data you wish to estimate change points for.", br(),
                     "Choose the algorithm you want to use for estimation.", br(),
-                    "Results will be shown below by plotting the series and the detected change points."),
+                    "The results will be displayed below by plotting the series and the detected change points."),
                  hr(class = "hrHeader")
           )
         ),

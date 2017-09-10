@@ -2,13 +2,13 @@ tabItem("yourData",
         fluidRow(
           column(12,
                  h3("Load data from Your Own Files",class = "hTitle"),
-                 h4("Upload your file and specify its structure. A preview will be shown below.",
+                 h4("Upload your file and specify its structure. A preview will appear below.",
                     br(),
                     "Declare if the file contains raw and/or column headers and specify what kind of field separator has to be used to read the data.",
                     br(),
-                    "Each column will be uploaded as a different series. So you might want to switch columns with rows if your file is organized differently.",
+                    "Each column will be uploaded as a different series. So you may wish to switch columns with rows if your file is organized differently.",
                     br(),
-                    "Specify the format and the column to use as index."),
+                    "Specify the format and the column to use as an index."),
                  hr(class = "hrHeader")
           )
         ),

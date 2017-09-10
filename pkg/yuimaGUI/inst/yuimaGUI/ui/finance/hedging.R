@@ -1,9 +1,9 @@
 tabItem(tabName = "hedging",
         fluidRow(
           column(12,
-                 h3("Here you can manage risk of a portfolio composed by options and the underlying asset.",class = "hTitle"),
-                 h4("The evolution of the underlying asset is simulated by models you estimated in section Modeling.", br(),
-                    "After performing the simulation click on button 'Show P&L' in tab 'Profit&Loss' and customize your portfolio.",br(),
+                 h3("Here you can manage the risk of a portfolio composed of options and the underlying asset.",class = "hTitle"),
+                 h4("The evolution of the underlying asset is simulated by the models you estimated in the Modeling section.", br(),
+                    "After performing the simulation, click on the 'Show P&L' button in the 'Profit&Loss' tab and customize your portfolio.",br(),
                     "The Profit&Loss distribution of your portfolio will be displayed (it includes transaction costs that you can customize)."),
                  hr(class = "hrHeader")
           )

@@ -4,7 +4,7 @@ tabItem(tabName = "cluster",
                  h3("Clustering",class = "hTitle"),
                  h4("Select data you want to cluster.", br(),
                     "Choose the distance you want to use and the kind of linkage for the hierarchical cluster analysis.", br(),
-                    "Results will be shown below by plotting dendrogram and multidimensional scaling output."),
+                    "The results will be shown below by plotting a dendrogram and multidimensional scaling output."),
                  hr(class = "hrHeader")
           )
         ),

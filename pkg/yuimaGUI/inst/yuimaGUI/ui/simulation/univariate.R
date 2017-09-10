@@ -4,9 +4,9 @@ tabItem(tabName = "simulate",
                  h3("Univariate Simulation",class = "hTitle"),
                  h4("Select the estimated models you wish to simulate.",
                     br(),
-                    "If you want to simulate a model that has not been estimated you can use tab 'Non-estimated models'.",
+                    "If you want to simulate a model that has not been estimated, you can use the 'Non-estimated models' tab.",
                     br(),
-                    "Click on buttons 'Set Simulation' and 'Advanced Settings' to customize the simulation process."),
+                    "Click on the 'Set Simulation' and 'Advanced Settings' buttons to customize the simulation process."),
                  hr(class = "hrHeader")
           )
         ),

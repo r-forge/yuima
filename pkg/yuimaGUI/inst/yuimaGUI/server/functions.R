@@ -23,16 +23,24 @@ melt <- function(x){
 }
 
 mode <- function(x) {
-  ux <- unique(x)
+  ux <- unique(na.omit(x))
   ux[which.max(tabulate(match(x, ux)))]
 }
 
 
+isUserDefined <- function(name){
+	n <- names(isolate({yuimaGUIdata$usr_model}))
+	if (length(n)!=0) return (name %in% n)
+	return (FALSE)
+}
+
 setDataGUI <- function(original.data, delta){
+  original.data <- na.omit(original.data)
+  delta <- max(delta)
   t <- index(original.data)
   t0 <- 0
   if(is.numeric(t)){
-    delta.original.data <- mean(diff(t), na.rm = TRUE)
+    delta.original.data <- mode(diff(t))
     t0 <- min(t, na.rm = TRUE)*delta/delta.original.data
   }
   setData(original.data = original.data, delta = delta, t0 = t0)
@@ -84,7 +92,7 @@ delData <- function(symb){
 
 defaultBounds <- function(name, delta, strict, jumps = NA, AR_C = NA, MA_C = NA, data, intensity = NULL, threshold = NULL){
   lastPrice = last(data)
-  if (name %in% names(isolate({yuimaGUIdata$usr_model}))){
+  if ( isUserDefined(name) ){
     par <- setModelByName(name = name, jumps = jumps,  AR_C = AR_C, MA_C = MA_C)@parameter@all
     if(strict==TRUE){
       lower <- rep(NA, length(par))
@@ -227,6 +235,28 @@ defaultBounds <- function(name, delta, strict, jumps = NA, AR_C = NA, MA_C = NA,
     if (strict==TRUE) return(list(lower=c(list("mu"=NA, "sigma"=0), boundsJump$lower, boundsIntensity$lower),upper=c(list("mu"=NA, "sigma"=NA), boundsJump$upper, boundsIntensity$upper)))
     else return(list(lower=c(list("mu"=-1, "sigma"=0), boundsJump$lower, boundsIntensity$lower),upper=c(list("mu"=1, "sigma"=1), boundsJump$upper, boundsIntensity$upper)))
   }
+  if (name == "Correlated Brownian Motion"){
+    par <- setModelByName(name = name, jumps = jumps,  AR_C = AR_C, MA_C = MA_C, dimension = ncol(data))@parameter
+    drift <- rep(NA, length(par@drift))
+    diffusion <- rep(NA, length(par@diffusion))
+    names(drift) <- par@drift
+    names(diffusion) <- par@diffusion
+    if (strict==TRUE) {
+      diffusion[] <- 0; lower_diffusion <- diffusion
+      diffusion[] <- NA; upper_diffusion <- diffusion
+      drift[] <- NA; lower_drift <- drift
+      drift[] <- NA; upper_drift <- drift
+      return (list(lower=as.list(c(lower_drift, lower_diffusion)), upper=as.list(c(upper_drift, upper_diffusion))))
+    }
+    else { 
+      x <- na.omit(diff(data))
+      mu <- colMeans(x)
+      sigma <- sapply(x, sd)
+      drift[] <- mu/delta; lower_drift <- drift; upper_drift <- drift
+      diffusion[] <- 0; diffusion[paste("s",seq(1,ncol(data)),seq(1,ncol(data)), sep = "")] <- sigma/sqrt(delta); lower_diffusion <- diffusion; upper_diffusion <- diffusion
+      return (list(lower=as.list(c(lower_drift, lower_diffusion)), upper=as.list(c(upper_drift, upper_diffusion))))
+    }
+  }
 }
 
 
@@ -291,8 +321,9 @@ intensityBounds <- function(intensity, strict, delta){
 }
 
 
-setModelByName <- function(name, jumps = NA, AR_C = NA, MA_C = NA, XinExpr = FALSE, intensity = NA){
-  if (name %in% names(isolate({yuimaGUIdata$usr_model}))){
+setModelByName <- function(name, jumps = NA, AR_C = NA, MA_C = NA, XinExpr = FALSE, intensity = NA, dimension = 1){
+  dimension <- max(1, dimension)
+  if ( isUserDefined(name) ){
     if (isolate({yuimaGUIdata$usr_model[[name]]$class=="Diffusion process" | yuimaGUIdata$usr_model[[name]]$class=="Fractional process"}))
       return(isolate({yuimaGUIdata$usr_model[[name]]$object}))
     if (isolate({yuimaGUIdata$usr_model[[name]]$class=="Compound Poisson"}))
@@ -321,92 +352,114 @@ setModelByName <- function(name, jumps = NA, AR_C = NA, MA_C = NA, XinExpr = FAL
     if(intensity=="None") return(yuima::setModel(drift="mu*x", diffusion="sigma*x", jump.coeff="x", measure.type = "code", measure = list(df = setJumps(jumps = jumps)), solve.variable = "x"))
     else return(yuima::setModel(drift="mu*x", diffusion="sigma*x", jump.coeff="x", measure.type = "CP", measure = list(intensity = intensity, df = setJumps(jumps = jumps)), solve.variable = "x"))
   }
-}
-
-printModelLatex <- function(names, process, jumps = NA){
-  if (process=="Diffusion process"){
-    mod <- ""
-    for (name in names){
-      if (name %in% names(isolate({yuimaGUIdata$usr_model}))){
-        text <- toLatex(setModelByName(name))
-        x <- paste(text[2:9], collapse = "")
-        x <- substr(x,3,nchar(x))
-        x <- gsub(x, pattern = "'", replacement = "")
-        x <- gsub(x, pattern = "x", replacement = "X_t")
-        x <- gsub(x, pattern = "W1", replacement = "W_t")
-        x <- gsub(x, pattern = "\\$", replacement = "")
-        mod <- paste(mod, ifelse(mod=="","","\\\\"), x)
-      }
-      if (name == "Brownian Motion" | name == "Bm")
-        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu \\; dt + \\sigma \\; dW_t")
-      if (name == "Geometric Brownian Motion" | name == "gBm")
-        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu X_t \\; dt + \\sigma X_t \\; dW_t")
-      if (name == "Ornstein-Uhlenbeck (OU)" | name == "OU")
-        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = -\\theta X_t \\; dt + \\sigma \\; dW_t")
-      if (name == "Vasicek model (VAS)" | name == "VAS")
-        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = (\\theta_1 - \\theta_2 X_t) \\;dt + \\theta_3 \\; dW_t")
-      if (name == "Constant elasticity of variance (CEV)" | name == "CEV")
-        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu X_t \\;dt + \\sigma X_t^\\gamma \\; dW_t")
-      if (name == "Cox-Ingersoll-Ross (CIR)" | name == "CIR")
-        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = (\\theta_1-\\theta_2 X_t) \\; dt + \\theta_3 \\sqrt{X_t} \\; dW_t")
-      if (name == "Chan-Karolyi-Longstaff-Sanders (CKLS)" | name == "CKLS")
-        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = (\\theta_1+\\theta_2 X_t) \\; dt + \\theta_3 X_t^{\\theta_4} \\; dW_t")
-      if (name == "Hyperbolic (Barndorff-Nielsen)" | name == "hyp1")
-        mod <- paste(mod, ifelse(mod=="","","\\\\"),"dX_t = \\frac{\\sigma}{2}^2 \\Bigl (\\beta-\\alpha \\frac{X_t-\\mu}{\\sqrt{\\delta^2+(X_t-\\mu)^2}} \\Bigl ) \\; dt + \\sigma \\; dW_t")
-      if (name == "Hyperbolic (Bibby and Sorensen)" | name == "hyp2")
-        mod <- paste(mod, ifelse(mod=="","","\\\\"),"dX_t = \\sigma \\; exp\\Bigl[\\frac{1}{2} \\Bigl( \\alpha \\sqrt{\\delta^2+(X_t-\\mu)^2}-\\beta (X_t-\\mu)\\Bigl)\\Bigl] \\; dW_t")
-    }
-    return(paste("$$",mod,"$$"))
-  }
-  if (process=="Fractional process"){
-    mod <- ""
-    for (name in names){
-      if (name %in% names(isolate({yuimaGUIdata$usr_model}))){
-        text <- toLatex(setModelByName(name))
-        x <- paste(text[2:9], collapse = "")
-        x <- substr(x,3,nchar(x))
-        x <- gsub(x, pattern = "'", replacement = "")
-        x <- gsub(x, pattern = "x", replacement = "X_t")
-        x <- gsub(x, pattern = "W1", replacement = "W_t^H")
-        x <- gsub(x, pattern = "\\$", replacement = "")
-        mod <- paste(mod, ifelse(mod=="","","\\\\"), x)
-      }
-      if (name == "Frac. Brownian Motion" | name == "Bm")
-        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu \\; dt + \\sigma \\; dW_t^H")
-      if (name == "Frac. Geometric Brownian Motion" | name == "gBm")
-        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu X_t \\; dt + \\sigma X_t \\; dW_t^H")
-      if (name == "Frac. Ornstein-Uhlenbeck (OU)" | name == "OU")
-        mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = -\\theta X_t \\; dt + \\sigma \\; dW_t^H")
-    }
-    return(paste("$$",mod,"$$"))
-  }
-  if (process=="Compound Poisson"){
-    mod <- paste("X_t = X_0+\\sum_{i=0}^{N_t} Y_i \\; : \\;\\;\\;  N_t \\sim Poi\\Bigl(\\int_0^t \\lambda(t)dt\\Bigl)", ifelse(!is.null(jumps), paste(", \\;\\;\\;\\; ", latexJumps(jumps)),""))
-    for (name in names){
-      if (name %in% names(isolate({yuimaGUIdata$usr_model}))){
-        text <- paste("\\lambda(t)=",yuimaGUIdata$usr_model[[name]]$intensity)
-        mod <- paste(mod, ifelse(mod=="","","\\\\"), text)
-      }
-      if (name == "Power Low Intensity") mod <- paste(mod, ifelse(mod=="","","\\\\"), "\\lambda(t)=\\alpha \\; t^{\\beta}")
-      if (name == "Constant Intensity")  mod <- paste(mod, ifelse(mod=="","","\\\\"), "\\lambda(t)=\\lambda")
-      if (name == "Linear Intensity")  mod <- paste(mod, ifelse(mod=="","","\\\\"), "\\lambda(t)=\\alpha+\\beta \\; t")
-      if (name == "Exponentially Decaying Intensity")  mod <- paste(mod, ifelse(mod=="","","\\\\"), "\\lambda(t)=\\alpha \\; e^{-\\beta t}")
-      if (name == "Periodic Intensity")  mod <- paste(mod, ifelse(mod=="","","\\\\"), "\\lambda(t)=\\frac{a}{2}\\bigl(1+cos(\\omega t + \\phi)\\bigl)+b")
-    }
-    return(paste("$$",mod,"$$"))
-  }
-  if (process=="COGARCH"){
-    return(paste("$$","COGARCH(p,q)","$$"))
-  }
-  if (process=="CARMA"){
-    return(paste("$$","CARMA(p,q)","$$"))
-  }
-  if (process=="Levy process"){
-    return(paste("$$","dX_t = \\mu X_t \\; dt + \\sigma X_t \\; dW_t + X_t \\; dZ_t","$$"))
+  if (name == "Correlated Brownian Motion") {
+    mat <- matrix(rep(1:dimension, dimension),dimension,dimension)
+    diff <- matrix(paste("s",mat,t(mat),sep=""), dimension, dimension)
+    diff[lower.tri(diff, diag = FALSE)] <- 0
+    return(yuima::setModel(drift=paste("mu", seq(1,dimension), sep = ""), diffusion=diff, solve.variable = paste("x", seq(1,dimension))))
   }
 }
 
-
+printModelLatex <- function(names, process, jumps = NA, multi = FALSE, dimension = 1, symb = character(0)){
+  dimension <- max(dimension, 1)
+  if(length(symb)>0) dimension <- length(symb)
+  if (multi==TRUE){
+    if (process=="Diffusion process"){
+      text <- toLatex(setModelByName(names, dimension = dimension))
+      x <- paste(text[-1], collapse = "")
+      if(length(symb)>0) for (i in 1:dimension) {
+        x <- gsub(x, pattern = paste("x", i), replacement = paste("X_{", symb[i], "}", sep = ""))
+      } else 
+        x <- gsub(x, pattern = "x ", replacement = "X_")
+        x <- gsub(x, pattern = "dW", replacement = "dW_")
+        x <- gsub(x, pattern = "\\$\\$\\$\\$.*", replacement = "$$")
+        return(x)
+    }
+  } else {
+    if (process=="Diffusion process"){
+      mod <- ""
+      for (name in names){
+        if ( isUserDefined(name) ){
+          text <- toLatex(setModelByName(name))
+          x <- paste(text[2:9], collapse = "")
+          x <- substr(x,3,nchar(x))
+          x <- gsub(x, pattern = "'", replacement = "")
+          x <- gsub(x, pattern = "x", replacement = "X_t")
+          x <- gsub(x, pattern = "W1", replacement = "W_t")
+          x <- gsub(x, pattern = "\\$", replacement = "")
+          mod <- paste(mod, ifelse(mod=="","","\\\\"), x)
+        }
+        if (name == "Brownian Motion" | name == "Bm")
+          mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu \\; dt + \\sigma \\; dW_t")
+        if (name == "Geometric Brownian Motion" | name == "gBm")
+          mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu X_t \\; dt + \\sigma X_t \\; dW_t")
+        if (name == "Ornstein-Uhlenbeck (OU)" | name == "OU")
+          mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = -\\theta X_t \\; dt + \\sigma \\; dW_t")
+        if (name == "Vasicek model (VAS)" | name == "VAS")
+          mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = (\\theta_1 - \\theta_2 X_t) \\;dt + \\theta_3 \\; dW_t")
+        if (name == "Constant elasticity of variance (CEV)" | name == "CEV")
+          mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu X_t \\;dt + \\sigma X_t^\\gamma \\; dW_t")
+        if (name == "Cox-Ingersoll-Ross (CIR)" | name == "CIR")
+          mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = (\\theta_1-\\theta_2 X_t) \\; dt + \\theta_3 \\sqrt{X_t} \\; dW_t")
+        if (name == "Chan-Karolyi-Longstaff-Sanders (CKLS)" | name == "CKLS")
+          mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = (\\theta_1+\\theta_2 X_t) \\; dt + \\theta_3 X_t^{\\theta_4} \\; dW_t")
+        if (name == "Hyperbolic (Barndorff-Nielsen)" | name == "hyp1")
+          mod <- paste(mod, ifelse(mod=="","","\\\\"),"dX_t = \\frac{\\sigma}{2}^2 \\Bigl (\\beta-\\alpha \\frac{X_t-\\mu}{\\sqrt{\\delta^2+(X_t-\\mu)^2}} \\Bigl ) \\; dt + \\sigma \\; dW_t")
+        if (name == "Hyperbolic (Bibby and Sorensen)" | name == "hyp2")
+          mod <- paste(mod, ifelse(mod=="","","\\\\"),"dX_t = \\sigma \\; exp\\Bigl[\\frac{1}{2} \\Bigl( \\alpha \\sqrt{\\delta^2+(X_t-\\mu)^2}-\\beta (X_t-\\mu)\\Bigl)\\Bigl] \\; dW_t")
+      }
+      return(paste("$$",mod,"$$"))
+    }
+    if (process=="Fractional process"){
+      mod <- ""
+      for (name in names){
+        if ( isUserDefined(name) ){
+          text <- toLatex(setModelByName(name))
+          x <- paste(text[2:9], collapse = "")
+          x <- substr(x,3,nchar(x))
+          x <- gsub(x, pattern = "'", replacement = "")
+          x <- gsub(x, pattern = "x", replacement = "X_t")
+          x <- gsub(x, pattern = "W1", replacement = "W_t^H")
+          x <- gsub(x, pattern = "\\$", replacement = "")
+          mod <- paste(mod, ifelse(mod=="","","\\\\"), x)
+        }
+        if (name == "Frac. Brownian Motion" | name == "Bm")
+          mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu \\; dt + \\sigma \\; dW_t^H")
+        if (name == "Frac. Geometric Brownian Motion" | name == "gBm")
+          mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = \\mu X_t \\; dt + \\sigma X_t \\; dW_t^H")
+        if (name == "Frac. Ornstein-Uhlenbeck (OU)" | name == "OU")
+          mod <- paste(mod, ifelse(mod=="","","\\\\"), "dX_t = -\\theta X_t \\; dt + \\sigma \\; dW_t^H")
+      }
+      return(paste("$$",mod,"$$"))
+    }
+    if (process=="Compound Poisson"){
+        mod <- paste("X_t = X_0+\\sum_{i=0}^{N_t} Y_i \\; : \\;\\;\\;  N_t \\sim Poi\\Bigl(\\int_0^t \\lambda(t)dt\\Bigl)", ifelse(!is.null(jumps), paste(", \\;\\;\\;\\; ", latexJumps(jumps)),""))
+      for (name in names){
+        if ( isUserDefined(name) ){
+          text <- paste("\\lambda(t)=",yuimaGUIdata$usr_model[[name]]$intensity)
+          mod <- paste(mod, ifelse(mod=="","","\\\\"), text)
+        }
+        if (name == "Power Low Intensity") mod <- paste(mod, ifelse(mod=="","","\\\\"), "\\lambda(t)=\\alpha \\; t^{\\beta}")
+        if (name == "Constant Intensity")  mod <- paste(mod, ifelse(mod=="","","\\\\"), "\\lambda(t)=\\lambda")
+        if (name == "Linear Intensity")  mod <- paste(mod, ifelse(mod=="","","\\\\"), "\\lambda(t)=\\alpha+\\beta \\; t")
+        if (name == "Exponentially Decaying Intensity")  mod <- paste(mod, ifelse(mod=="","","\\\\"), "\\lambda(t)=\\alpha \\; e^{-\\beta t}")
+        if (name == "Periodic Intensity")  mod <- paste(mod, ifelse(mod=="","","\\\\"), "\\lambda(t)=\\frac{a}{2}\\bigl(1+cos(\\omega t + \\phi)\\bigl)+b")
+      }
+      return(paste("$$",mod,"$$"))
+    }
+    if (process=="COGARCH"){
+      return(paste("$$","COGARCH(p,q)","$$"))
+    }
+    if (process=="CARMA"){
+      return(paste("$$","CARMA(p,q)","$$"))
+    }
+    if (process=="Levy process"){
+      return(paste("$$","dX_t = \\mu X_t \\; dt + \\sigma X_t \\; dW_t + X_t \\; dZ_t","$$"))
+    }
+  }
+}
+  
+  
 ###Function to convert unit of measure of the estimates
 changeBaseP <- function(param, StdErr, delta, original.data, paramName, modelName, newBase, allParam){
   msg <- NULL
@@ -424,7 +477,7 @@ changeBaseP <- function(param, StdErr, delta, original.data, paramName, modelNam
     if (newBase == "Daily") dt1 <- seriesLength/(length(original.data)-1)
   }
   if(class(index(original.data))=="numeric"){
-    dt1 <- as.numeric(end(original.data) - start(original.data))/(length(original.data)-1)
+    dt1 <- as.numeric(end(original.data) - start(original.data))/(length(index(original.data))-1)
     msg <- "Parameters are in the same unit of measure of input data"
   }
   if (modelName %in% c("Brownian Motion","Bm","Geometric Brownian Motion","gBm")){
@@ -485,6 +538,10 @@ changeBaseP <- function(param, StdErr, delta, original.data, paramName, modelNam
     if(paramName %in% c("a", "b", "omega")) return(list("Estimate"= param*delta/dt1, "Std. Error"=StdErr*delta/dt1, "msg"=msg))
     if(paramName %in% c("phi", "mu_jump", "sigma_jump", "a_jump", "b_jump")) return(list("Estimate"= param, "Std. Error"=StdErr, "msg"=msg))
   }
+  if (modelName %in% c("Correlated Brownian Motion")){
+    if(startsWith(paramName, "mu")) return(list("Estimate"= param*delta/dt1, "Std. Error"=StdErr*delta/dt1, "msg"=msg))
+    if(startsWith(paramName, "s")) return(list("Estimate"= param*sqrt(delta/dt1), "Std. Error"=StdErr*sqrt(delta/dt1), "msg"=msg))
+  }
   msg <- paste("No parameters conversion available for this model. Parameters have been obtained using delta = ", delta)
   return(list("Estimate"= param, "Std. Error"=StdErr, "msg"=msg, "conversion"=FALSE))
 }
@@ -499,7 +556,7 @@ signifDigits <- function(value, sd){
   }
 }
 
-changeBase <- function(table, yuimaGUI, newBase = input$baseModels, session = session, choicesUI="baseModels", anchorId = "modelsAlert", alertId = "modelsAlert_conversion"){
+changeBase <- function(table, yuimaGUI, newBase, session = session, choicesUI, anchorId, alertId){
   closeAlert(session, alertId)
   shinyjs::toggle(id = choicesUI, condition = (class(index(yuimaGUI$model@data@original.data))=="Date"))
   outputTable <- data.frame()
@@ -552,8 +609,9 @@ clearNA <- function(List){
     return (List)
 }
 
-addModel <- function(timeout = Inf, modName, intensity_levy, modClass, AR_C, MA_C, jumps, symbName, data, toLog, delta, start, startMin, startMax, trials, seed, method="BFGS", fixed = list(), lower, upper, joint=FALSE, aggregation=TRUE, threshold=NULL, session, anchorId, alertId){
+addModel <- function(timeout = Inf, modName, multi = FALSE, intensity_levy, modClass, AR_C, MA_C, jumps, symbName, data, toLog, delta, start, startMin, startMax, trials, seed, method="BFGS", fixed = list(), lower, upper, joint=FALSE, aggregation=TRUE, threshold=NULL, session, anchorId, alertId){
   info <- list(
+    symb = names(data),
     class = modClass,
     modName = modName,
     AR = AR_C,
@@ -580,13 +638,21 @@ addModel <- function(timeout = Inf, modName, intensity_levy, modClass, AR_C, MA_
   fixed <- clearNA(fixed)
   lower <- clearNA(lower)
   upper <- clearNA(upper)
-  if(toLog==TRUE) data <- try(log(data))
-  if(class(data)=="try-error"){
-    createAlert(session = session, anchorId = anchorId, alertId = alertId, content =  paste("Cannot convert series ", symbName, "to log. Try to use 'Advanced Settings' and customize estimation.", sep = ""), style = "error")
+  for (i in 1:length(toLog)) if(toLog[i]==TRUE) {
+    tmp <- try(log(data[,i]))
+    if(class(data)!="try-error")
+      data[,i] <- tmp
+    else {
+      createAlert(session = session, anchorId = anchorId, alertId = alertId, content =  paste("Cannot convert series ", symbName, "to log. Try to use 'Advanced Settings' and customize estimation.", sep = ""), style = "error")
+      return()
+    }
+  }
+  model <- try(setYuima(data = setDataGUI(data, delta = delta), model=setModelByName(name = modName, dimension = ncol(data), intensity = intensity_levy, jumps = jumps, MA_C = MA_C, AR_C = AR_C)))
+  if (class(model)=="try-error"){
+    createAlert(session = session, anchorId = anchorId, alertId = alertId, content =  "Unable to construct a synchronous grid for the data provided", style = "error")
     return()
   }
-  model <- setYuima(data = setDataGUI(data, delta = delta), model=setModelByName(name = modName, intensity = intensity_levy, jumps = jumps, MA_C = MA_C, AR_C = AR_C))
-  index(model@data@original.data) <- index(data)
+  index(model@data@original.data) <- index(na.omit(data))
   parameters <- model@model@parameter
   
   
@@ -887,13 +953,22 @@ addModel <- function(timeout = Inf, modName, intensity_levy, modClass, AR_C, MA_
     return()
   }
   
-  yuimaGUIdata$model[[symbName]][[ifelse(is.null(length(yuimaGUIdata$model[[symbName]])),1,length(yuimaGUIdata$model[[symbName]])+1)]] <<- list(
-    model = model,
-    qmle = QMLE,
-    aic = ifelse(!(modClass %in% c("CARMA","COGARCH","Fractional process")), AIC(QMLE), NA),
-    bic = ifelse(!(modClass %in% c("CARMA","COGARCH","Fractional process")), BIC(QMLE), NA),
-    info = info
-  )
+  if(multi==FALSE)
+    yuimaGUIdata$model[[symbName]][[ifelse(is.null(length(yuimaGUIdata$model[[symbName]])),1,length(yuimaGUIdata$model[[symbName]])+1)]] <<- list(
+      model = model,
+      qmle = QMLE,
+      aic = ifelse(!(modClass %in% c("CARMA","COGARCH","Fractional process")), AIC(QMLE), NA),
+      bic = ifelse(!(modClass %in% c("CARMA","COGARCH","Fractional process")), BIC(QMLE), NA),
+      info = info
+    )
+  else 
+    yuimaGUIdata$multimodel[[symbName]][[ifelse(is.null(length(yuimaGUIdata$multimodel[[symbName]])),1,length(yuimaGUIdata$multimodel[[symbName]])+1)]] <<- list(
+      model = model,
+      qmle = QMLE,
+      aic = ifelse(!(modClass %in% c("CARMA","COGARCH","Fractional process")), AIC(QMLE), NA),
+      bic = ifelse(!(modClass %in% c("CARMA","COGARCH","Fractional process")), BIC(QMLE), NA),
+      info = info
+    )
 }
 
 
@@ -1034,23 +1109,25 @@ delModel <- function(symb, n=1){
 }
 
 
+delMultiModel <- function(symb, n=1){
+  for(i in length(symb):1){
+    yuimaGUIdata$multimodel[[symb[i]]][as.numeric(n[i])] <<- NULL
+    if (length(yuimaGUIdata$multimodel[[symb[i]]])==0)
+      yuimaGUIdata$multimodel[[symb[i]]] <<- NULL
+  }
+}
+
 simulateGUI <- function(symbName, modelYuimaGUI, xinit, nsim, nstep, simulate.from, simulate.to, saveTraj, space.discretized, method, session, anchorId, alertId = NULL, true.parameter = NULL){
   modelYuima <- modelYuimaGUI$model
   model <- modelYuima@model
-  toLog <- ifelse(is.null(modelYuimaGUI$info$toLog), FALSE, modelYuimaGUI$info$toLog)
+  if(is.null(modelYuimaGUI$info$toLog)) toLog <- FALSE else toLog <- modelYuimaGUI$info$toLog
   if(simulate.from >= simulate.to){
     createAlert(session = session, anchorId = anchorId, alertId = alertId, content = paste("Unable to simulate ", symbName," by ", modelYuimaGUI$info$modName, ": ending time before starting time.", sep = ""), style = "danger")
     return()
   }
-  if(toLog==TRUE) xinit <- log(xinit)
-  if(saveTraj==TRUE){
-    trajectory <- zoo::zoo(order.by = numeric())
-    hist <- NA
-  }
-  if(saveTraj==FALSE){
-    trajectory <- NA
-    hist <- numeric(nsim)
-  }
+  if(!is.null(names(xinit))) seriesnames <- names(xinit) else seriesnames <- model@solve.variable
+  xinit <- as.numeric(xinit)
+  xinit[toLog==TRUE] <- log(xinit[toLog==TRUE])
   if(is.null(true.parameter)){
     convert <- TRUE
     if (modelYuimaGUI$info$class=="Fractional process") true.parameter <- as.list(modelYuimaGUI$qmle["Estimate",])
@@ -1073,6 +1150,9 @@ simulateGUI <- function(symbName, modelYuimaGUI, xinit, nsim, nstep, simulate.fr
     convert <- FALSE
     sampling <- setSampling(Initial = simulate.from, Terminal = simulate.to, n = nstep)
   }
+  
+  if(nsim*sampling@n*length(xinit) > 1000*252*2) saveTraj <- FALSE
+  
   is.valid <- TRUE
   if (modelYuimaGUI$info$class=="COGARCH") {
     noise <- cogarchNoise(yuima = modelYuima, param = true.parameter)
@@ -1092,6 +1172,7 @@ simulateGUI <- function(symbName, modelYuimaGUI, xinit, nsim, nstep, simulate.fr
     createAlert(session = session, anchorId = anchorId, alertId = alertId, content = "Hurst coefficient must greater than 0 and less than 1", style = "danger")
     return()
   }
+  
   withProgress(message = 'Simulating: ', value = 0, {
     for (i in 1:nsim){
       incProgress(1/nsim, detail = paste("Simulating:",i,"(/",nsim,")"))
@@ -1107,63 +1188,100 @@ simulateGUI <- function(symbName, modelYuimaGUI, xinit, nsim, nstep, simulate.fr
         is.valid <- FALSE
         break()
       }
-      else if (any(is.na(as.numeric(simulation@data@zoo.data[[1]])) | !is.finite(as.numeric(simulation@data@zoo.data[[1]])) | (toLog==TRUE & !is.finite(exp(as.numeric(simulation@data@zoo.data[[1]])))))){
-        is.valid <- FALSE
-        break()
-      }
       else {
-        if (saveTraj==TRUE)
-          trajectory <- merge(trajectory, simulation@data@zoo.data[[1]])
-        if (saveTraj==FALSE)
-          hist[i] <- as.numeric(tail(simulation@data@zoo.data[[1]],1))
+        dimension <- length(simulation@data@zoo.data)
+        if (modelYuimaGUI$info$class=="COGARCH") dimension <- dimension - 2
+        if (saveTraj==TRUE){
+          x <- do.call(merge,simulation@data@zoo.data)
+          if(i==1) {
+            timeindex <- index(x)
+            x <- as.matrix(x)
+            trajectory <- matrix(nrow = nrow(x), ncol = nsim*dimension)
+            colnames(trajectory) <- seq(1:ncol(trajectory))
+            hist <- NA 
+          }
+          else 
+            x <- as.matrix(x)
+          x[,toLog==TRUE] <- exp(x[,toLog==TRUE])
+          if(any( is.na(x) | !is.finite(x) )){
+            is.valid <- FALSE
+            break()
+          }
+          colindex <- seq(1+(i-1)*dimension, i*dimension)
+          trajectory[,colindex] <- x[,1:dimension]
+          colnames(trajectory)[colindex] <- paste(seriesnames[1:dimension], i, sep = "_sim")
+        } else {
+          x <- do.call(c, lapply(simulation@data@zoo.data, FUN = function(x) as.numeric(last(x))))
+          if(i==1) {
+            trajectory <- NA
+            hist <- matrix(nrow = dimension, ncol = nsim, dimnames = list(seriesnames[1:dimension]))
+          }
+          hist[,i] <- x
+        }
       }
     }
   })
+  
   if (!is.valid){
     if(modelYuimaGUI$info$class %in% c("CARMA","COGARCH")) msg <- paste("Unable to simulate ", symbName," by ", modelYuimaGUI$info$modName, ". Probably something wrong with the estimation of this model", sep = "")
     else msg <- paste("Unable to simulate", symbName,"by", modelYuimaGUI$info$modName)
     createAlert(session = session, anchorId = anchorId, alertId = alertId, content = msg, style = "danger")
     return()
   }
-  if(saveTraj==TRUE & convert==TRUE){
-    times <- index(trajectory)
-    if(is.numeric(data_index))
-      index(trajectory) <- as.numeric(times/used_delta*real_delta)
-    else
-      index(trajectory) <- as.POSIXct(24*60*60*(times-times[1])/used_delta*real_delta, origin = simulate.from)
-    if(!is.null(colnames(trajectory)))
-      colnames(trajectory) <- seq(1:length(colnames(trajectory)))
+  
+  if(saveTraj==TRUE){
+    trajectory <- zoo(trajectory, order.by = timeindex)  
+    if(convert==TRUE){
+      if(is.numeric(data_index))
+        index(trajectory) <- as.numeric(timeindex/used_delta*real_delta)
+      else
+        index(trajectory) <- as.POSIXct(24*60*60*(timeindex-timeindex[1])/used_delta*real_delta, origin = simulate.from)
+    }
   }
-  if(toLog==TRUE){
-    trajectory <- exp(trajectory)
-    hist <- exp(hist)
-  }
+  
   return(list(hist=hist, trajectory=trajectory, nstep = sampling@n[1], simulate.from = simulate.from, simulate.to = simulate.to, delta = sampling@delta))
 }
 
 
 
-addSimulation <- function(modelYuimaGUI, symbName, xinit, nsim, nstep, simulate.from, simulate.to, saveTraj, seed, sampling, true.parameter = NULL, space.discretized = FALSE, method = "euler", session, anchorId){
+addSimulation <- function(modelYuimaGUI, symbName, xinit, nsim, nstep, simulate.from, simulate.to, saveTraj, seed, sampling, true.parameter = NULL, space.discretized = FALSE, method = "euler", session, anchorId, is.multi = FALSE){
   if(!is.na(seed)) set.seed(seed)
   if(is.na(seed)) set.seed(NULL)
   sim <- simulateGUI(symbName = symbName, modelYuimaGUI = modelYuimaGUI, xinit = xinit, nsim = nsim, nstep = nstep, simulate.from = simulate.from, simulate.to = simulate.to, saveTraj = saveTraj, space.discretized = space.discretized, method = method, session = session, anchorId = anchorId, true.parameter = true.parameter)
   if(!is.null(sim)){
-    yuimaGUIdata$simulation[[symbName]][[ifelse(is.null(length(yuimaGUIdata$simulation[[symbName]])),1,length(yuimaGUIdata$simulation[[symbName]])+1)]] <<- list(
-      model = modelYuimaGUI,
-      trajectory = sim$trajectory,
-      hist = sim$hist,
-      info = list(nsim = nsim, nstep = sim$nstep, simulate.from = sim$simulate.from, simulate.to = sim$simulate.to, delta = sim$delta)
-    )
+    if(is.multi==FALSE)
+      yuimaGUIdata$simulation[[symbName]][[ifelse(is.null(length(yuimaGUIdata$simulation[[symbName]])),1,length(yuimaGUIdata$simulation[[symbName]])+1)]] <<- list(
+        model = modelYuimaGUI,
+        trajectory = sim$trajectory,
+        hist = sim$hist,
+        info = list(nsim = nsim, nstep = sim$nstep, simulate.from = sim$simulate.from, simulate.to = sim$simulate.to, delta = sim$delta)
+      )
+    else
+      yuimaGUIdata$multisimulation[[symbName]][[ifelse(is.null(length(yuimaGUIdata$multisimulation[[symbName]])),1,length(yuimaGUIdata$multisimulation[[symbName]])+1)]] <<- list(
+        model = modelYuimaGUI,
+        trajectory = sim$trajectory,
+        hist = sim$hist,
+        info = list(nsim = nsim, nstep = sim$nstep, simulate.from = sim$simulate.from, simulate.to = sim$simulate.to, delta = sim$delta)
+      )
   }
 }
 
 
 
-delSimulation <- function(symb, n=1){
-  for(i in length(symb):1){
-    yuimaGUIdata$simulation[[symb[i]]][as.numeric(n[i])] <<- NULL
-    if (length(yuimaGUIdata$simulation[[symb[i]]])==0)
-      yuimaGUIdata$simulation[[symb[i]]] <<- NULL
+delSimulation <- function(symb, n=1, multi=FALSE){
+  if(multi==FALSE){
+    for(i in length(symb):1){
+      yuimaGUIdata$simulation[[symb[i]]][as.numeric(n[i])] <<- NULL
+      if (length(yuimaGUIdata$simulation[[symb[i]]])==0)
+        yuimaGUIdata$simulation[[symb[i]]] <<- NULL
+    }
+  }
+  else {
+    for(i in length(symb):1){
+      yuimaGUIdata$multisimulation[[symb[i]]][as.numeric(n[i])] <<- NULL
+      if (length(yuimaGUIdata$multisimulation[[symb[i]]])==0)
+        yuimaGUIdata$multisimulation[[symb[i]]] <<- NULL
+    }
   }
 }
 
@@ -1352,7 +1470,7 @@ saveData <- function() {
   dataDownload_series <- reactive({
     for (symb in names(yuimaGUIdata$series)){
       data <- getData(symb)
-      if(class(index(data)[1])=="numeric") {
+      if(is.numeric(index(data))) {
         if (!exists("data_num", inherits = FALSE)) data_num <- data
         else data_num <- merge(data_num, data)
       }
@@ -1361,9 +1479,9 @@ saveData <- function() {
         else data_date <- merge(data_date, data)
       }
     }
-    if (exists("data_date") & !exists("data_num")) return(as.data.frame(data_date[order(index(data_date)), ]))
-    if (!exists("data_date") & exists("data_num")) return(as.data.frame(data_num[order(index(data_num)), ]))
-    if (exists("data_date") & exists("data_num")) return(rbind.fill(as.data.frame(data_num[order(index(data_num)), ]), as.data.frame(data_date[order(index(data_date)), ])))
+    if (exists("data_date") & !exists("data_num")) return(as.data.frame(data_date[order(index(data_date)), , drop = FALSE]))
+    if (!exists("data_date") & exists("data_num")) return(as.data.frame(data_num[order(index(data_num)), , drop = FALSE]))
+    if (exists("data_date") & exists("data_num")) return(rbind.fill(as.data.frame(data_num[order(index(data_num)), , drop = FALSE]), as.data.frame(data_date[order(index(data_date)), , drop = FALSE])))
   })
   downloadHandler(
     filename = "yuimaGUIdata.txt",

@@ -1,4 +1,8 @@
-yuimaGUItable <- reactiveValues(series=data.frame(),  model=data.frame(), simulation=data.frame(), hedging=data.frame())
+yuimaGUItable <- reactiveValues(series=data.frame(),  
+                                model=data.frame(), multimodel=data.frame(), 
+                                simulation=data.frame(), multisimulation=data.frame(), 
+                                hedging=data.frame())
+
 yuimaGUIsettings <- list(simulation = list(), estimation = list(), delta = list(), toLog = list())
 
 
@@ -13,15 +17,7 @@ output$saveSession <- {
 
 observeEvent(input$loadSession, {
   try(load(choose.files(caption = "Select a .yuimaGUI file", multi = FALSE)))
-  yuimaGUIdata$series <<- yuimaGUIdata$series
-  yuimaGUIdata$model <<- yuimaGUIdata$model
-  yuimaGUIdata$usr_model <<- yuimaGUIdata$usr_model
-  yuimaGUIdata$simulation <<- yuimaGUIdata$simulation
-  yuimaGUIdata$usr_simulation <<- yuimaGUIdata$usr_simulation
-  yuimaGUIdata$cp <<- yuimaGUIdata$cp
-  yuimaGUIdata$cpYuima <<- yuimaGUIdata$cpYuima
-  yuimaGUIdata$llag <<- yuimaGUIdata$llag
-  yuimaGUIdata$cluster <<- yuimaGUIdata$cluster
+  for(i in names(yuimaGUIdata)) yuimaGUIdata[[i]] <<- yuimaGUIdata[[i]]
 })
 
 
@@ -58,6 +54,26 @@ observeEvent(yuimaGUIdata$model, priority = 10, {
   }
 })
 
+observeEvent(yuimaGUIdata$multimodel, priority = 10, {
+  yuimaGUItable$multimodel <<- data.frame()
+  for (symb in names(yuimaGUIdata$multimodel)){
+    for (i in 1:length(yuimaGUIdata$multimodel[[symb]])){
+      newRow <- data.frame(
+        Symb = symb,
+        Class = yuimaGUIdata$multimodel[[symb]][[i]]$info$class,
+        Model = yuimaGUIdata$multimodel[[symb]][[i]]$info$modName,
+        Jumps = yuimaGUIdata$multimodel[[symb]][[i]]$info$jumps,
+        From = as.character(start(yuimaGUIdata$multimodel[[symb]][[i]]$model@data@original.data)),
+        To = as.character(end(yuimaGUIdata$multimodel[[symb]][[i]]$model@data@original.data)),
+        AIC = yuimaGUIdata$multimodel[[symb]][[i]]$aic,
+        BIC = yuimaGUIdata$multimodel[[symb]][[i]]$bic,
+        stringsAsFactors = FALSE)
+      rownames(newRow) <- as.character(paste(symb," ", i, sep=""))
+      yuimaGUItable$multimodel <<- rbind(yuimaGUItable$multimodel, newRow)
+    }
+  }
+})
+
 observeEvent(yuimaGUIdata$simulation, priority = 10, {
   yuimaGUItable$simulation <<- data.frame()
   for (symb in names(yuimaGUIdata$simulation)){
@@ -86,6 +102,39 @@ observeEvent(yuimaGUIdata$simulation, priority = 10, {
     }
   }
 })
+
+
+
+observeEvent(yuimaGUIdata$multisimulation, priority = 10, {
+  yuimaGUItable$multisimulation <<- data.frame()
+  for (symb in names(yuimaGUIdata$multisimulation)){
+    for (i in 1:length(yuimaGUIdata$multisimulation[[symb]])){
+      estimated.from <- NA
+      estimated.to <- NA
+      if (!is.null(yuimaGUIdata$multisimulation[[symb]][[i]]$model$model@data@original.data)){
+        estimated.from <- as.character(start(yuimaGUIdata$multisimulation[[symb]][[i]]$model$model@data@original.data))
+        estimated.to <- as.character(end(yuimaGUIdata$multisimulation[[symb]][[i]]$model$model@data@original.data))
+      }
+      newRow <- data.frame(
+        "Symb" = symb,
+        "Class" = yuimaGUIdata$multisimulation[[symb]][[i]]$model$info$class,
+        "Model" = yuimaGUIdata$multisimulation[[symb]][[i]]$model$info$modName,
+        "Jumps" = yuimaGUIdata$multisimulation[[symb]][[i]]$model$info$jumps,
+        "N sim" = yuimaGUIdata$multisimulation[[symb]][[i]]$info$nsim,
+        "N step" = yuimaGUIdata$multisimulation[[symb]][[i]]$info$nstep,
+        "delta" = yuimaGUIdata$multisimulation[[symb]][[i]]$info$delta,
+        "Simulated from" = as.character(yuimaGUIdata$multisimulation[[symb]][[i]]$info$simulate.from),
+        "Simulated to" = as.character(yuimaGUIdata$multisimulation[[symb]][[i]]$info$simulate.to),
+        "Estimated from" = estimated.from,
+        "Estimated to" = estimated.to,
+        check.names = FALSE, stringsAsFactors = FALSE)
+      rownames(newRow) <- as.character(paste(symb," ", i, sep=""))
+      yuimaGUItable$multisimulation <<- rbind(yuimaGUItable$multisimulation, newRow)
+    }
+  }
+})
+
+
 
 observeEvent(yuimaGUIdata$series, priority = 10, {
   n <- names(yuimaGUIdata$series)
@@ -148,5 +197,7 @@ defaultModels <-  c("Diffusion process"="Geometric Brownian Motion",
                     "COGARCH" = "Cogarch(p,q)",
                     "Levy process" = "Geometric Brownian Motion with Jumps"
 )
+
+defaultMultiModels <-  c("Diffusion process"="Correlated Brownian Motion")
 
 defaultJumps <- c("Gaussian", "Uniform")
