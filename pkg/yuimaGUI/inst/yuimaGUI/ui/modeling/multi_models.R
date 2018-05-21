@@ -87,7 +87,7 @@ tabItem(tabName="multi_models",
                                                                 shinyjs::hidden(div(id="multi_estimates_info", fluidRow(
                                                                   column(12,
                                                                          textOutput("multi_SymbolName"),
-                                                                         a(id = "multi_linkMoreInfo", tags$u("More Info"), href = ""),
+                                                                         a(id = "multi_linkMoreInfo", tags$u("More Info"), href = "#"),
                                                                          bsModal(id = "multi_MoreInfo", trigger = "multi_linkMoreInfo", title = "Info", size = "large",
                                                                                  column(12,
                                                                                         fluidRow(uiOutput("multi_text_MoreInfo")),

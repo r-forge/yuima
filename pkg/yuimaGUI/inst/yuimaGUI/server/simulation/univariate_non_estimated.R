@@ -24,8 +24,8 @@ output$simulate_model_usr_selectParam <- renderUI({
   if (is.null(input$simulate_model_usr_selectModel)) valid <- FALSE
   else if (isolate({input$simulate_model_usr_selectClass=="Compound Poisson"}) & is.null(input$simulate_model_usr_selectJumps)) valid <- FALSE
   if (valid) {
-    choices <- setModelByName(input$simulate_model_usr_selectModel, jumps = jumps_shortcut(class = isolate({input$simulate_model_usr_selectClass}), jumps = input$simulate_model_usr_selectJumps))@parameter@all
-    if (input$simulate_model_usr_selectClass=="Fractional process") choices <- c(choices, "hurst")
+	mod <- setModelByName(input$simulate_model_usr_selectModel, jumps = jumps_shortcut(class = isolate({input$simulate_model_usr_selectClass}), jumps = input$simulate_model_usr_selectJumps))
+	choices <- getAllParams(mod = mod, class = input$simulate_model_usr_selectClass)	
     return(selectInput("simulate_model_usr_selectParam", label = "Parameter", choices = choices))
   }
 })
@@ -48,11 +48,12 @@ observeEvent(input$simulate_model_usr_button_save, {
     yuimaGUIdata$usr_simulation[[id]][["Class"]] <<- input$simulate_model_usr_selectClass
     yuimaGUIdata$usr_simulation[[id]][["Model"]] <<- input$simulate_model_usr_selectModel
     yuimaGUIdata$usr_simulation[[id]][["Jumps"]] <<- input$simulate_model_usr_selectJumps
+	if(!(input$simulate_model_usr_selectClass %in% c("Compound Poisson", "Levy process"))) yuimaGUIdata$usr_simulation[[id]][["Jumps"]] <<- NA
     if (is.null(yuimaGUIdata$usr_simulation[[id]][["true.param"]])){
       yuimaGUIdata$usr_simulation[[id]][["true.param"]] <<- list()
     }
-    allparam <- setModelByName(input$simulate_model_usr_selectModel, jumps = input$simulate_model_usr_selectJumps)@parameter@all
-    if (input$simulate_model_usr_selectClass=="Fractional process") allparam <- c(allparam, "hurst")
+	mod <- setModelByName(input$simulate_model_usr_selectModel, jumps = input$simulate_model_usr_selectJumps)
+    allparam <- getAllParams(mod = mod, class = input$simulate_model_usr_selectClass)
     if (length(allparam)==0)
       yuimaGUIdata$usr_simulation[[id]]["true.param"] <<- NULL
     if (length(allparam)!=0){

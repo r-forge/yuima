@@ -58,7 +58,7 @@ output$table_MoreInfo <- renderTable(digits=5, rownames = TRUE, {
   info <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$info
   if (info$class=="Fractional process") coef <- as.data.frame(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle)
   else coef <- as.data.frame(t(summary(yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$qmle)@coef))
-  params <- yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model@model@parameter@all
+  params <- getAllParams(mod = yuimaGUIdata$model[[id[1]]][[as.numeric(id[2])]]$model, class = info$class)
   lower <- data.frame(info$lower)
   upper <- data.frame(info$upper)
   fixed <- data.frame(info$fixed)

@@ -31,7 +31,8 @@ output$multi_simulate_model_usr_selectParam <- renderUI({
   else if (isolate({input$multi_simulate_model_usr_selectClass=="Compound Poisson"}) & is.null(input$multi_simulate_model_usr_selectJumps)) valid <- FALSE
   else if (isolate({input$multi_simulate_model_usr_selectModel %in% c("Correlated Brownian Motion")}) & is.null(input$multi_simulate_model_usr_selectDimension)) valid <- FALSE
   if (valid) {
-    choices <- setModelByName(input$multi_simulate_model_usr_selectModel, dimension = input$multi_simulate_model_usr_selectDimension, jumps = jumps_shortcut(class = isolate({input$multi_simulate_model_usr_selectClass}), jumps = input$multi_simulate_model_usr_selectJumps))@parameter@all
+	mod <- setModelByName(input$multi_simulate_model_usr_selectModel, dimension = input$multi_simulate_model_usr_selectDimension, jumps = jumps_shortcut(class = isolate({input$multi_simulate_model_usr_selectClass}), jumps = input$multi_simulate_model_usr_selectJumps))
+    choices <- getAllParams(mod = mod, class = input$multi_simulate_model_usr_selectClass)
     if (input$multi_simulate_model_usr_selectClass=="Fractional process") choices <- c(choices, "hurst")
     return(selectInput("multi_simulate_model_usr_selectParam", label = "Parameter", choices = choices))
   }
@@ -59,8 +60,8 @@ observeEvent(input$multi_simulate_model_usr_button_save, {
     if (is.null(yuimaGUIdata$usr_multisimulation[[id]][["true.param"]])){
       yuimaGUIdata$usr_multisimulation[[id]][["true.param"]] <<- list()
     }
-    allparam <- setModelByName(input$multi_simulate_model_usr_selectModel, jumps = input$multi_simulate_model_usr_selectJumps, dimension = input$multi_simulate_model_usr_selectDimension)@parameter@all
-    if (input$multi_simulate_model_usr_selectClass=="Fractional process") allparam <- c(allparam, "hurst")
+	mod <- setModelByName(input$multi_simulate_model_usr_selectModel, jumps = input$multi_simulate_model_usr_selectJumps, dimension = input$multi_simulate_model_usr_selectDimension)
+    allparam <- getAllParams(mod = mod, class = input$multi_simulate_model_usr_selectClass)
     if (length(allparam)==0)
       yuimaGUIdata$usr_multisimulation[[id]]["true.param"] <<- NULL
     if (length(allparam)!=0){

@@ -1,3 +1,15 @@
+#use it for shinyapps.io
+yuimaGUIdata <- reactiveValues(series=list(),
+                               model=list(), multimodel=list(),
+                               usr_model = list(), usr_multimodel = list(),
+                               simulation=list(), multisimulation=list(),
+                               usr_simulation = list(), usr_multisimulation = list(),
+                               cp=list(),
+                               cpYuima=list(),
+                               llag = list(),
+                               cluster = list(),
+                               hedging = list())
+
 yuimaGUItable <- reactiveValues(series=data.frame(),  
                                 model=data.frame(), multimodel=data.frame(), 
                                 simulation=data.frame(), multisimulation=data.frame(), 
@@ -190,6 +202,7 @@ defaultModels <-  c("Diffusion process"="Geometric Brownian Motion",
                     "Compound Poisson" = "Power Low Intensity",
                     "Compound Poisson" = "Exponentially Decaying Intensity",
                     "Compound Poisson" = "Periodic Intensity",
+                    "Point Process" = "Hawkes",
                     #"Fractional process"="Frac. Geometric Brownian Motion",
                     #"Fractional process"="Frac. Brownian Motion",
                     "Fractional process"="Frac. Ornstein-Uhlenbeck (OU)",
@@ -198,6 +211,13 @@ defaultModels <-  c("Diffusion process"="Geometric Brownian Motion",
                     "Levy process" = "Geometric Brownian Motion with Jumps"
 )
 
-defaultMultiModels <-  c("Diffusion process"="Correlated Brownian Motion")
+defaultMultiModels <-  c("Diffusion process" = "Correlated Brownian Motion")
 
-defaultJumps <- c("Gaussian", "Uniform")
+defaultJumps <- c("Gaussian", 
+                  "Uniform", 
+                  "Student t", 
+                  "Variance Gamma", 
+                  "Inverse Gaussian", 
+                  "Normal Inverse Gaussian", 
+                  "Hyperbolic", 
+                  "Generalized Hyperbolic")

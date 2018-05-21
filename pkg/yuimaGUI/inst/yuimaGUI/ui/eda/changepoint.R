@@ -43,7 +43,7 @@ tabItem(tabName = "changepoint",
                                                                                        uiOutput("changepoint_symb", align="center"),
                                                                                        div(fluidRow(
                                                                                          column(6, div(align = "left", selectInput("changepoint_scale", label = "Scale", choices=c("Linear","Logarithmic (Y)","Logarithmic (X)", "Logarithmic (XY)"), width = "150px"))),
-                                                                                         column(6, div(align = "right", br(), a(id = "linkChangePointInfo", "Change Points Info", style = "font-size: 140%;", href = "")))
+                                                                                         column(6, div(align = "right", br(), a(id = "linkChangePointInfo", "Change Points Info", style = "font-size: 140%;", href = "#")))
                                                                                        )),
                                                                                        bsModal(id = "ChangePointInfo", trigger = "linkChangePointInfo", title = "Change Points Info",
                                                                                                column(12,
@@ -187,7 +187,7 @@ tabItem(tabName = "changepoint",
                                                                                          column(6,plotOutput("parametric_changepoint_plot_series", brush = brushOpts(id = "parametric_changePoint_brush", delayType = "debounce", delay = 10000, resetOnNew = TRUE), dblclick = "parametric_changePoint_dbclick")),
                                                                                          column(6,
                                                                                                 div(uiOutput("parametric_changepoint_info"),
-                                                                                                    a(id = "parametric_linkChangePointInfo", "Change Point Info", style = "font-size: 140%;", href = ""),
+                                                                                                    a(id = "parametric_linkChangePointInfo", "Change Point Info", style = "font-size: 140%;", href = "#"),
                                                                                                     align="center"),br(),br(),br(),br(),br(),br(),br(),br(),br(),
                                                                                                 fluidRow(
                                                                                                   column(2),
