@@ -296,7 +296,8 @@ output$parametric_modal_model <- renderUI({
 })
 output$parametric_modal_parameter <- renderUI({
   if (!is.null(input$parametric_modal_model)){
-    par <- setModelByName(input$parametric_modal_model, jumps = NA, AR_C = NA, MA_C = NA)@parameter@all
+    mod <- setModelByName(input$parametric_modal_model, jumps = NA, AR_C = NA, MA_C = NA)
+	par <- getAllParams(mod, 'Diffusion process')
     selectInput(inputId = "parametric_modal_parameter", label = "Parameter", choices = par)
   }
 })

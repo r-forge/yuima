@@ -5,7 +5,7 @@ output$multi_model <- renderUI({
     for(i in names(yuimaGUIdata$usr_multimodel))
       if (yuimaGUIdata$usr_multimodel[[i]]$class==input$multi_modelClass) {
         if(input$multi_modelClass!="Diffusion process") choices <- c(i, choices)
-        else if (length(setModelByName(name = i)@parameter@all)!=0) choices <- c(i, choices)
+        else if (length(getAllParams(mod = setModelByName(name = i), class = input$multi_modelClass))!=0) choices <- c(i, choices)
       }
   return (selectInput("multi_model",label = "Model Name", choices = choices, multiple = FALSE))
 })
@@ -363,10 +363,8 @@ output$multi_advancedSettingsModel <- renderUI({
 output$multi_advancedSettingsParameter <- renderUI({
   if (!is.null(input$multi_model))
     if (!is.null(input$multi_advancedSettingsModel)){
-      parL <- setModelByName(input$multi_advancedSettingsModel, dimension = nrow(multi_seriesToEstimate$table), intensity = input$model_levy_intensity, jumps = jumps_shortcut(class = input$multi_modelClass, jumps = input$multi_jumps), AR_C = ifelse(input$multi_modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$multi_modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))@parameter
-      par <- parL@all
-      if (input$multi_modelClass=="COGARCH") par <- unique(c(parL@drift, parL@xinit))
-      if (input$multi_modelClass=="CARMA") par <- parL@drift
+      mod <- setModelByName(input$multi_advancedSettingsModel, dimension = nrow(multi_seriesToEstimate$table), intensity = input$model_levy_intensity, jumps = jumps_shortcut(class = input$multi_modelClass, jumps = input$multi_jumps), AR_C = ifelse(input$multi_modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$multi_modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))
+	  par <- getAllParams(mod, input$multi_modelClass)
       selectInput(inputId = "multi_advancedSettingsParameter", label = "Parameter", choices = par)
     }
 })

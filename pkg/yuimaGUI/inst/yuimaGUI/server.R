@@ -3,9 +3,9 @@ options("getSymbols.warning4.0"=FALSE)
 
 server <- function(input, output, session) {
   
-  session$onSessionEnded(function() {
-    stopApp()
-  })
+  # session$onSessionEnded(function() {
+  #   stopApp()
+  # })
 
   source("server/settings.R", local = TRUE)
   source("server/functions.R", local = TRUE)

@@ -261,12 +261,20 @@ observeEvent(input$simulate_simulateModels, {
           incProgress(1/nrow(modelsToSimulate$table), detail = paste(modID,"-",yuimaGUIdata$usr_simulation[[modID]][["Model"]]))
           jumps <- ifelse(is.null(yuimaGUIdata$usr_simulation[[modID]][["Jumps"]]),NA, yuimaGUIdata$usr_simulation[[modID]][["Jumps"]])
           modName <- yuimaGUIdata$usr_simulation[[modID]][["Model"]]
-          modelYuimaGUI <- list(model = setYuima(model = setModelByName(name = modName, jumps = jumps)),
-                                info = list(class = yuimaGUIdata$usr_simulation[[modID]][["Class"]], 
-                                            modName = modName,
-                                            jumps = jumps
-                                )
-          )
+          if(yuimaGUIdata$usr_simulation[[modID]][["Class"]]=='Point Process')
+            modelYuimaGUI <- list(model = setModelByName(name = modName, jumps = jumps),
+                                  info = list(class = yuimaGUIdata$usr_simulation[[modID]][["Class"]], 
+                                              modName = modName,
+                                              jumps = jumps
+                                  )
+            )
+          else 
+            modelYuimaGUI <- list(model = setYuima(model = setModelByName(name = modName, jumps = jumps)),
+                                  info = list(class = yuimaGUIdata$usr_simulation[[modID]][["Class"]], 
+                                              modName = modName,
+                                              jumps = jumps
+                                  )
+            )
           addSimulation(
             modelYuimaGUI = modelYuimaGUI,
             symbName = modID,

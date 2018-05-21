@@ -35,7 +35,7 @@ tabItem(tabName = "simulate",
                                                   column(6, br(), div(align="center",
                                                                       fluidRow(
                                                                         column(1),
-                                                                        column(5,selectInput("simulate_model_usr_selectClass", label = "Class", choices = c("Diffusion process", "Fractional process", "Compound Poisson"))),
+                                                                        column(5,selectInput("simulate_model_usr_selectClass", label = "Class", choices = c("Diffusion process", "Fractional process", "Compound Poisson", "Point Process"))),
                                                                         column(5,uiOutput("simulate_model_usr_selectModel"))
                                                                       ),
                                                                       uiOutput("simulate_model_usr_ID"),

@@ -16,7 +16,7 @@ tabItem(tabName = "home",
                  h4("Step 2", class = "hTitle"),
                  h4("Model data in section 'Modeling'.", br(),
                     "Here you can fit models choosing between a number of default options or defining your own model.", br(),
-                    "Now you are ready to go to the ‘Simulate’ section."),
+                    "Now you are ready to go to the 'Simulate' section."),
                  h4("Step 3", class = "hTitle"),
                  h4("Read the short explanation at the beginning of each section for further information. Enjoy!")
           ),

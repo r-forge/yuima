@@ -5,7 +5,7 @@ output$model <- renderUI({
     for(i in names(yuimaGUIdata$usr_model))
       if (yuimaGUIdata$usr_model[[i]]$class==input$modelClass) {
         if(input$modelClass!="Diffusion process") choices <- c(i, choices)
-        else if (length(setModelByName(name = i)@parameter@all)!=0) choices <- c(i, choices)
+        else if (length(getAllParams(mod = setModelByName(name = i), class = input$modelClass))!=0) choices <- c(i, choices)
       }
   return (selectInput("model",label = "Model Name", choices = choices, multiple = TRUE))
 })
@@ -357,10 +357,8 @@ output$advancedSettingsModel <- renderUI({
 output$advancedSettingsParameter <- renderUI({
   if (!is.null(input$model))
     if (!is.null(input$advancedSettingsModel)){
-      parL <- setModelByName(input$advancedSettingsModel, intensity = input$model_levy_intensity, jumps = jumps_shortcut(class = input$modelClass, jumps = input$jumps), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))@parameter
-      par <- parL@all
-      if (input$modelClass=="COGARCH") par <- unique(c(parL@drift, parL@xinit))
-      if (input$modelClass=="CARMA") par <- parL@drift
+      mod <- setModelByName(input$advancedSettingsModel, intensity = input$model_levy_intensity, jumps = jumps_shortcut(class = input$modelClass, jumps = input$jumps), AR_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(input$modelClass %in% c("CARMA","COGARCH"), input$MA_C, NA))
+	  par <- getAllParams(mod, input$modelClass)
       selectInput(inputId = "advancedSettingsParameter", label = "Parameter", choices = par)
     }
 })
