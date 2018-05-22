@@ -110,7 +110,7 @@ th{
   text-align: center;
 }
 #loadSession{
-  display: block;
+  display: inline-block;
   margin: 0 auto;
 }
 

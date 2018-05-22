@@ -28,8 +28,10 @@ output$saveSession <- {
 } 
 
 observeEvent(input$loadSession, {
-  try(load(choose.files(caption = "Select a .yuimaGUI file", multi = FALSE)))
-  for(i in names(yuimaGUIdata)) yuimaGUIdata[[i]] <<- yuimaGUIdata[[i]]
+	if (!is.null(input$loadSession$datapath)){
+		try(load(input$loadSession$datapath))
+		for(i in names(yuimaGUIdata)) yuimaGUIdata[[i]] <<- yuimaGUIdata[[i]]
+	}
 })
 
 
