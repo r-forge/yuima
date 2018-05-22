@@ -213,7 +213,8 @@ defaultModels <-  c("Diffusion process"="Geometric Brownian Motion",
 
 defaultMultiModels <-  c("Diffusion process" = "Correlated Brownian Motion")
 
-defaultJumps <- c("Gaussian", 
+defaultJumps <- c("Gaussian",
+				  "Constant",
                   "Uniform", 
                   "Student t", 
                   "Variance Gamma", 

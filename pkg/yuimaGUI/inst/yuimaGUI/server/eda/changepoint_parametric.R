@@ -215,7 +215,7 @@ observe({
   for (symb in rownames(parametric_seriesToChangePoint$table)){
     if (is.null(yuimaGUIsettings$delta[[symb]])) yuimaGUIsettings$delta[[symb]] <<- 0.01
     if (is.null(yuimaGUIsettings$toLog[[symb]])) yuimaGUIsettings$toLog[[symb]] <<- FALSE
-    data <- na.omit(as.numeric(getData(symb)))
+    data <- getData(symb)
     if (yuimaGUIsettings$toLog[[symb]]==TRUE) data <- log(data)
     for (modName in input$parametric_changepoint_model){
       if (class(try(setModelByName(modName, jumps = NA, AR_C = NA, MA_C = NA)))!="try-error"){

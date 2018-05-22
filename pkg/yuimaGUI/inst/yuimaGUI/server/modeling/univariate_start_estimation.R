@@ -265,7 +265,7 @@ observe({
       else yuimaGUIsettings$delta[[symb]] <<- 0.01
     }
     if (is.null(yuimaGUIsettings$toLog[[symb]])) yuimaGUIsettings$toLog[[symb]] <<- FALSE
-    data <- na.omit(as.numeric(getData(symb)))
+    data <- getData(symb)
     if (yuimaGUIsettings$toLog[[symb]]==TRUE) data <- log(data)
     for (modName in input$model){
       if (class(try(setModelByName(modName, intensity = input$model_levy_intensity, jumps = jumps_shortcut(class = class, jumps = input$jumps), AR_C = ifelse(class %in% c("CARMA","COGARCH"), input$AR_C, NA), MA_C = ifelse(class %in% c("CARMA","COGARCH"), input$MA_C, NA))))!="try-error"){
