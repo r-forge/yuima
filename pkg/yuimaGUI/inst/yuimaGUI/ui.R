@@ -30,7 +30,7 @@ sidebar<-dashboardSidebar(
     div(id="sessionButtons",
       fluidRow( downloadButton("saveSession", label = "Save Session")),
       br(),
-      fluidRow(actionButton("loadSession", label = "Load Session", icon = icon("open", lib = "glyphicon")))
+	  fluidRow(column(1),column(9,fileInput("loadSession", label = "Load Session", multiple=FALSE)))
     ),
     br(),
     div(id="theyuimaprojct",
