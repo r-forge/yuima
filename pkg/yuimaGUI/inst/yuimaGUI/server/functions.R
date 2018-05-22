@@ -91,7 +91,7 @@ delData <- function(symb){
 
 
 defaultBounds <- function(name, delta, strict, jumps = NA, AR_C = NA, MA_C = NA, data, intensity = NULL, threshold = NULL){
-  lastPrice = last(data)
+  lastPrice = as.numeric(last(data))
   if ( isUserDefined(name) ){
     mod <- setModelByName(name = name, jumps = jumps,  AR_C = AR_C, MA_C = MA_C)
 	  par <- getAllParams(mod, yuimaGUIdata$usr_model[[name]]$class)
@@ -118,19 +118,18 @@ defaultBounds <- function(name, delta, strict, jumps = NA, AR_C = NA, MA_C = NA,
     }
     return(list(lower=as.list(lower), upper=as.list(upper)))
   }
-  if (name %in% defaultModels[names(defaultModels) == "Point Process"]){
-    mod <- setModelByName(name = name, jumps = jumps,  AR_C = AR_C, MA_C = MA_C)
-    par <- getAllParams(mod, "Point Process")
-    if(strict==TRUE){
-      lower <- rep(NA, length(par))
-      upper <- rep(NA, length(par))
-    } else {
-      lower <- rep(0, length(par))
-      upper <- rep(10, length(par))
+  if (name == "Hawkes"){
+    if (strict==TRUE) return (list(lower=list("nu1"=0, "c11"=0, "a11"=0), upper=list("nu1"=NA, "c11"=100, "a11"=NA)))
+    else { 
+      x <- as.numeric(diff(data))
+      t1 <- tail(time(data),n=1)
+      t0 <- time(data)[1]
+      n <- length(x[x!=0])
+      nu1 <- n/as.numeric(t1-t0)
+      c11 <- 0
+      a11 <- 1
+      return (list(lower=list("nu1"=nu1, "c11"=c11, "a11"=a11), upper=list("nu1"=nu1, "c11"=c11, "a11"=a11)))
     }
-    names(lower) <- par
-    names(upper) <- par
-    return(list(lower=as.list(lower), upper=as.list(upper)))
   }
   if (name %in% defaultModels[names(defaultModels) == "COGARCH"]){
     mod <- setModelByName(name = name, jumps = jumps,  AR_C = AR_C, MA_C = MA_C)
@@ -290,6 +289,9 @@ setJumps <- function(jumps){
   if(jumps=='Gaussian') {
     return(list("dnorm(z, mean = mu_jump, sd = sigma_jump)"))
   }
+  if(jumps=='Constant') {
+    return(list("dconst(z, k = k_jump)"))
+  }
   if(jumps=='Uniform') {
     return(list("dunif(z, min = a_jump, max = b_jump)"))
   }
@@ -314,7 +316,7 @@ setJumps <- function(jumps){
 }
 
 jumpBounds <- function(jumps, data, strict, threshold = 0){
-  x <- na.omit(diff(data))
+  x <- na.omit(as.numeric(diff(data)))
   x <- x[abs(x)>threshold]
   x <- x-sign(x)*threshold
   switch(jumps,
@@ -332,6 +334,13 @@ jumpBounds <- function(jumps, data, strict, threshold = 0){
              a <- min(x)
              b <- max(x)
              return(list(lower=list("a_jump"=a, "b_jump"=b), upper=list("a_jump"=a, "b_jump"=b)))
+           }
+         },
+		 "Constant" = {
+           if(strict==TRUE) return(list(lower=list("k_jump"=NA), upper=list("k_jump"=NA)))
+           else {
+             k <- median(x)
+             return(list(lower=list("k_jump"=k), upper=list("k_jump"=k)))
            }
          },
          "Inverse Gaussian" = {
@@ -431,14 +440,15 @@ jumpBounds <- function(jumps, data, strict, threshold = 0){
 latexJumps <- function(jumps){
   if (!is.null(jumps)){
     switch (jumps,
-            "Gaussian" = "Y_i \\sim N(\\mu_{jump}, \\; \\sigma_{jump})",
-            "Uniform" = "Y_i \\sim Unif(a_{jump}, \\; b_{jump})",
-            "Inverse Gaussian" = "Y_i \\sim IG(\\delta_{jump}, \\; \\gamma_{jump})",
-			      "Normal Inverse Gaussian" = "Y_i \\sim NIG( \\alpha_{jump}, \\; \\beta_{jump}, \\; \\delta_{jump}, \\; \\mu_{jump})",
-			      "Hyperbolic" = "Y_i \\sim HYP( \\alpha_{jump}, \\; \\beta_{jump}, \\; \\delta_{jump}, \\; \\mu_{jump})",
-			      "Student t" = "Y_i \\sim t( \\nu_{jump}, \\; \\mu_{jump} )",
-			      "Variance Gamma" = "Y_i \\sim VG( \\lambda_{jump}, \\; \\alpha_{jump}, \\; \\beta_{jump}, \\; \\mu_{jump})",
-			      "Generalized Hyperbolic" = "Y_i \\sim GH( \\lambda_{jump}, \\; \\alpha_{jump}, \\; \\beta_{jump}, \\; \\delta_{jump}, \\; \\mu_{jump})"
+		"Gaussian" = "Y_i \\sim N(\\mu_{jump}, \\; \\sigma_{jump})",
+		"Constant" = "Y_i = k_{jump}",
+		"Uniform" = "Y_i \\sim Unif(a_{jump}, \\; b_{jump})",
+		"Inverse Gaussian" = "Y_i \\sim IG(\\delta_{jump}, \\; \\gamma_{jump})",
+		"Normal Inverse Gaussian" = "Y_i \\sim NIG( \\alpha_{jump}, \\; \\beta_{jump}, \\; \\delta_{jump}, \\; \\mu_{jump})",
+		"Hyperbolic" = "Y_i \\sim HYP( \\alpha_{jump}, \\; \\beta_{jump}, \\; \\delta_{jump}, \\; \\mu_{jump})",
+		"Student t" = "Y_i \\sim t( \\nu_{jump}, \\; \\mu_{jump} )",
+		"Variance Gamma" = "Y_i \\sim VG( \\lambda_{jump}, \\; \\alpha_{jump}, \\; \\beta_{jump}, \\; \\mu_{jump})",
+		"Generalized Hyperbolic" = "Y_i \\sim GH( \\lambda_{jump}, \\; \\alpha_{jump}, \\; \\beta_{jump}, \\; \\delta_{jump}, \\; \\mu_{jump})"
     )
   }
 }
@@ -814,9 +824,16 @@ addModel <- function(timeout = Inf, modName, multi = FALSE, intensity_levy, modC
     }
   }
   if(modClass=='Point Process'){
-	dataObj <- setDataGUI(data, delta = delta)
-	model <- setModelByName(name = modName, dimension = ncol(data), intensity = intensity_levy, jumps = jumps, MA_C = MA_C, AR_C = AR_C)
-	model@data <- dataObj
+  	model <- setModelByName(name = modName, dimension = ncol(data), intensity = intensity_levy, jumps = jumps, MA_C = MA_C, AR_C = AR_C)
+  	t1 <- tail(time(data),n=1)
+  	t0 <- time(data)[1]
+  	if(!is.numeric(t0) | !is.numeric(t1)){
+  	  t0 <- 0
+  	  t1 <- as.numeric(t1-t0)/365
+  	}
+  	samp <- setSampling(t0, t1, n = as.integer(as.numeric(t1-t0)/delta)+1)
+  	colnames(data) <- model@model@solve.variable
+  	model <- DataPPR(CountVar = data, yuimaPPR = model, samp = samp)
   } else { 
 	model <- try(setYuima(data = setDataGUI(data, delta = delta), model=setModelByName(name = modName, dimension = ncol(data), intensity = intensity_levy, jumps = jumps, MA_C = MA_C, AR_C = AR_C)))
   }
@@ -824,7 +841,7 @@ addModel <- function(timeout = Inf, modName, multi = FALSE, intensity_levy, modC
     createAlert(session = session, anchorId = anchorId, alertId = alertId, content =  "Unable to construct a synchronous grid for the data provided", style = "error")
     return()
   }
-  index(model@data@original.data) <- index(na.omit(data))
+  #index(model@data@original.data) <- index(na.omit(data))
   parameters <- getAllParams(model, modClass)
   
   
