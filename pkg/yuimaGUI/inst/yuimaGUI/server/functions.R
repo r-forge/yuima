@@ -226,17 +226,32 @@ defaultBounds <- function(name, delta, strict, jumps = NA, AR_C = NA, MA_C = NA,
   if (name == "Power Low Intensity"){
     boundsJump <- jumpBounds(jumps = jumps, strict = strict, data = data)
     if (strict==TRUE) return(list(lower=c(list("alpha"=0, "beta"=NA), boundsJump$lower),upper=c(list("alpha"=NA, "beta"=NA), boundsJump$upper)))
-    else return(list(lower=c(list("alpha"=0, "beta"=-3), boundsJump$lower),upper=c(list("alpha"=0.1/delta^(3/2), "beta"=3), boundsJump$upper)))
+    else {
+      x <- as.numeric(diff(data))
+      counts <- length(x[x!=0 & !is.na(x)])
+      alpha <- counts/(length(x)*delta)
+      return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=alpha, "beta"=0), boundsJump$upper)))
+    }
   }
   if (name == "Linear Intensity"){
     boundsJump <- jumpBounds(jumps = jumps, strict = strict, data = data)
     if (strict==TRUE) return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=NA, "beta"=NA), boundsJump$upper)))
-    else return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=1/delta, "beta"=0.1/delta^2), boundsJump$upper)))
+    else {
+      x <- as.numeric(diff(data))
+      counts <- length(x[x!=0 & !is.na(x)])
+      alpha <- counts/(length(x)*delta)
+      return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=alpha, "beta"=0), boundsJump$upper)))
+    }
   }
   if (name == "Exponentially Decaying Intensity"){
     boundsJump <- jumpBounds(jumps = jumps, strict = strict, data = data)
     if (strict==TRUE) return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=NA, "beta"=NA), boundsJump$upper)))
-    else return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=1/delta, "beta"=1/delta), boundsJump$upper)))
+    else {
+      x <- as.numeric(diff(data))
+      counts <- length(x[x!=0 & !is.na(x)])
+      alpha <- counts/(length(x)*delta)
+      return(list(lower=c(list("alpha"=0, "beta"=0), boundsJump$lower),upper=c(list("alpha"=alpha, "beta"=0), boundsJump$upper)))
+    }
   }
   if (name == "Periodic Intensity"){
     boundsJump <- jumpBounds(jumps = jumps, strict = strict, data = data)
