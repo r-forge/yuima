@@ -71,8 +71,8 @@ observe({
   if(!is.null(input$simulate_showSimulation_simID)){
     if(input$simulate_showSimulation_simID %in% rownames(yuimaGUItable$simulation)) {
       id <- unlist(strsplit(input$simulate_showSimulation_simID, split = " "))
-      shinyjs::toggle("simulate_showSimulation_hist_div", condition = yuimaGUIdata$simulation[[id[1]]][[as.numeric(id[2])]]$info$nsim > 10)
-      if(yuimaGUIdata$simulation[[id[1]]][[as.numeric(id[2])]]$info$nsim > 10){
+      shinyjs::toggle("simulate_showSimulation_hist_div", condition = yuimaGUIdata$simulation[[id[1]]][[as.numeric(id[2])]]$info$nsim > 1)
+      if(yuimaGUIdata$simulation[[id[1]]][[as.numeric(id[2])]]$info$nsim > 1){
         if(!is.na(yuimaGUIdata$simulation[[id[1]]][[as.numeric(id[2])]]$hist[1])){
           if(!is.null(input$simulate_showSimulation_hist_nBins)){
             output$simulate_showSimulation_hist <- renderPlot({

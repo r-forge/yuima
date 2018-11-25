@@ -136,9 +136,9 @@ multi_simulation_hist <- reactiveValues(values=NULL, x=NULL, y=NULL, z=NULL)
 observe({
   if(!is.null(params_multi_simulate_showSimulation_plot$id) & !is.null(params_multi_simulate_showSimulation_plot$y) & !is.null(params_multi_simulate_showSimulation_plot$z) ){
     id <- unlist(strsplit(params_multi_simulate_showSimulation_plot$id, split = " "))
-    if(id[1] %in% names(yuimaGUIdata$multisimulation)) if(length(yuimaGUIdata$multisimulation[id[1]])>=as.numeric(id[2])) if(yuimaGUIdata$multisimulation[[id[1]]][[as.numeric(id[2])]]$info$nsim > 10){
+    if(id[1] %in% names(yuimaGUIdata$multisimulation)) if(length(yuimaGUIdata$multisimulation[[id[1]]])>=as.numeric(id[2])) if(yuimaGUIdata$multisimulation[[id[1]]][[as.numeric(id[2])]]$info$nsim > 1){
       if(is.na(yuimaGUIdata$multisimulation[[id[1]]][[as.numeric(id[2])]]$hist[1])){
-        shinyjs::toggle("multi_simulate_showSimulation_hist_div", condition = yuimaGUIdata$multisimulation[[id[1]]][[as.numeric(id[2])]]$info$nsim > 10)
+        shinyjs::toggle("multi_simulate_showSimulation_hist_div", condition = yuimaGUIdata$multisimulation[[id[1]]][[as.numeric(id[2])]]$info$nsim > 1)
         
         filtered.colnames <- gsub(colnames(yuimaGUIdata$multisimulation[[id[1]]][[as.numeric(id[2])]]$trajectory), pattern = "_sim.*", replacement = "")
         seriesnames <- unique(filtered.colnames)

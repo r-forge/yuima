@@ -5,9 +5,9 @@ tabItem(tabName="models",
                                  h3("Univariate Model Estimation",class = "hTitle"),
                                  h4("Select the data and the model you wish to estimate. Each model will be fitted to each selected series.",
                                     br(),
-                                    "Click on the 'Set Range' and 'Advanced Settings' buttons to customize the estimation process.",
+                                    "Click on the Set Range and Advanced Settings buttons to customize the estimation process.",
                                     br(),
-                                    "A number of default models are available but you can set your own model (tab 'Set model') and use it for estimation and/or simulation purposes."),
+                                    "A number of default models are available but you can set your own model (tab Set model) and use it for estimation and/or simulation purposes."),
                                  hr(class = "hrHeader")
                           )
                         ),

@@ -134,7 +134,7 @@ observeEvent(input$llag_button_startEstimation, {
                   i <- i+1
                 } else break
               }
-              yuimaGUIdata$llag[[id]] <<- list(type = "llag", maxLag = input$llag_maxLag, delta = delta, llag = res$lagcce, p.values = res$p.values, start = start, end = end)
+              yuimaGUIdata$llag[[id]] <<- list(type = "llag", maxLag = input$llag_maxLag, delta = delta, llag = res$lagcce, cor = res$cormat, p.values = res$p.values, start = start, end = end)
             }
           }
           if(input$llag_type=="corr"){
@@ -212,19 +212,25 @@ output$llag_plot <- renderPlot({
     info <- isolate({yuimaGUIdata$llag[[input$llag_analysis_id]]})
     if(info$type=="llag"){
       co <- ifelse(info$p.values > input$llag_plot_confidence | is.na(info$p.values), 0, info$llag)
-      co<-melt(t(co))
-      digits <- 1+as.integer(abs(log10(info$delta)))
+      co <- melt(t(co))
+      co$label <- paste(
+          round(co$value, 1+as.integer(abs(log10(info$delta)))), 
+          '\n',
+          '(',
+          apply(co, MARGIN = 1, function(x) {round(info$cor[x[1], x[2]], 2)}), 
+          ')',
+          sep = '')
     }
     if(info$type=="corr"){
       co <- info$cormat
-      co<-melt(t(co))
-      digits <- 2
+      co <- melt(t(co))
+      co$label <- round(co$value, 2)
     }
     fillColor <- switch(getOption("yuimaGUItheme"), "black"="#282828", "white"="#f0f4f5")
     textColor <- switch(getOption("yuimaGUItheme"), "black"="#CDCECD", "white"="black")
     ggplot(co, aes(Var1, Var2)) + # x and y axes => Var1 and Var2
       geom_tile(aes(fill = value)) + # background colours are mapped according to the value column
-      geom_text(aes(label = round(co$value, digits))) + # write the values
+      geom_text(aes(label = co$label)) + # write the values
       scale_fill_gradient2(low = "#ffa500", 
                            mid = switch(getOption("yuimaGUItheme"), "black"="gray30", "white"="#C7E2DF"), 
                            high = "#74d600", 

@@ -3,7 +3,7 @@ tabItem(tabName = "hedging",
           column(12,
                  h3("Here you can manage the risk of a portfolio composed of options and the underlying asset.",class = "hTitle"),
                  h4("The evolution of the underlying asset is simulated by the models you estimated in the Modeling section.", br(),
-                    "After performing the simulation, click on the 'Show P&L' button in the 'Profit&Loss' tab and customize your portfolio.",br(),
+                    "After performing the simulation, click on the Show P&L button in the Profit&Loss tab and customize your portfolio.",br(),
                     "The Profit&Loss distribution of your portfolio will be displayed (it includes transaction costs that you can customize)."),
                  hr(class = "hrHeader")
           )
@@ -12,7 +12,7 @@ tabItem(tabName = "hedging",
         tabsetPanel(id = "panel_hedging", type = "tabs",
                     tabPanel(title = "Start simulations",
                              fluidRow(column(12, br(),
-                                             h4("Click on the model by which to simulate the evolution of the underlying asset"),
+                                             h4("Click on the model in order to simulate the evolution of the underlying asset"),
                                              DT::dataTableOutput("hedging_databaseModels")
                              )
                              ),
