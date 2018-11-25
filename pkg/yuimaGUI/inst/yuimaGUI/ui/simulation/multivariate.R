@@ -6,7 +6,7 @@ tabItem(tabName = "multi_simulate",
                     #br(),
                     #"If you want to simulate a model that has not been estimated, you can use the 'Non-estimated models' tab.",
                     br(),
-                    "Click on the 'Set Simulation' and 'Advanced Settings' buttons to customize the simulation process."),
+                    "Click on the Set Simulation and Advanced Settings buttons to customize the simulation process."),
                  hr(class = "hrHeader")
           )
         ),

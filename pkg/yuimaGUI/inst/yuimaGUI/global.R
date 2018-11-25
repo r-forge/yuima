@@ -11,18 +11,21 @@ suppressMessages(require(plotly))
 suppressMessages(require(ghyp))
 
 
-# if(!exists("yuimaGUIdata"))
-#   yuimaGUIdata <- reactiveValues(series=list(), 
-#                                  model=list(), multimodel=list(), 
-#                                  usr_model = list(), usr_multimodel = list(), 
-#                                  simulation=list(), multisimulation=list(), 
-#                                  usr_simulation = list(), usr_multisimulation = list(), 
-#                                  cp=list(), 
-#                                  cpYuima=list(), 
-#                                  llag = list(), 
-#                                  cluster = list(), 
-#                                  hedging = list())
- 
+### comment this for web app version ###
+if(!exists("yuimaGUIdata"))
+  yuimaGUIdata <- reactiveValues(series=list(),
+                                 model=list(), multimodel=list(),
+                                 usr_model = list(), usr_multimodel = list(),
+                                 simulation=list(), multisimulation=list(),
+                                 usr_simulation = list(), usr_multisimulation = list(),
+                                 cp=list(),
+                                 cpYuima=list(),
+                                 llag = list(),
+                                 cluster = list(),
+                                 hedging = list())
+### comment this for web app version ###
+
+
 if(is.null(getOption("yuimaGUItheme"))) options(yuimaGUItheme = "black")
 
 #NIG distribution
@@ -34,6 +37,10 @@ rNIG.gui <- function(n, alpha, delta, beta, mu){
   g <- NIG.ad(alpha = alpha, delta = delta, beta = beta, mu = mu)
   rghyp(n = n, object = g)
 }
+pNIG.gui <- function(q, alpha, delta, beta, mu){
+  g <- NIG.ad(alpha = alpha, delta = delta, beta = beta, mu = mu)
+  pghyp(q = q, object = g)
+}
 
 #hyp distribution
 dhyp.gui <- function(x, alpha, delta, beta, mu){
@@ -43,6 +50,10 @@ dhyp.gui <- function(x, alpha, delta, beta, mu){
 rhyp.gui <- function(n, alpha, delta, beta, mu){
   g <- hyp.ad(alpha = alpha, delta = delta, beta = beta, mu = mu)
   rghyp(n = n, object = g)
+}
+phyp.gui <- function(q, alpha, delta, beta, mu){
+  g <- hyp.ad(alpha = alpha, delta = delta, beta = beta, mu = mu)
+  pghyp(q = q, object = g)
 }
 
 #VG distribution
@@ -54,6 +65,10 @@ rVG.gui <- function(n, lambda, alpha, beta, mu){
   g <- VG.ad(lambda = lambda, alpha = alpha, beta = beta, mu = mu)
   rghyp(n = n, object = g)
 }
+pVG.gui <- function(q, lambda, alpha, beta, mu){
+  g <- VG.ad(lambda = lambda, alpha = alpha, beta = beta, mu = mu)
+  pghyp(q = q, object = g)
+}
 
 #ghyp distribution
 dghyp.gui <- function(x, lambda, alpha, delta, beta, mu){
@@ -63,4 +78,8 @@ dghyp.gui <- function(x, lambda, alpha, delta, beta, mu){
 rghyp.gui <- function(n, lambda, alpha, delta, beta, mu){
   g <- ghyp.ad(lambda = lambda, alpha = alpha, delta = delta, beta = beta, mu = mu)
   rghyp(n = n, object = g)
+}
+pghyp.gui <- function(q, lambda, alpha, delta, beta, mu){
+  g <- ghyp.ad(lambda = lambda, alpha = alpha, delta = delta, beta = beta, mu = mu)
+  pghyp(q = q, object = g)
 }

@@ -131,6 +131,17 @@ defaultBounds <- function(name, delta, strict, jumps = NA, AR_C = NA, MA_C = NA,
       return (list(lower=list("nu1"=nu1, "c11"=c11, "a11"=a11), upper=list("nu1"=nu1, "c11"=c11, "a11"=a11)))
     }
   }
+  if (name == "Hawkes Power Law Kernel"){
+    if (strict==TRUE) return (list(lower=list("nu"=0, "k"=NA, "beta"=NA, 'gamma'=NA), upper=list("nu"=NA,  "k"=NA, "beta"=NA, 'gamma'=NA)))
+    else { 
+      x <- as.numeric(diff(data))
+      t1 <- tail(time(data),n=1)
+      t0 <- time(data)[1]
+      n <- length(x[x!=0])
+      nu <- n/as.numeric(t1-t0)
+      return (list(lower=list("nu"=nu, "k"=0, "beta"=0, 'gamma'=-1), upper=list("nu"=nu, "k"=0, "beta"=0, 'gamma'=1)))
+    }
+  }
   if (name %in% defaultModels[names(defaultModels) == "COGARCH"]){
     mod <- setModelByName(name = name, jumps = jumps,  AR_C = AR_C, MA_C = MA_C)
     par <- getAllParams(mod, "COGARCH")
@@ -499,6 +510,11 @@ setModelByName <- function(name, jumps = NA, AR_C = NA, MA_C = NA, XinExpr = FAL
   if (name == "Frac. Geometric Brownian Motion" | name == "gBm") return(yuima::setModel(drift="mu*x", diffusion="sigma*x", solve.variable = "x", hurst = NA))
   if (name == "Frac. Ornstein-Uhlenbeck (OU)" | name == "OU") return(yuima::setModel(drift="-theta*x", diffusion="sigma", solve.variable = "x", hurst = NA))
   if (name == "Hawkes") return(yuima::setHawkes())
+  if (name == "Hawkes Power Law Kernel") {
+    df <- setLaw(rng = function(n){as.matrix(rep(1,n))}, dim = 1)
+    countMod <- setModel(drift = c("0"), diffusion = matrix("0",1,1), jump.coeff = matrix(c("1"),1,1), measure = list(df = df), measure.type = "code", solve.variable = c("N"), xinit=c("0"))
+    return(yuima::setPPR(yuima = countMod, counting.var="N", gFun="nu", Kernel = as.matrix("k/(beta+(t-s))^gamma"), lambda.var = "lambda", var.dx = "N", lower.var="0", upper.var = "t"))
+  }
   if (name == "Power Low Intensity") return(yuima::setPoisson(intensity="alpha*t^(beta)", df=setJumps(jumps = jumps), solve.variable = "x"))
   if (name == "Constant Intensity") return(yuima::setPoisson(intensity="lambda", df=setJumps(jumps = jumps), solve.variable = "x"))
   if (name == "Linear Intensity") return(yuima::setPoisson(intensity="alpha+beta*t", df=setJumps(jumps = jumps), solve.variable = "x"))
@@ -620,6 +636,7 @@ printModelLatex <- function(names, process, jumps = NA, multi = FALSE, dimension
         
         }
         if (name == "Hawkes") mod <- paste(mod, ifelse(mod=="","","\\\\"), "kern(t-s) = c_{11}\\exp\\left[-a_{11}\\left(t-s\\right)\\right]")
+        if( name == "Hawkes Power Law Kernel") mod <- paste(mod, ifelse(mod=="","","\\\\"), "kern(t-s) = \\frac{k}{\\left[\\beta+(t-s)\\right]^{\\gamma}}")
       }
       return(paste("$$",mod,"$$"))
     }
@@ -1395,7 +1412,7 @@ simulateGUI <- function(symbName, modelYuimaGUI, xinit, nsim, nstep, simulate.fr
       }
       else {
         dimension <- length(simulation@data@zoo.data)
-        if (modelYuimaGUI$info$class=="COGARCH") dimension <- dimension - 2
+        if (modelYuimaGUI$info$class %in% c("CARMA","COGARCH")) dimension <- dimension - 2
         if (saveTraj==TRUE){
           x <- do.call(merge,simulation@data@zoo.data)
           if(i==1) {

@@ -5,9 +5,9 @@ tabItem(tabName="multi_models",
                                  h3("Multivariate Model Estimation",class = "hTitle"),
                                  h4("Select the data and the model you wish to estimate. The model will be fitted to the selected series.",
                                     br(),
-                                    "Click on buttons 'Set Range' and 'Advanced Settings' to customize the estimation process.",
+                                    "Click on buttons Set Range and Advanced Settings to customize the estimation process.",
                                     br(),
-                                    "Building your own multivariate model will soon be possible"
+                                    'Building your own multivariate model is not possible at the moment.'
                                     #"Some default models are available but you can set your own model (tab 'Set model') and use it for estimation and/or simulation purposes."
                                     ),
                                  hr(class = "hrHeader")

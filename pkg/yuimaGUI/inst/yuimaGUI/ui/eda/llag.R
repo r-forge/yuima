@@ -69,7 +69,7 @@ tabItem(tabName = "llag",
                                               column(6),
                                               column(2,actionButton("llag_deleteAll_analysis", label = "Delete All"))
                                             ),
-                                            HTML("<div id = 'llag_plot_howToRead'><h4><b>How to read the plot:</b><br/>If the lead-lag is positive: 'row.name' anticipates 'col.name of 'X' periods<br/>If the lead-lag is negative: 'row.name' follows 'col.name' with 'X' delay periods<br/><br/><b>'X'</b> are the numbers in the plot above.<br/>They are expressed in days if you are using time series, or in the same unit of measure of time if you are using numerical time index.</h4></div>")
+                                            HTML("<div id = 'llag_plot_howToRead'><h4><b>How to read the plot:</b><br/>If the lead-lag is positive: 'row.name' anticipates 'col.name of 'X' periods<br/>If the lead-lag is negative: 'row.name' follows 'col.name' with 'X' delay periods<br/><br/><b>'X'</b> are the numbers in the plot above.<br/>They are expressed in days if you are using time series, or in the same unit of measure of time if you are using numerical time index.<br/>The numbers in round brackets are correlations between the series shifted by the corresponding estimated lead-lag parameter.</h4></div>")
                         )))
         )
 )

@@ -21,7 +21,7 @@ tabItem(tabName = "cluster",
                         column(4,br(),br(),
                                div(align="center",
                                    selectInput("cluster_linkage", "Linkage", choices = c("Complete"="complete", "Single"="single", "Average"="average", "Ward"="ward.D", "Ward squared"="ward.D2", "McQuitty"="mcquitty", "Median"="median", "Centroid"="centroid")),
-                                   selectInput("cluster_distance", "Distance", choices = c("Percentage Increments Distribution"="MYdist_perc", "Increments Distribution"="MYdist_ass", "Markov Operator"="MOdist", "Euclidean"="euclidean", "Maximum"="maximum", "Manhattan"="manhattan", "Canberra"="canberra", "Minkowski"="minkowski")),
+                                   selectInput("cluster_distance", "Metric", choices = c("Percentage Increments Distribution"="MYdist_perc", "Increments Distribution"="MYdist_ass", "Markov Operator"="MOdist", "Euclidean"="euclidean", "Maximum"="maximum", "Manhattan"="manhattan", "Canberra"="canberra", "Minkowski"="minkowski")),
                                    shinyjs::hidden(numericInput("cluster_distance_minkowskiPower", label = "Power", value = 2)))
                         )
         )),

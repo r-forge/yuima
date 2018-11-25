@@ -1,5 +1,6 @@
-#use it for shinyapps.io
-yuimaGUIdata <- reactiveValues(series=list(),
+#shinyapp web app
+if(!exists("yuimaGUIdata"))
+  yuimaGUIdata <- reactiveValues(series=list(),
                                model=list(), multimodel=list(),
                                usr_model = list(), usr_multimodel = list(),
                                simulation=list(), multisimulation=list(),
@@ -205,6 +206,7 @@ defaultModels <-  c("Diffusion process"="Geometric Brownian Motion",
                     "Compound Poisson" = "Exponentially Decaying Intensity",
                     "Compound Poisson" = "Periodic Intensity",
                     "Point Process" = "Hawkes",
+					"Point Process" = "Hawkes Power Law Kernel",
                     #"Fractional process"="Frac. Geometric Brownian Motion",
                     #"Fractional process"="Frac. Brownian Motion",
                     "Fractional process"="Frac. Ornstein-Uhlenbeck (OU)",

@@ -197,7 +197,55 @@ observeEvent(input$model_modal_model_id,{
         #dx <- dx-sign(dx)*threshold
         for (i in names(y$qmle@coef)) assign(i, value = as.numeric(y$qmle@coef[i]))
         dx <- data.frame("V1" = dx)
-        if(y$info$jumps=="Gaussian"){
+        switch(y$info$jumps,
+          "Gaussian" = {
+            dfun <- dnorm
+            pfun <- "pnorm"
+            args <- list(mean = mu_jump, sd = sigma_jump)  
+          },
+          "Constant" = {
+            dfun <- dconst
+            pfun <- "pconst"
+            args <- list(k = k_jump)
+            pconst <- function(q, k){q>=k}
+          },
+          "Uniform" = {
+            dfun <- dunif
+            pfun <- "punif"
+            args <- list(min = a_jump, max = b_jump)
+          },
+          "Inverse Gaussian" = {
+            dfun <- dIG
+            pfun <- "pIG"
+            args <- list(delta = delta_jump, gamma = gamma_jump)
+          },
+          "Normal Inverse Gaussian" = {
+            dfun <- dNIG.gui
+            pfun <- "pNIG.gui"
+            args <- list(alpha = alpha_jump, beta = beta_jump, delta = delta_jump, mu = mu_jump)
+          },
+          "Hyperbolic" = {
+            dfun <- dhyp.gui
+            pfun <- "phyp.gui"
+            args <- list(alpha = alpha_jump, beta = beta_jump, delta = delta_jump, mu = mu_jump)
+          },
+          "Student t" = {
+            dfun <- dt
+            pfun <- "pt"
+            args <- list(df = nu_jump, ncp = mu_jump)
+          },
+          "Variance Gamma" = {
+            dfun <- dVG.gui
+            pfun <- "pVG.gui"
+            args <- list(lambda = lambda_jump, alpha = alpha_jump, beta = beta_jump, mu = mu_jump)
+          },
+          "Generalized Hyperbolic" = {
+            dfun <- dghyp.gui
+            pfun <- "pghyp.gui"
+            args <- list(lambda = lambda_jump, alpha = alpha_jump, delta = delta_jump, beta = beta_jump, mu = mu_jump)
+          }
+        )
+        if(exists('args') & exists('dfun') & exists('pfun')){
           output$model_modal_plot_distr <- renderPlot({
             return(
               ggplot(dx, aes(x = V1)) + 
@@ -206,41 +254,19 @@ observeEvent(input$model_modal_model_id,{
                   axis.title=element_text(size=12),
                   legend.position="none"
                 ) +
-                stat_function(fun = dnorm, args = list(mean = mu_jump, sd = sigma_jump), fill = "blue",color = "blue", geom = 'area', alpha = 0.5) +
+                stat_function(fun = dfun, args = args, fill = "blue",color = "blue", geom = 'area', alpha = 0.5) +
                 geom_density(alpha = 0.5, fill = "green", color = "green") +
                 xlim(-4, 4) + 
                 labs(fill="", title = "Empirical VS Estimated Distribution", x = "Increments", y = "Density")
             )
           })
-          ksTest <- try(ks.test(x = as.numeric(dx$V1), "pnorm", mean = mu_jump, sd = sigma_jump))
+          ksTest <- try(do.call(what = 'ks.test', args = append( list(x = as.numeric(dx$V1), y = pfun), lapply(args, FUN = function(x) x)) ))
           output$model_modal_plot_test <- renderUI({
             if(class(ksTest)!="try-error")
               HTML(paste("<div><h5 class='hModal'>Kolmogorov-Smirnov p-value (the two distributions coincide): ", format(ksTest$p.value, scientific=T, digits = 2), "</h5></div>"))
-          })
+          }) 
         }
-        if(y$info$jumps=="Uniform"){
-          output$model_modal_plot_distr <- renderPlot({
-            return(
-              ggplot(dx, aes(x = V1)) + 
-                theme(
-                  plot.title = element_text(size=14, face= "bold", hjust = 0.5),
-                  axis.title=element_text(size=12),
-                  legend.position="none"
-                ) +
-                stat_function(fun = dunif, args = list(min = a_jump, max = b_jump), fill = "blue",color = "blue", geom = 'area', alpha = 0.5) +
-                geom_density(alpha = 0.5, fill = "green", color = "green") +
-                xlim(min(dx$V1),max(dx$V1)) + 
-                labs(fill="", title = "Empirical VS Estimated Distribution", x = "Increments", y = "Density")
-            )
-          })
-          ksTest <- try(ks.test(x = as.numeric(dx$V1), "punif", min = a_jump, max = b_jump))
-          output$model_modal_plot_test <- renderUI({
-            if(class(ksTest)!="try-error")
-              HTML(paste("<div><h5 class='hModal'>Kolmogorov-Smirnov p-value (the two distributions coincide): ", format(ksTest$p.value, scientific=T, digits = 2), "</h5></div>"))
-          })
-        }
-        
-        
+      
         delta <- y$model@sampling@delta
         jumps <- ifelse(abs(diff(x))>threshold,1,0)
         jumps[is.na(jumps)] <- 0

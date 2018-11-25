@@ -30,17 +30,12 @@ sidebar<-dashboardSidebar(
     div(id="sessionButtons",
       fluidRow( downloadButton("saveSession", label = "Save Session")),
       br(),
-	  fluidRow(column(1),column(9,fileInput("loadSession", label = "Load Session", multiple=FALSE)))
+	    fluidRow(column(1),column(9,fileInput("loadSession", label = "Load Session", multiple=FALSE)))
     ),
-    br(),
+    hr(),br(),
     div(id="theyuimaprojct",
-        a("User Guide", href="https://yuima-project.com/manuals/", target="_blank"),br(),
-        a("Troubleshooting", href="https://yuima-project.com/category/troubleshooting-yuimagui/", target="_blank"),br(),
-        br(),
-        a("Spreading the word", href="https://yuima-project.com/category/conferences/", target="_blank"),br(),
-        a("About Us", href="https://yuima-project.com/the-yuima-team/", target="_blank"),br(),
-        br(),
-        a("Contact Us", href="https://yuima-project.com/contact-us/", target="_blank")
+        a("User Guide", href="https://yuimaproject.com/wp-content/uploads/2018/08/manual_yuimagui_v1-02.pdf", target="_blank"),br(),
+        br()
     )
   )
 )
