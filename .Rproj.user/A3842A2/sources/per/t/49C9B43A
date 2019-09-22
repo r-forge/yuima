@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1544432946622.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1034215240",
+    "id" : "49C9B43A",
+    "lastKnownWriteTime" : 1544430823,
+    "last_content_update" : 1544430823,
+    "path" : "C:/Users/Emanuele/Desktop/Asymp Exp.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "35,0",
+        "scrollLine" : "23"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

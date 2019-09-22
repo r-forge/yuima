@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1544432917389.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2850163453",
+    "id" : "2471C01",
+    "lastKnownWriteTime" : 1526264950,
+    "last_content_update" : 1526264950,
+    "path" : "~/YUIMA/yuima/yuima/R/asymptotic_term_third.R",
+    "project_path" : "R/asymptotic_term_third.R",
+    "properties" : {
+        "cursorPosition" : "19,28",
+        "scrollLine" : "11"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
