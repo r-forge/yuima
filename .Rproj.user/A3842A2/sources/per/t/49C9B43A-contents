@@ -1,0 +1,108 @@
+require(yuima)
+# to the Black-Scholes economy:
+# dXt^e = Xt^e * dt + e * Xt^e * dWt
+diff.matrix <- "x*e"
+model <- setModel(drift = "x", diffusion = diff.matrix)
+# call option is evaluated by averating
+# max{ (1/T)*int_0^T Xt^e dt, 0}, the first argument is the functional of interest:
+Terminal <- 1
+xinit <- c(1)
+f <- list( c(expression(x/Terminal)), c(expression(0)))
+F <- 0
+division <- 1000
+e <- 4
+yuima <- setYuima(model = model, sampling = setSampling(Terminal=Terminal, n=division))
+yuima <- setFunctional( yuima, xinit=xinit, f=f,F=F,e=e)
+#monte carlo
+mc <- sapply(seq(1,2000), function(i){
+  cat('.')
+  simFunctional(simulate(yuima,xinit=xinit,true.par=list(e = e)))
+})
+mean(mc)
+
+
+# asymptotic expansion
+rho <- expression(0)
+F0 <- F0(yuima)
+get_ge <- function(x,epsilon,K,F0){
+  tmp <- (F0 - K) + (epsilon * x) 
+  tmp[(epsilon * x) < (K-F0)] <- 0
+  return( tmp )
+}
+
+g <- function(x) get_ge(x,epsilon=e,K=1,F0=F0)
+set.seed(123)
+asymp <- asymptotic_term(yuima, block=10, rho,g)
+asymp
+sum(asymp$d0 + e * asymp$d1)
+
+
+
+ae1 <- c()
+ae2 <- c()
+ae3 <- c()
+mc <- c()
+grid <- seq(0.01, 5, by = 0.5)
+#grid <- e
+for(e in grid){
+
+  #e <- 0.3
+  K <- 0.1
+  block <- 50
+  
+  g <- function(x) { get_ge(x,epsilon=e,K=K,F0=F0) }
+  a1 <- asymptotic_term(yuima, block=block, rho, g)
+  #a1
+  
+  g2 <- function(x) { (get_ge(x,epsilon=e,K=K,F0=F0) - a1$d0) / (e) }
+  set.seed(123)
+  a2 <- asymptotic_term(yuima, block=block, rho, g2)
+  #a2
+  
+  g3 <- function(x) { (get_ge(x,epsilon=e,K=K,F0=F0) - a1$d0 - a2$d0 * e) / (e^2/2) }
+  set.seed(123)
+  a3 <- asymptotic_term(yuima, block=block, rho, g3)
+  #a3
+
+  ae1 <- c(ae1, sum(a1$d0 + e * a1$d1 + e^2/2 * a1$d2))
+  ae2 <- c(ae2, sum(a1$d0 + e * a2$d0 + e^2/2 * a2$d1))
+  ae3 <- c(ae3, sum(a1$d0 + e * a2$d0 + e^2/2 * a3$d0))
+  
+  mc <- c(mc, mean(sapply(seq(1,1000), function(i){
+    cat('.')
+    simFunctional(simulate(yuima,xinit=xinit,true.par=list(e = e)))
+  })))
+
+}
+
+matplot(data.frame(mc = mc, ae1 = ae1, ae2 = ae2, ae3 = ae3), type = c("b"), pch=1, col = 1:4)
+legend("topleft", legend = 1:4, col=1:4, pch=1)
+
+
+
+
+g <- function(x) { get_ge(x,epsilon=e,K=K,F0=F0) }
+my_asymptotic_term <- function(exp = 3, g = NULL, coef = NULL){
+  
+  i <- length(coef)
+  ae <- sum(coef * e^(0:(i-1))/factorial(0:(i-1)), na.rm = T)
+  f <- function(x) {(g(x) - ae)/(e^i/factorial(i))}
+  
+  coef <- c(coef, asymptotic_term(yuima, block=block, rho, f)$d0)
+  
+  if(i<exp) {
+    return(my_asymptotic_term(exp = exp, g = g, coef = coef))  
+  }
+  
+  return( list(ae = ae, coef = coef) )  
+}
+
+my_asymptotic_term(3)
+
+
+
+
+
+  
+  
+  
