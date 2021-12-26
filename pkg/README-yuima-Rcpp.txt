@@ -18,3 +18,5 @@ library(tools)
 
 # this page is also of interest
 # http://stackoverflow.com/questions/42313373/r-cmd-check-note-found-no-calls-to-r-registerroutines-r-usedynamicsymbols
+
+README-yuima-Rcpp.txt
