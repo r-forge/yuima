@@ -1,4 +1,3 @@
-#exportPattern("^[[:alpha:]]+")
 export(yuimaGUI)
 
 importFrom("shiny", "runApp")
@@ -11,3 +10,4 @@ importFrom("shinydashboard", "dashboardSidebar")
 importFrom("shinyjs", "show")
 importFrom("yuima", "setData")
 importFrom("plotly", "plot_ly")
+importFrom("ghyp", "rghyp")
