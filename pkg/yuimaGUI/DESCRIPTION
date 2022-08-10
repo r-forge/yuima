@@ -8,4 +8,5 @@ Description: Provides a graphical user interface for the 'yuima' package.
 License: GPL-2
 Depends: R(>= 3.0.0) 
 Imports: DT (>= 0.2), shinyjs, shiny, shinydashboard, shinyBS, yuima, quantmod, sde, ggplot2, plotly, ghyp
-RoxygenNote: 7.2.0
+RoxygenNote: 7.2.1
+URL: https://yuimaproject.com
